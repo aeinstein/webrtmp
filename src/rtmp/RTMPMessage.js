@@ -6,12 +6,12 @@ class RTMPMessage{
         "DataMessageAMF0", "SharedObjectMessageAMF0", "CommandMessageAMF0", "dummy", "Aggregate Message"];
 
     messageType;
-	messageLength;
-    length;
+	messageLength = 0;
+    length = 0;
 	timestamp;
     extendedTimestamp = false;
 	message_stream_id = 0;
-	payload;
+	payload = new Uint8Array(0);
 
     /**
      *
@@ -19,18 +19,11 @@ class RTMPMessage{
      */
 	constructor(payload) {
         if(payload) {
-            this.setPayload(payload);
+			this.setMessageLength(payload.length);
+            this.addPayload(payload);
         }
 	}
 
-    /**
-     *
-     * @param {Uint8Array} payload
-     */
-	setPayload(payload){
-		this.payload = payload;
-		this.length = this.payload.length;
-	}
 
     /**
      *

@@ -355,12 +355,12 @@ class RTMPMessage{
         "DataMessageAMF0", "SharedObjectMessageAMF0", "CommandMessageAMF0", "dummy", "Aggregate Message"];
 
     messageType;
-	messageLength;
-    length;
+	messageLength = 0;
+    length = 0;
 	timestamp;
     extendedTimestamp = false;
 	message_stream_id = 0;
-	payload;
+	payload = new Uint8Array(0);
 
     /**
      *
@@ -368,18 +368,11 @@ class RTMPMessage{
      */
 	constructor(payload) {
         if(payload) {
-            this.setPayload(payload);
+			this.setMessageLength(payload.length);
+            this.addPayload(payload);
         }
 	}
 
-    /**
-     *
-     * @param {Uint8Array} payload
-     */
-	setPayload(payload){
-		this.payload = payload;
-		this.length = this.payload.length;
-	}
 
     /**
      *
@@ -888,7 +881,6 @@ class ChunkParser {
 
             // Message Header Type
             fmt = ((data[0] & 0xC0) >>> 6);  // upper 2 bit
-            console.log("[ ChunkParser ] chunk type: ", fmt);
 
             // Basic Header ChunkID
             let csid = data[header_length++] & 0x3f;	// lower 6 bits
@@ -900,7 +892,7 @@ class ChunkParser {
                 csid = data[header_length++] * 256 + data[header_length++] + 64;
             }
 
-            console.log("[ ChunkParser ] chunk_stream_id: ", csid);
+            console.log("[ ChunkParser ] chunk type: ", fmt, " StreamID: " + csid);
 
             let payload;
 
@@ -924,24 +916,6 @@ class ChunkParser {
 
                 console.log("[ ChunkParser ] message_length: " + message_length);
 
-                payload_length = message_length;
-
-                if(payload_length > this.CHUNK_SIZE){
-                    // Wir erwarten CHUNK_SIZE bytes
-                    payload_length = this.CHUNK_SIZE;
-                }
-
-                payload = data.slice(header_length, header_length +payload_length);
-
-                // haben wir alles
-                if(payload.length < payload_length){
-                    // wait for next packet
-                    console.log("[ ChunkParser ] packet(" + payload.length + "/" + payload_length + ") too small, wait for next");
-                    return;
-                }
-
-                msg.setPayload(payload);
-
                 this.chunkstreams[csid] = msg;
                 break;
 
@@ -962,24 +936,6 @@ class ChunkParser {
 
                 console.log("[ ChunkParser ] message_length: " + message_length);
 
-                payload_length = message_length;
-
-                if(payload_length > this.CHUNK_SIZE){
-                    // Wir erwarten CHUNK_SIZE bytes
-                    payload_length = this.CHUNK_SIZE;
-                }
-
-                payload = data.slice(header_length, header_length +payload_length);
-
-                // haben wir alles? message_length oder CHUNK_SIZE
-                if(payload.length < payload_length){
-                    // wait for next packet
-                    console.log("[ ChunkParser ] packet(" + payload.length + "/" + payload_length + ") too small, wait for next");
-                    return;
-                }
-
-                msg.setPayload(payload);
-
                 this.chunkstreams[csid] = msg;
                 break;
 
@@ -995,21 +951,6 @@ class ChunkParser {
 
                 msg.setMessageTimestamp(timestamp);
 
-                payload = data.slice(header_length);
-                payload_length = msg.getMessageLength();
-
-                // haben wir alles
-                if(payload.length < payload_length){
-                    // wait for next packet
-                    console.log("[ ChunkParser ] packet(" + payload.length + "/" + payload_length + ") too small, wait for next");
-                    return;
-                }
-
-                if(payload.length > this.CHUNK_SIZE) {
-                    msg.addPayload(payload.slice(0, this.CHUNK_SIZE));
-                } else {
-                    msg.addPayload(payload);
-                }
                 break;
 
             case 3:		// 0 byte
@@ -1020,53 +961,36 @@ class ChunkParser {
                     header_length++;
                 }
 
-                payload_length = msg.bytesMissing();
-
-                if(payload_length > this.CHUNK_SIZE) {
-                    payload_length = this.CHUNK_SIZE;
-                }
-
-                payload = data.slice(header_length, header_length +payload_length);
-
-                // haben wir alles
-                if(payload.length < payload_length){
-                    // wait for next packet
-                    console.log("[ ChunkParser ] packet(" + payload.length + "/" + payload_length + ") too small, wait for next");
-                    return;
-                }
-
-                msg.addPayload(payload);
                 break;
             }
 
+            payload_length = this.chunkstreams[csid].bytesMissing();
 
+            if(payload_length > this.CHUNK_SIZE) payload_length = this.CHUNK_SIZE;      // Max. CHUNK_SIZE erwarten
 
+            payload = data.slice(header_length, header_length +payload_length);
 
+            // sind genug bytes für das chunk da?
+            if(payload.length < payload_length){
+                console.log("[ ChunkParser ] packet(" + payload.length + "/" + payload_length + ") too small, wait for next");
+                return;
+            }
 
-
-
+            this.chunkstreams[csid].addPayload(payload);
 
             if(this.chunkstreams[csid].isComplete()) {     // Message complete
                 console.log("[ ChunkParser ] RTMP: ", msg.getMessageType(), rtmp_RTMPMessage.MessageTypes[msg.getMessageType()], msg.getPayloadlength(), msg.getMessageStreamID());
-
                 this.conn_worker.onMessage(this.chunkstreams[csid]);
             }
 
             let consumed = (header_length + payload_length);
 
-            console.log("[ ChunkParser ] cut: " + consumed);
-
-            if(isNaN(consumed)) {
-                return;
-            }
-
             if(consumed > this.buffer.length) {
                 console.warn("[ ChunkParser ] mehr abschneiden als da");
-                return;
             }
 
             this.buffer = this.buffer.slice(consumed);
-            console.log("[ ChunkParser ] now: " + this.buffer.length);
+            console.log("[ ChunkParser ] consumed: " + consumed + " bytes, rest: " + this.buffer.length);
 
         } while(this.buffer.length > 11);   // minimum size
 

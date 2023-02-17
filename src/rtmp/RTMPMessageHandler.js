@@ -5,8 +5,11 @@ import NetConnection from "./NetConnection";
 import ChunkParser from "./ChunkParser";
 import RTMPMediaMessageHandler from "./RTMPMediaMessageHandler";
 import AMF0Object from "./AMF0Object";
+import Log from "../utils/logger";
 
 class RTMPMessageHandler {
+    TAG = "RTMPMessageHandler";
+
     netconnections = {};
     chunk_stream_id = 2;
     trackedCommand = "";
@@ -22,22 +25,22 @@ class RTMPMessageHandler {
         this.media_handler = new RTMPMediaMessageHandler();
 
         this.media_handler.onError = (type, info)=>{
-            console.log(type, info);
+            Log.d(this.TAG, type, info);
             postMessage(["onError", type, info]);
         }
 
         this.media_handler.onMediaInfo = (mediainfo)=>{
-            console.log(mediainfo);
+            Log.d(this.TAG, mediainfo);
             postMessage(["onMediaInfo", mediainfo]);
         }
 
         this.media_handler.onTrackMetadata = (type, metadata)=>{
-            console.log(type, metadata);
+            Log.d(this.TAG, type, metadata);
             postMessage(["onTrackMetadata", type, metadata]);
         }
 
         this.media_handler.onDataAvailable = (videoTrack, audioTrack)=>{
-            console.log(videoTrack, audioTrack);
+            Log.d(this.TAG, videoTrack, audioTrack);
             postMessage(["onDataAvailable", videoTrack, audioTrack]);
         }
 
@@ -67,7 +70,7 @@ class RTMPMessageHandler {
      * @param {Uint8Array} data
      */
     parseChunk(data){
-        console.log("[ RTMPMessageHandler ] parseChunk: " + data.length);
+        Log.d(this.TAG, "parseChunk: " + data.length);
         this.chunk_parser.parseChunk(data);
     }
 
@@ -76,7 +79,7 @@ class RTMPMessageHandler {
      * @param {RTMPMessage} msg
      */
     onMessage(msg){
-        console.log("[ RTMPMessageHandler ] onMessage: " + msg.getMessageType() + " StreamID:" + msg.getMessageStreamID());
+        Log.d(this.TAG, " onMessage: " + msg.getMessageType() + " StreamID:" + msg.getMessageStreamID());
 
         switch(msg.getMessageType()){
         case 1:         // PCM Set Chunk Size
@@ -92,17 +95,17 @@ class RTMPMessageHandler {
             break;
 
         case 8:         // Audio Message
-            console.log("[ RTMPMessageHandler ] AUDIOFRAME: ", msg.getPayload());
+            Log.d(this.TAG, "AUDIOFRAME: ", msg.getPayload());
             this.media_handler.handleMediaMessage(msg);
             break;
 
         case 9:         // Video Message
-            console.log("[ RTMPMessageHandler ] VIDEOFRAME: ", msg.getPayload());
+            Log.d(this.TAG, "VIDEOFRAME: ", msg.getPayload());
             this.media_handler.handleMediaMessage(msg);
             break;
 
         case 18:        // Data Message AMF0
-            console.log("[ RTMPMessageHandler ] DATAFRAME: ", msg.getPayload());
+            Log.d(this.TAG, "DATAFRAME: ", msg.getPayload());
             this.media_handler.handleMediaMessage(msg);
             break;
 
@@ -114,14 +117,14 @@ class RTMPMessageHandler {
             const command = new AMF0Object();
             let cmd = command.parseAMF0(msg.getPayload());
 
-            console.log("[ RTMPMessageHandler ] AMF0", cmd);
+            Log.d(this.TAG, "AMF0", cmd);
 
             switch(cmd[0]) {
             case "_result":
                 switch(this.trackedCommand){
                 case "connect":
                     if(cmd[3].code == "NetConnection.Connect.Success") {
-                        console.log("[ RTMPMessageHandler ] got _result: " + cmd[3].code);
+                        Log.d(this.TAG,"got _result: " + cmd[3].code);
                         postMessage([cmd[3].code]);
                         this.createStream();
                     }
@@ -137,12 +140,12 @@ class RTMPMessageHandler {
                 break;
 
             case "onStatus":
-                console.log("[ RTMPMessageHandler ] onStatus: " + cmd[3].code);
+                Log.d(this.TAG,"onStatus: " + cmd[3].code);
                 postMessage([cmd[3].code]);
                 break;
 
             default:
-                console.warn("[ RTMPMessageHandler ] CommandMessage " + cmd[0] + " not yet implemented");
+                Log.w(this.TAG,"CommandMessage " + cmd[0] + " not yet implemented");
                 break;
             }
 
@@ -154,11 +157,11 @@ class RTMPMessageHandler {
         case 15:        // Data Message AMF3
         case 16:        // Shared Object Message AMF3
         case 17:        // Command Message AMF3
-            console.error("[ RTMPMessageHandler ] AMF3 is not yet implemented");
+            Log.e(this.TAG,"AMF3 is not yet implemented");
             break;
 
         default:
-            console.warn("[ RTMPMessageHandler ] MessageType: " + RTMPMessage.MessageTypes[msg.getMessageType()] + "(" + msg.getMessageType() + ")");
+            Log.d(this.TAG,"[MessageType: " + RTMPMessage.MessageTypes[msg.getMessageType()] + "(" + msg.getMessageType() + ")");
             break;
 
         }
@@ -329,7 +332,7 @@ class RTMPMessageHandler {
             const chunk = new Chunk(m2);
             chunk.setChunkStreamID(2);  // Control Channel
 
-            console.log("send Pong");
+            Log.i(this.TAG,"send Pong");
             this.socket.send(chunk.getBytes());
         }
     }

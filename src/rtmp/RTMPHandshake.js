@@ -1,4 +1,4 @@
-import {Log} from "../utils/logger";
+import Log from "../utils/logger";
 
 class RTMPHandshake{
     TAG = "RTMPHandshake";
@@ -26,7 +26,9 @@ class RTMPHandshake{
     do(){
         if(!this.onHandshakeDone) {
             Log.e(this.TAG, "onHandshakeDone not defined");
+            return;
         }
+
         Log.v(this.TAG, "send C0");
         this.socket.send(new Uint8Array([0x03]));
         this.state = 1;
@@ -125,14 +127,14 @@ class RTMPHandshake{
 
         this.state = 6;
 
-        Log.v(this.TAG, "[ RTMPHandshake ] RTMP Connection established");
+        Log.v(this.TAG, "RTMP Connection established");
 
         this.onHandshakeDone(true);
     }
 
     _compare(ar1, ar2){
         for(let i = 0; i < ar1.length; i++){
-            if(ar1[i] != ar2[i]) return false;
+            if(ar1[i] !== ar2[i]) return false;
         }
 
         return true;
@@ -144,8 +146,6 @@ class RTMPHandshake{
      * @param {Uint8Array} data
      */
     processServerInput(data){
-        Log.v(this.TAG, "processing mode " + this.state + ": ", data);
-
         switch(this.state){
             case 2:		//
                 this._parseS0(data);

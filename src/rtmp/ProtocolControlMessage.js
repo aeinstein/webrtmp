@@ -1,4 +1,7 @@
+import Log from "../utils/logger";
+
 class ProtocolControlMessage{
+    TAG = "ProtocolControlMessage";
     pcm_type;
     data;
 
@@ -15,11 +18,11 @@ class ProtocolControlMessage{
             break;
 
         case 6:
-            console.error("Protocol Control Message Type: " + pcm_type + " use SetPeerBandwidthMessage");
+            Log.w(this.TAG, "Protocol Control Message Type: " + pcm_type + " use SetPeerBandwidthMessage");
             break;
 
         default:
-            console.error("Protocol Control Message Type: " + pcm_type + " not supported");
+            Log.e(this.TAG, "Protocol Control Message Type: " + pcm_type + " not supported");
             break;
         }
     }

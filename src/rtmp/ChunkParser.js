@@ -1,7 +1,10 @@
 import RTMPMessage from "./RTMPMessage";
 import {_concatArrayBuffers} from "../utils/utils";
+import Log from "../utils/logger";
 
 class ChunkParser {
+    TAG = "ChunkParser";
+
     /**
      *
      * @type {number}
@@ -33,9 +36,9 @@ class ChunkParser {
         this.buffer = _concatArrayBuffers(this.buffer, newdata);      // Neues Packet an Buffer anfügen
 
         do {
-            console.log("[ ChunkParser ] buffer length: " + this.buffer.length);
+            Log.d(this.TAG, "buffer length: " + this.buffer.length);
 
-            if(this.buffer.length < 100) console.log(this.buffer);
+            if(this.buffer.length < 100) Log.d(this.TAG, this.buffer);
 
             /**
              *
@@ -59,7 +62,7 @@ class ChunkParser {
                 csid = data[header_length++] * 256 + data[header_length++] + 64;
             }
 
-            console.log("[ ChunkParser ] chunk type: ", fmt, " StreamID: " + csid);
+            Log.d(this.TAG, "chunk type: ", fmt, " StreamID: " + csid);
 
             let payload;
 
@@ -81,7 +84,7 @@ class ChunkParser {
 
                 msg.setMessageTimestamp(timestamp);
 
-                console.log("[ ChunkParser ] message_length: " + message_length);
+                Log.d(this.TAG, "message_length: " + message_length);
 
                 this.chunkstreams[csid] = msg;
                 break;
@@ -101,7 +104,7 @@ class ChunkParser {
                 msg.setMessageTimestamp(timestamp);
 
 
-                console.log("[ ChunkParser ] message_length: " + message_length);
+                Log.d(this.TAG, "message_length: " + message_length);
 
                 this.chunkstreams[csid] = msg;
                 break;
@@ -139,29 +142,29 @@ class ChunkParser {
 
             // sind genug bytes für das chunk da?
             if(payload.length < payload_length){
-                console.log("[ ChunkParser ] packet(" + payload.length + "/" + payload_length + ") too small, wait for next");
+                Log.d(this.TAG, "packet(" + payload.length + "/" + payload_length + ") too small, wait for next");
                 return;
             }
 
             this.chunkstreams[csid].addPayload(payload);
 
             if(this.chunkstreams[csid].isComplete()) {     // Message complete
-                console.log("[ ChunkParser ] RTMP: ", msg.getMessageType(), RTMPMessage.MessageTypes[msg.getMessageType()], msg.getPayloadlength(), msg.getMessageStreamID());
+                Log.d(this.TAG, "RTMP: ", msg.getMessageType(), RTMPMessage.MessageTypes[msg.getMessageType()], msg.getPayloadlength(), msg.getMessageStreamID());
                 this.conn_worker.onMessage(this.chunkstreams[csid]);
             }
 
             let consumed = (header_length + payload_length);
 
             if(consumed > this.buffer.length) {
-                console.warn("[ ChunkParser ] mehr abschneiden als da");
+                Log.w(this.TAG, "mehr abschneiden als da");
             }
 
             this.buffer = this.buffer.slice(consumed);
-            console.log("[ ChunkParser ] consumed: " + consumed + " bytes, rest: " + this.buffer.length);
+            Log.d(this.TAG, "consumed: " + consumed + " bytes, rest: " + this.buffer.length);
 
         } while(this.buffer.length > 11);   // minimum size
 
-        console.log("parseChunk complete");
+        Log.d(this.TAG, "parseChunk complete");
     }
 
     /**
@@ -169,7 +172,7 @@ class ChunkParser {
      * @param {Number} size
      */
     setChunkSize(size){
-        console.log("[ ChunkParser ] SetChunkSize: " + size);
+        Log.d(this.TAG, "SetChunkSize: " + size);
         this.CHUNK_SIZE = size;
     }
 }

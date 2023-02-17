@@ -1,8 +1,10 @@
 import ProtocolControlMessage from "./ProtocolControlMessage";
 import RTMPMessage from "./RTMPMessage";
 import Chunk from "./Chunk";
+import Log from "../utils/logger";
 
 class NetConnection{
+    TAG = "NetConnection";
     WindowAcknowledgementSize;
     MessageStreamID;
     CHUNK_SIZE = 128;
@@ -19,7 +21,7 @@ class NetConnection{
     constructor(message_stream_id, handler) {
         this.MessageStreamID = message_stream_id;
 
-        console.log(handler);
+        Log.d(this.TAG, handler);
 
         this.handler = handler;
         this.socket = handler.socket;
@@ -42,12 +44,12 @@ class NetConnection{
         case 3:         // PCM Acknowledgement
         case 5:         // PCM Window Acknowledgement Size
             this.WindowAcknowledgementSize = (data[0] << 24) | (data[1] << 16) | (data[2] << 8) | (data[3]);
-            console.log("[ NetConnection ] WindowAcknowledgementSize: " + this.WindowAcknowledgementSize);
+            Log.i(this.TAG, "WindowAcknowledgementSize: " + this.WindowAcknowledgementSize);
             break;
 
         case 6:         // PCM Set Peer Bandwidth
             this.BandWidth = (data[0] << 24) | (data[1] << 16) | (data[2] << 8) | (data[3]);
-            console.log("[ NetConnection ] SetPeerBandwidth: " + this.BandWidth);
+            Log.i(this.TAG, "SetPeerBandwidth: " + this.BandWidth);
 
             // send Window Ack Size
             let msg = new ProtocolControlMessage(0x05, this.WindowAcknowledgementSize);
@@ -58,7 +60,7 @@ class NetConnection{
             const chunk = new Chunk(m2);
             chunk.setChunkStreamID(2);  // Control Channel
 
-            console.log("[ NetConnection ] send WindowAcksize");
+            Log.i(this.TAG, "send WindowAcksize");
             this.socket.send(chunk.getBytes());
 
             break;

@@ -1,36 +1,35 @@
-import {Log} from "./utils/logger";
+import Log from "./utils/logger";
 import MSEController from "./utils/mse-controller";
-import {defaultConfig} from "./utils/utils";
+import {defaultConfig, ErrorDetails, ErrorTypes, MSEEvents, PlayerEvents, TransmuxingEvents} from "./utils/utils";
 import WebRTMP_Controller from "./wss/connection.controller";
 import Transmuxer from "./flv/transmuxer";
 import EventEmitter from "./utils/event_emitter";
 
 class WebRTMP{
 	TAG = 'WebRTMP';
-	_type = 'WebRTMP';
 
-	constructor(mediaDataSource, config) {
+	constructor() {
 		this.wss = new WebRTMP_Controller();
 
 		this.wss.addEventListener("Connected", ()=>{
-			console.log("[ WebRTMP ] Connected");
+			Log.d(this.TAG, "Connected");
 		});
 
 		this.wss.addEventListener("RTMPConnected", ()=>{
-			console.log("RTMPConnected");
+			Log.d(this.TAG,"RTMPConnected");
 		});
 
 		this.wss.addEventListener("RTMPMessageArrived", (data)=>{
-			console.log("RTMPMessageArrived", data);
+			Log.d(this.TAG,"RTMPMessageArrived", data);
 		});
 
 
 		this.wss.addEventListener("ProtocolControlMessage", (data)=>{
-			console.log("ProtocolControlMessage", data);
+			Log.d(this.TAG,"ProtocolControlMessage", data);
 		});
 
 		this.wss.addEventListener("UserControlMessage", (data)=>{
-			console.log("UserControlMessage", data);
+			Log.d(this.TAG,"UserControlMessage", data);
 		});
 
 		this.wss.addEventListener("Started", ()=>{});
@@ -54,7 +53,7 @@ class WebRTMP{
 			Object.assign(this._config, config);
 		}
 
-		this._transmuxer = new Transmuxer(mediaDataSource, this._config);
+		this._transmuxer = new Transmuxer(this._config);
 	}
 
 	_onvLoadedMetadata(e) {
@@ -225,7 +224,11 @@ class WebRTMP{
 		});
 	}
 }
-
-window["webrtmp"] = new WebRTMP();
+Log.LEVEL = Log.TRACE;
+Log.WITH_STACKTRACE = false;
 
 export default WebRTMP;
+
+window["Log"] = Log;
+window["webrtmp"] = new WebRTMP();
+

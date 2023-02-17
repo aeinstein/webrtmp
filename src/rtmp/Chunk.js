@@ -1,6 +1,8 @@
 import {_concatArrayBuffers} from "../utils/utils";
+import Log from "../utils/logger";
 
 class Chunk{
+    TAG = "Chunk";
     chunk_stream_id = 0;
 
     length;
@@ -33,7 +35,7 @@ class Chunk{
         let fmt = 0;
 
         do {
-            console.log("[ Chunk ] create chunk: " + p.length);
+            Log.d("create chunk: " + p.length);
             ret = _concatArrayBuffers(ret, this._getHeaderBytes(fmt), p.slice(0,this.CHUNK_SIZE));
             p = p.slice(this.CHUNK_SIZE);
             fmt = 0x3;	// next chunk without header
@@ -138,7 +140,7 @@ class Chunk{
      * @param {Number} chunk_stream_id
      */
     setChunkStreamID(chunk_stream_id) {
-        console.log("[ Chunk ] setChunkStreamID:" + chunk_stream_id);
+        Log.d(this.TAG, "setChunkStreamID:" + chunk_stream_id);
         this.chunk_stream_id = chunk_stream_id;
     }
 

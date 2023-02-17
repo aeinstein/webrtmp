@@ -19,6 +19,7 @@
 
 import {IllegalStateException} from "../utils/exception";
 import {decodeUTF8} from "../utils/utf8-conv";
+import Log from "../utils/logger";
 
 let le = (function () {
     let buf = new ArrayBuffer(2);
@@ -27,6 +28,7 @@ let le = (function () {
 })();
 
 class AMF {
+    static TAG = "AMF";
 
     /**
      *
@@ -34,21 +36,21 @@ class AMF {
      * @returns {{}}
      */
     static parseScriptData(array) {
-        console.log(array);
+        Log.d(this.TAG, array);
 
         let data = {};
 
         try {
             let name = AMF.parseValue(array);
-            console.log(name);
+            Log.d(this.TAG, name);
 
             let value = AMF.parseValue(array.slice(name.size));
-            console.log(value);
+            Log.d(this.TAG, value);
 
             data[name.data] = value.data;
 
         } catch (e) {
-            console.error('AMF', e.toString());
+            Log.w(this.TAG, e.toString());
         }
 
         return data;
@@ -256,10 +258,10 @@ class AMF {
                 default:
                     // ignore and skip
                     offset = array.length;
-                    console.warn('Unsupported AMF value type ' + type);
+                    Log.w(this.TAG, 'Unsupported AMF value type ' + type);
             }
         } catch (e) {
-            console.error('AMF', e.toString());
+            Log.e(this.TAG, e.toString());
         }
 
         return {

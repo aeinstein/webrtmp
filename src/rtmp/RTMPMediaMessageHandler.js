@@ -1,7 +1,7 @@
 import {IllegalStateException} from "../utils/exception";
 import MediaInfo from "../formats/media-info";
 import AMF from "../flv/amf-parser";
-import {Log} from "../utils/logger";
+import Log from "../utils/logger";
 import {DemuxErrors} from "../utils/utils";
 import SPSParser from "../flv/sps-parser";
 

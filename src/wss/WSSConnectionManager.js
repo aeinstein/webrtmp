@@ -1,24 +1,35 @@
+import Log from "../utils/logger";
+
 class WSSConnectionManager{
+    TAG = "WSSConnectionManager";
+    host;
     wss;
 
+    /**
+     *
+     * @param {String} host
+     * @param {Number} port
+     * @param callback
+     */
     connect(host, port, callback){
-        console.log("[ WSSConnectionManager ] connecting to : " + host + ":" + port);
+        this.host = host;
+        Log.v(this.TAG, "connecting to : " + host + ":" + port);
         this.wss = new WebSocket("wss://" + host + ":" + port + "/");
 
         this.wss.binaryType = "arraybuffer";
 
         this.wss.onopen = (e)=>{
-            console.log(e);
+            Log.v(this.TAG, e);
             callback(true);
         }
 
         this.wss.onclose = (e)=>{
-            console.log(e);
+            Log.w(this.TAG, e);
             postMessage(["ConnectionLost"]);
         }
 
         this.wss.onerror = (e)=>{
-            console.log(e);
+            Log.e(this.TAG, e);
             postMessage(["Failure"]);
         }
     }
@@ -29,6 +40,10 @@ class WSSConnectionManager{
 
     getSocket(){
         return this.wss;
+    }
+
+    getHost(){
+        return this.host;
     }
 
     close(){

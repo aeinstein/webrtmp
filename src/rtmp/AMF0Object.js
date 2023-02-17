@@ -1,6 +1,9 @@
 import {_byteArrayToNumber, _byteArrayToString, _numberToByteArray, _stringToByteArray} from "../utils/utils";
+import Log from "../utils/logger";
 
 class AMF0Object {
+	TAG = "AMF0Object";
+
 	command;
 	transaction_id;
 	command_object;
@@ -13,7 +16,7 @@ class AMF0Object {
 	constructor(params) {
 		if(params) {
             this.params = params;
-			console.log("cmd: " + this.params[0]);
+			Log.d(this.TAG, "cmd: " + this.params[0]);
 		}
 	}
 
@@ -61,7 +64,7 @@ class AMF0Object {
 				break;
 
             default:
-                console.warn("var_type: " + var_type + " not yet implemented");
+                Log.w(this.TAG, "var_type: " + var_type + " not yet implemented");
                 break;
 			}
 		}
@@ -72,21 +75,16 @@ class AMF0Object {
 	_parseAMF0Object() {
 		let o2 = {};
 
-		//console.log("parseObject: " + this.data.length);
-
 		while (this.data.length > 0) {
 			let keylen = (this.data[0] << 8) | (this.data[1]); this.data = this.data.slice(2);
 
 			// Object end marker
 			if (keylen === 0 && this.data[0] === 9) {
-				//console.log("endmarker found");
 				this.data = this.data.slice(1);
 				return o2;
 			}
 
 			let keyName = _byteArrayToString(this.data.slice(0, keylen)); this.data = this.data.slice(keylen);
-
-			//console.log("key found: " + keyName);
 
 			const var_type = this.data.shift();
 
@@ -118,7 +116,7 @@ class AMF0Object {
                 break;
 
             default:
-                console.warn("var_type: " + var_type + " not yet implemented");
+				Log.w(this.TAG, "var_type: " + var_type + " not yet implemented");
                 break;
 			}
 		}
@@ -135,8 +133,6 @@ class AMF0Object {
 
         for(let i = 0; i < this.params.length; i++) {
             const param = this.params[i];
-
-            //console.log("Param", i, typeof param);
 
             switch(typeof param){
             case "string":
@@ -158,8 +154,6 @@ class AMF0Object {
                 bytes.push(0x03); // Object
 
                 for (let key in param) {
-                    //console.log("param: " + key);
-
                     let value = param[key];
                     let keylength = key.length;
 
@@ -195,7 +189,7 @@ class AMF0Object {
                         break;
 
                     default:
-                        console.warn(typeof value, " not yet implementd");
+						Log.w(this.TAG, typeof value, " not yet implementd");
                         break;
                     }
                 }
@@ -212,7 +206,7 @@ class AMF0Object {
                 break;
 
             default:
-                console.warn(typeof param, " not yet implementd");
+				Log.w(this.TAG, typeof param, " not yet implementd");
                 break;
             }
         }

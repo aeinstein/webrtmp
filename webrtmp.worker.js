@@ -5,28 +5,169 @@ var __webpack_exports__ = {};
   !*** ./wss/connection.worker.js + 19 modules ***!
   \***********************************************/
 
+;// CONCATENATED MODULE: ./utils/logger.js
+class Log {
+    static OFF = -1;
+    static TRACE = 0;
+    static DEBUG = 1;
+    static INFO = 1;
+    static WARN = 3;
+    static ERROR = 4;
+    static CRITICAL = 5;
+    static WITH_STACKTRACE = false;
+
+    static LEVEL = Log.DEBUG;
+
+    /**
+     *
+     * @param {Number} level
+     * @param {String} tag
+     * @param txt
+     * @private
+     */
+    static _output = function output(level, tag, ...txt){
+        if(Log.LEVEL === Log.OFF) return;
+        if(level < Log.LEVEL) return;
+
+        const callstack = Log.getStackTrace();
+
+        // debug aufruf entfernen
+        callstack.shift();
+        callstack.shift();
+
+        let color = "color: silver";
+
+        switch(level) {
+            case Log.TRACE:	// TRACE
+                color = "background-color: gray";
+                break;
+
+            case Log.DEBUG:	// DEBUG
+
+                break;
+
+            case Log.INFO:	// INFO
+                color = "color: green";
+                break;
+
+            case Log.WARN:	// WARN
+                color = "color: orange; background-color: #EAA80035";
+                break;
+
+            case Log.ERROR:	// ERROR
+                color = "color: red; background-color: #FF000020";
+                break;
+
+            case Log.CRITICAL:	// CRITICAL
+                color = "color: red";
+                break;
+        }
+
+        Log._print(callstack, color, tag, ...txt);
+    };
+
+    static _print(callstack, color, tag, ...txt){
+        if(Log.WITH_STACKTRACE || Log.LEVEL === Log.TRACE || Log.LEVEL === Log.ERROR){
+            console.groupCollapsed("%c " + tag, "%o", color, ...txt);
+
+            for(let i = 0; i < callstack.length; i++) {
+                console.log("%c" + callstack[i], color);
+            }
+            console.groupEnd();
+
+        } else {
+            console.log("%c" + tag, "%o", color, ...txt)
+        }
+    }
+
+    static getStackTrace = function() {
+        let callstack = [];
+
+        try {
+            i.dont.exist+=0; //doesn't exist- that's the point
+
+        } catch(e) {
+            if (e.stack) { //Firefox
+                let lines = e.stack.split('\n');
+
+                for (let i=0; i < lines.length; i++) {
+                    callstack.push(lines[i]);
+                }
+
+                //Ersten Eintrag entfernen
+                callstack.shift();
+                callstack.shift();
+                //this.isCallstackPopulated = true;
+            }
+        }
+
+        return(callstack);
+    };
+
+    static c(tag, ...msg) {
+        Log._output(Log.CRITICAL, tag, ...msg);
+    }
+
+    static e(tag, ...msg) {
+        Log._output(Log.ERROR, tag, ...msg);
+    }
+
+    static i(tag, ...msg) {
+        Log._output(Log.INFO, tag, ...msg);
+    }
+
+    static w(tag, ...msg) {
+        Log._output(Log.WARN, tag, ...msg);
+    }
+
+    static d(tag, ...msg) {
+        Log._output(Log.DEBUG, tag, ...msg);
+    }
+
+    static v(tag, ...msg) {
+        Log._output(Log.DEBUG, tag, ...msg);
+    }
+
+    static t(tag, ...msg) {
+        Log._output(Log.TRACE, tag, ...msg);
+    }
+}
+
+/* harmony default export */ const logger = (Log);
+
 ;// CONCATENATED MODULE: ./wss/WSSConnectionManager.js
+
+
 class WSSConnectionManager{
+    TAG = "WSSConnectionManager";
+    host;
     wss;
 
+    /**
+     *
+     * @param {String} host
+     * @param {Number} port
+     * @param callback
+     */
     connect(host, port, callback){
-        console.log("[ WSSConnectionManager ] connecting to : " + host + ":" + port);
+        this.host = host;
+        logger.v(this.TAG, "connecting to : " + host + ":" + port);
         this.wss = new WebSocket("wss://" + host + ":" + port + "/");
 
         this.wss.binaryType = "arraybuffer";
 
         this.wss.onopen = (e)=>{
-            console.log(e);
+            logger.v(this.TAG, e);
             callback(true);
         }
 
         this.wss.onclose = (e)=>{
-            console.log(e);
+            logger.w(this.TAG, e);
             postMessage(["ConnectionLost"]);
         }
 
         this.wss.onerror = (e)=>{
-            console.log(e);
+            logger.e(this.TAG, e);
             postMessage(["Failure"]);
         }
     }
@@ -39,35 +180,16 @@ class WSSConnectionManager{
         return this.wss;
     }
 
+    getHost(){
+        return this.host;
+    }
+
     close(){
         this.wss.close();
     }
 }
 
 /* harmony default export */ const wss_WSSConnectionManager = (WSSConnectionManager);
-
-;// CONCATENATED MODULE: ./utils/logger.js
-class Log {
-    static v(...params){
-        console.log(...params);
-    }
-
-    static e(...params){
-        console.error(...params);
-    }
-
-    static w(...params){
-        console.warn(...params);
-    }
-
-    static t(...params){
-        console.trace(...params);
-    }
-
-    static i(...params){
-        console.info(...params);
-    }
-}
 
 ;// CONCATENATED MODULE: ./rtmp/RTMPHandshake.js
 
@@ -87,7 +209,7 @@ class RTMPHandshake{
         this.socket = socket;
 
         this.socket.onmessage = (e)=>{
-            Log.v(this.TAG, e.data);
+            logger.v(this.TAG, e.data);
             this.processServerInput(new Uint8Array(e.data));
         }
     }
@@ -97,13 +219,15 @@ class RTMPHandshake{
      */
     do(){
         if(!this.onHandshakeDone) {
-            Log.e(this.TAG, "onHandshakeDone not defined");
+            logger.e(this.TAG, "onHandshakeDone not defined");
+            return;
         }
-        Log.v(this.TAG, "send C0");
+
+        logger.v(this.TAG, "send C0");
         this.socket.send(new Uint8Array([0x03]));
         this.state = 1;
 
-        Log.v(this.TAG, "send C1");
+        logger.v(this.TAG, "send C1");
         this.socket.send(this._generateC1());
         this.state = 2;
     }
@@ -142,19 +266,19 @@ class RTMPHandshake{
      * @private
      */
     _parseS0(data){
-        Log.v(this.TAG, "S0: ", data);
+        logger.v(this.TAG, "S0: ", data);
 
         if(data[0] !== 0x03) {
-            Log.e(this.TAG, "S0 response not 0x03");
+            logger.e(this.TAG, "S0 response not 0x03");
 
         } else {
-            Log.v(this.TAG, "1st Byte OK");
+            logger.v(this.TAG, "1st Byte OK");
         }
 
         this.state = 3;
 
         if(data.length > 1) {
-            Log.v(this.TAG, "S1 included");
+            logger.v(this.TAG, "S1 included");
             this._parseS1(data.slice(1));
         }
     }
@@ -165,18 +289,18 @@ class RTMPHandshake{
      * @private
      */
     _parseS1(data){
-        Log.v(this.TAG, "parse S1: ", data);
+        logger.v(this.TAG, "parse S1: ", data);
         this.state = 4;
 
         let s1 = data.slice(0, 1536);
 
-        Log.v(this.TAG, "send C2");
+        logger.v(this.TAG, "send C2");
         this.socket.send(this._generateC2(s1));
 
         this.state = 5;
 
         if(data.length > 0) {
-            Log.v(this.TAG, "S2 included");
+            logger.v(this.TAG, "S2 included");
             this._parseS2(data.slice(1536));
         }
     }
@@ -187,24 +311,24 @@ class RTMPHandshake{
      * @private
      */
     _parseS2(data) {
-        Log.v(this.TAG, "parse S2: ", data);
+        logger.v(this.TAG, "parse S2: ", data);
 
         if(!this._compare(this.c1, data)) {
-            Log.e(this.TAG, "C1 S1 not equal");
+            logger.e(this.TAG, "C1 S1 not equal");
             this.onHandshakeDone(false);
             return;
         }
 
         this.state = 6;
 
-        Log.v(this.TAG, "[ RTMPHandshake ] RTMP Connection established");
+        logger.v(this.TAG, "RTMP Connection established");
 
         this.onHandshakeDone(true);
     }
 
     _compare(ar1, ar2){
         for(let i = 0; i < ar1.length; i++){
-            if(ar1[i] != ar2[i]) return false;
+            if(ar1[i] !== ar2[i]) return false;
         }
 
         return true;
@@ -216,8 +340,6 @@ class RTMPHandshake{
      * @param {Uint8Array} data
      */
     processServerInput(data){
-        Log.v(this.TAG, "processing mode " + this.state + ": ", data);
-
         switch(this.state){
             case 2:		//
                 this._parseS0(data);
@@ -421,7 +543,10 @@ const ErrorDetails = {
 ;// CONCATENATED MODULE: ./rtmp/RTMPMessage.js
 
 
+
 class RTMPMessage{
+	TAG = "RTMPMessage";
+
     static MessageTypes = ["dummy", "PCMSetChunkSize", "PCMAbortMessage", "PCMAcknolegement", "UserControlMessage", "WindowAcknowledgementSize", "PCMSetPeerBandwidth",
         "dummy", "AudioMessage", "VideoMessage", "dummy", "dummy", "dummy", "dummy", "dummy", "DataMessageAMF3", "Shared Object Message AMF3", "CommandMessageAMF3",
         "DataMessageAMF0", "SharedObjectMessageAMF0", "CommandMessageAMF0", "dummy", "Aggregate Message"];
@@ -530,13 +655,13 @@ class RTMPMessage{
 	 */
 	addPayload(data){
 		if(data.length > this.bytesMissing()) {
-			console.error("try to add too much data");
+			logger.e(this.TAG, "try to add too much data");
 			return;
 		}
 
 		this.payload = _concatArrayBuffers(this.payload, data);
 		this.length = this.payload.length;
-		console.log("[ RTMPMessage ] payload size is now: " + this.length);
+		logger.d(this.TAG, "[ RTMPMessage ] payload size is now: " + this.length);
 	}
 
 	getPayload(){
@@ -566,7 +691,9 @@ class RTMPMessage{
 ;// CONCATENATED MODULE: ./rtmp/Chunk.js
 
 
+
 class Chunk{
+    TAG = "Chunk";
     chunk_stream_id = 0;
 
     length;
@@ -599,7 +726,7 @@ class Chunk{
         let fmt = 0;
 
         do {
-            console.log("[ Chunk ] create chunk: " + p.length);
+            logger.d("create chunk: " + p.length);
             ret = _concatArrayBuffers(ret, this._getHeaderBytes(fmt), p.slice(0,this.CHUNK_SIZE));
             p = p.slice(this.CHUNK_SIZE);
             fmt = 0x3;	// next chunk without header
@@ -704,7 +831,7 @@ class Chunk{
      * @param {Number} chunk_stream_id
      */
     setChunkStreamID(chunk_stream_id) {
-        console.log("[ Chunk ] setChunkStreamID:" + chunk_stream_id);
+        logger.d(this.TAG, "setChunkStreamID:" + chunk_stream_id);
         this.chunk_stream_id = chunk_stream_id;
     }
 
@@ -795,7 +922,10 @@ class UserControlMessage{
 /* harmony default export */ const rtmp_UserControlMessage = (UserControlMessage);
 
 ;// CONCATENATED MODULE: ./rtmp/ProtocolControlMessage.js
+
+
 class ProtocolControlMessage{
+    TAG = "ProtocolControlMessage";
     pcm_type;
     data;
 
@@ -812,11 +942,11 @@ class ProtocolControlMessage{
             break;
 
         case 6:
-            console.error("Protocol Control Message Type: " + pcm_type + " use SetPeerBandwidthMessage");
+            logger.w(this.TAG, "Protocol Control Message Type: " + pcm_type + " use SetPeerBandwidthMessage");
             break;
 
         default:
-            console.error("Protocol Control Message Type: " + pcm_type + " not supported");
+            logger.e(this.TAG, "Protocol Control Message Type: " + pcm_type + " not supported");
             break;
         }
     }
@@ -849,7 +979,9 @@ class ProtocolControlMessage{
 
 
 
+
 class NetConnection{
+    TAG = "NetConnection";
     WindowAcknowledgementSize;
     MessageStreamID;
     CHUNK_SIZE = 128;
@@ -866,7 +998,7 @@ class NetConnection{
     constructor(message_stream_id, handler) {
         this.MessageStreamID = message_stream_id;
 
-        console.log(handler);
+        logger.d(this.TAG, handler);
 
         this.handler = handler;
         this.socket = handler.socket;
@@ -889,12 +1021,12 @@ class NetConnection{
         case 3:         // PCM Acknowledgement
         case 5:         // PCM Window Acknowledgement Size
             this.WindowAcknowledgementSize = (data[0] << 24) | (data[1] << 16) | (data[2] << 8) | (data[3]);
-            console.log("[ NetConnection ] WindowAcknowledgementSize: " + this.WindowAcknowledgementSize);
+            logger.i(this.TAG, "WindowAcknowledgementSize: " + this.WindowAcknowledgementSize);
             break;
 
         case 6:         // PCM Set Peer Bandwidth
             this.BandWidth = (data[0] << 24) | (data[1] << 16) | (data[2] << 8) | (data[3]);
-            console.log("[ NetConnection ] SetPeerBandwidth: " + this.BandWidth);
+            logger.i(this.TAG, "SetPeerBandwidth: " + this.BandWidth);
 
             // send Window Ack Size
             let msg = new rtmp_ProtocolControlMessage(0x05, this.WindowAcknowledgementSize);
@@ -905,7 +1037,7 @@ class NetConnection{
             const chunk = new rtmp_Chunk(m2);
             chunk.setChunkStreamID(2);  // Control Channel
 
-            console.log("[ NetConnection ] send WindowAcksize");
+            logger.i(this.TAG, "send WindowAcksize");
             this.socket.send(chunk.getBytes());
 
             break;
@@ -926,7 +1058,10 @@ class NetConnection{
 
 
 
+
 class ChunkParser {
+    TAG = "ChunkParser";
+
     /**
      *
      * @type {number}
@@ -958,9 +1093,9 @@ class ChunkParser {
         this.buffer = _concatArrayBuffers(this.buffer, newdata);      // Neues Packet an Buffer anfügen
 
         do {
-            console.log("[ ChunkParser ] buffer length: " + this.buffer.length);
+            logger.d(this.TAG, "buffer length: " + this.buffer.length);
 
-            if(this.buffer.length < 100) console.log(this.buffer);
+            if(this.buffer.length < 100) logger.d(this.TAG, this.buffer);
 
             /**
              *
@@ -984,7 +1119,7 @@ class ChunkParser {
                 csid = data[header_length++] * 256 + data[header_length++] + 64;
             }
 
-            console.log("[ ChunkParser ] chunk type: ", fmt, " StreamID: " + csid);
+            logger.d(this.TAG, "chunk type: ", fmt, " StreamID: " + csid);
 
             let payload;
 
@@ -1006,7 +1141,7 @@ class ChunkParser {
 
                 msg.setMessageTimestamp(timestamp);
 
-                console.log("[ ChunkParser ] message_length: " + message_length);
+                logger.d(this.TAG, "message_length: " + message_length);
 
                 this.chunkstreams[csid] = msg;
                 break;
@@ -1026,7 +1161,7 @@ class ChunkParser {
                 msg.setMessageTimestamp(timestamp);
 
 
-                console.log("[ ChunkParser ] message_length: " + message_length);
+                logger.d(this.TAG, "message_length: " + message_length);
 
                 this.chunkstreams[csid] = msg;
                 break;
@@ -1064,29 +1199,29 @@ class ChunkParser {
 
             // sind genug bytes für das chunk da?
             if(payload.length < payload_length){
-                console.log("[ ChunkParser ] packet(" + payload.length + "/" + payload_length + ") too small, wait for next");
+                logger.d(this.TAG, "packet(" + payload.length + "/" + payload_length + ") too small, wait for next");
                 return;
             }
 
             this.chunkstreams[csid].addPayload(payload);
 
             if(this.chunkstreams[csid].isComplete()) {     // Message complete
-                console.log("[ ChunkParser ] RTMP: ", msg.getMessageType(), rtmp_RTMPMessage.MessageTypes[msg.getMessageType()], msg.getPayloadlength(), msg.getMessageStreamID());
+                logger.d(this.TAG, "RTMP: ", msg.getMessageType(), rtmp_RTMPMessage.MessageTypes[msg.getMessageType()], msg.getPayloadlength(), msg.getMessageStreamID());
                 this.conn_worker.onMessage(this.chunkstreams[csid]);
             }
 
             let consumed = (header_length + payload_length);
 
             if(consumed > this.buffer.length) {
-                console.warn("[ ChunkParser ] mehr abschneiden als da");
+                logger.w(this.TAG, "mehr abschneiden als da");
             }
 
             this.buffer = this.buffer.slice(consumed);
-            console.log("[ ChunkParser ] consumed: " + consumed + " bytes, rest: " + this.buffer.length);
+            logger.d(this.TAG, "consumed: " + consumed + " bytes, rest: " + this.buffer.length);
 
         } while(this.buffer.length > 11);   // minimum size
 
-        console.log("parseChunk complete");
+        logger.d(this.TAG, "parseChunk complete");
     }
 
     /**
@@ -1094,7 +1229,7 @@ class ChunkParser {
      * @param {Number} size
      */
     setChunkSize(size){
-        console.log("[ ChunkParser ] SetChunkSize: " + size);
+        logger.d(this.TAG, "SetChunkSize: " + size);
         this.CHUNK_SIZE = size;
     }
 }
@@ -1407,6 +1542,7 @@ function decodeUTF8(uint8array) {
 
 
 
+
 let le = (function () {
     let buf = new ArrayBuffer(2);
     (new DataView(buf)).setInt16(0, 256, true);  // little-endian write
@@ -1414,6 +1550,7 @@ let le = (function () {
 })();
 
 class AMF {
+    static TAG = "AMF";
 
     /**
      *
@@ -1421,21 +1558,21 @@ class AMF {
      * @returns {{}}
      */
     static parseScriptData(array) {
-        console.log(array);
+        logger.d(this.TAG, array);
 
         let data = {};
 
         try {
             let name = AMF.parseValue(array);
-            console.log(name);
+            logger.d(this.TAG, name);
 
             let value = AMF.parseValue(array.slice(name.size));
-            console.log(value);
+            logger.d(this.TAG, value);
 
             data[name.data] = value.data;
 
         } catch (e) {
-            console.error('AMF', e.toString());
+            logger.w(this.TAG, e.toString());
         }
 
         return data;
@@ -1643,10 +1780,10 @@ class AMF {
                 default:
                     // ignore and skip
                     offset = array.length;
-                    console.warn('Unsupported AMF value type ' + type);
+                    logger.w(this.TAG, 'Unsupported AMF value type ' + type);
             }
         } catch (e) {
-            console.error('AMF', e.toString());
+            logger.e(this.TAG, e.toString());
         }
 
         return {
@@ -2269,7 +2406,7 @@ class RTMPMediaMessageHandler{
         let timestamp = msg.getTimestamp();
         let streamId = msg.getMessageStreamID()
         if (streamId !== 0) {
-            Log.w(this.TAG, 'Meet tag which has StreamID != 0!');
+            logger.w(this.TAG, 'Meet tag which has StreamID != 0!');
         }
 
         switch (tagType) {
@@ -2304,11 +2441,11 @@ class RTMPMediaMessageHandler{
 
         if (scriptData.hasOwnProperty('onMetaData')) {
             if (scriptData.onMetaData == null || typeof scriptData.onMetaData !== 'object') {
-                Log.w(this.TAG, 'Invalid onMetaData structure!');
+                logger.w(this.TAG, 'Invalid onMetaData structure!');
                 return;
             }
             if (this._metadata) {
-                Log.w(this.TAG, 'Found another onMetaData tag!');
+                logger.w(this.TAG, 'Found another onMetaData tag!');
             }
             this._metadata = scriptData;
             let onMetaData = this._metadata.onMetaData;
@@ -2371,7 +2508,7 @@ class RTMPMediaMessageHandler{
             }
             this._dispatch = false;
             this._mediaInfo.metadata = onMetaData;
-            Log.v(this.TAG, 'Parsed onMetaData');
+            logger.v(this.TAG, 'Parsed onMetaData');
             if (this._mediaInfo.isComplete()) {
                 this._onMediaInfo(this._mediaInfo);
             }
@@ -2409,7 +2546,7 @@ class RTMPMediaMessageHandler{
      */
     _parseAudioData(payload, tagTimestamp) {
         if (payload.length <= 1) {
-            Log.w(this.TAG, 'Flv: Invalid audio packet, missing SoundData payload!');
+            logger.w(this.TAG, 'Flv: Invalid audio packet, missing SoundData payload!');
             return;
         }
 
@@ -2470,7 +2607,7 @@ class RTMPMediaMessageHandler{
 
             if (aacData.packetType === 0) {  // AAC sequence header (AudioSpecificConfig)
                 if (meta.config) {
-                    Log.w(this.TAG, 'Found another AudioSpecificConfig!');
+                    logger.w(this.TAG, 'Found another AudioSpecificConfig!');
                 }
                 let misc = aacData.data;
                 meta.audioSampleRate = misc.samplingRate;
@@ -2480,7 +2617,7 @@ class RTMPMediaMessageHandler{
                 meta.config = misc.config;
                 // The decode result of an aac sample is 1024 PCM samples
                 meta.refSampleDuration = 1024 / meta.audioSampleRate * meta.timescale;
-                Log.v(this.TAG, 'Parsed AudioSpecificConfig');
+                logger.v(this.TAG, 'Parsed AudioSpecificConfig');
 
                 if (this._isInitialMetadataDispatched()) {
                     // Non-initial metadata, force dispatch (or flush) parsed frames to remuxer
@@ -2514,7 +2651,7 @@ class RTMPMediaMessageHandler{
                 track.samples.push(aacSample);
                 track.length += aacData.data.length;
             } else {
-                Log.e(this.TAG, `Flv: Unsupported AAC data type ${aacData.packetType}`);
+                logger.e(this.TAG, `Flv: Unsupported AAC data type ${aacData.packetType}`);
             }
         } else if (soundFormat === 2) {  // MP3
             if (!meta.codec) {
@@ -2529,7 +2666,7 @@ class RTMPMediaMessageHandler{
                 meta.originalCodec = misc.originalCodec;
                 // The decode result of an mp3 sample is 1152 PCM samples
                 meta.refSampleDuration = 1152 / meta.audioSampleRate * meta.timescale;
-                Log.v(this.TAG, 'Parsed MPEG Audio Frame Header');
+                logger.v(this.TAG, 'Parsed MPEG Audio Frame Header');
 
                 this._audioInitialMetadataDispatched = true;
                 this._onTrackMetadata('audio', meta);
@@ -2571,7 +2708,7 @@ class RTMPMediaMessageHandler{
      */
     _parseAACAudioData(payload) {
         if (payload.length <= 1) {
-            Log.w(this.TAG, 'Flv: Invalid AAC packet, missing AACPacketType or/and Data!');
+            logger.w(this.TAG, 'Flv: Invalid AAC packet, missing AACPacketType or/and Data!');
             return;
         }
 
@@ -2703,7 +2840,7 @@ class RTMPMediaMessageHandler{
      */
     _parseMP3AudioData(array, requestHeader) {
         if (array.length < 4) {
-            Log.w(this.TAG, 'Flv: Invalid MP3 packet, header missing!');
+            logger.w(this.TAG, 'Flv: Invalid MP3 packet, header missing!');
             return;
         }
 
@@ -2784,7 +2921,7 @@ class RTMPMediaMessageHandler{
      */
     _parseVideoData(payload, tagTimestamp, tagPosition) {
         if (payload.length <= 1) {
-            Log.w(this.TAG, 'Flv: Invalid video packet, missing VideoData payload!');
+            logger.w(this.TAG, 'Flv: Invalid video packet, missing VideoData payload!');
             return;
         }
 
@@ -2817,7 +2954,7 @@ class RTMPMediaMessageHandler{
      */
     _parseAVCVideoPacket(payload, tagTimestamp, tagPosition, frameType) {
         if (payload.length < 4) {
-            Log.w(this.TAG, 'Flv: Invalid AVC packet, missing AVCPacketType or/and CompositionTime');
+            logger.w(this.TAG, 'Flv: Invalid AVC packet, missing AVCPacketType or/and CompositionTime');
             return;
         }
 
@@ -2847,7 +2984,7 @@ class RTMPMediaMessageHandler{
      */
     _parseAVCDecoderConfigurationRecord(payload) {
         if (payload.length < 7) {
-            Log.w(this.TAG, 'Flv: Invalid AVCDecoderConfigurationRecord, lack of data!');
+            logger.w(this.TAG, 'Flv: Invalid AVCDecoderConfigurationRecord, lack of data!');
             return;
         }
 
@@ -2870,7 +3007,7 @@ class RTMPMediaMessageHandler{
 
         } else {
             if (typeof meta.avcc !== 'undefined') {
-                Log.w(this.TAG, 'Found another AVCDecoderConfigurationRecord!');
+                logger.w(this.TAG, 'Found another AVCDecoderConfigurationRecord!');
             }
         }
 
@@ -2895,7 +3032,7 @@ class RTMPMediaMessageHandler{
             this._onError(DemuxErrors.FORMAT_ERROR, 'Flv: Invalid AVCDecoderConfigurationRecord: No SPS');
             return;
         } else if (spsCount > 1) {
-            Log.w(this.TAG, `Flv: Strange AVCDecoderConfigurationRecord: SPS Count = ${spsCount}`);
+            logger.w(this.TAG, `Flv: Strange AVCDecoderConfigurationRecord: SPS Count = ${spsCount}`);
         }
 
         let offset = 6;
@@ -2980,7 +3117,7 @@ class RTMPMediaMessageHandler{
             this._onError(DemuxErrors.FORMAT_ERROR, 'Flv: Invalid AVCDecoderConfigurationRecord: No PPS');
             return;
         } else if (ppsCount > 1) {
-            Log.w(this.TAG, `Flv: Strange AVCDecoderConfigurationRecord: PPS Count = ${ppsCount}`);
+            logger.w(this.TAG, `Flv: Strange AVCDecoderConfigurationRecord: PPS Count = ${ppsCount}`);
         }
 
         offset++;
@@ -2999,7 +3136,7 @@ class RTMPMediaMessageHandler{
 
         meta.avcc = new Uint8Array(payload.length);
         meta.avcc.set(new Uint8Array(payload), 0);
-        Log.v(this.TAG, 'Parsed AVCDecoderConfigurationRecord');
+        logger.v(this.TAG, 'Parsed AVCDecoderConfigurationRecord');
 
         if (this._isInitialMetadataDispatched()) {
             // flush parsed frames
@@ -3029,7 +3166,7 @@ class RTMPMediaMessageHandler{
 
         while (offset < dataSize) {
             if (offset + 4 >= dataSize) {
-                Log.w(this.TAG, `Malformed Nalu near timestamp ${dts}, offset = ${offset}, dataSize = ${dataSize}`);
+                logger.w(this.TAG, `Malformed Nalu near timestamp ${dts}, offset = ${offset}, dataSize = ${dataSize}`);
                 break;  // data not enough for next Nalu
             }
             // Nalu with length-header (AVC1)
@@ -3038,7 +3175,7 @@ class RTMPMediaMessageHandler{
                 naluSize >>>= 8;
             }
             if (naluSize > dataSize - lengthSize) {
-                Log.w(this.TAG, `Malformed Nalus near timestamp ${dts}, NaluSize > DataSize!`);
+                logger.w(this.TAG, `Malformed Nalus near timestamp ${dts}, NaluSize > DataSize!`);
                 return;
             }
 
@@ -3080,7 +3217,10 @@ class RTMPMediaMessageHandler{
 ;// CONCATENATED MODULE: ./rtmp/AMF0Object.js
 
 
+
 class AMF0Object {
+	TAG = "AMF0Object";
+
 	command;
 	transaction_id;
 	command_object;
@@ -3093,7 +3233,7 @@ class AMF0Object {
 	constructor(params) {
 		if(params) {
             this.params = params;
-			console.log("cmd: " + this.params[0]);
+			logger.d(this.TAG, "cmd: " + this.params[0]);
 		}
 	}
 
@@ -3141,7 +3281,7 @@ class AMF0Object {
 				break;
 
             default:
-                console.warn("var_type: " + var_type + " not yet implemented");
+                logger.w(this.TAG, "var_type: " + var_type + " not yet implemented");
                 break;
 			}
 		}
@@ -3152,21 +3292,16 @@ class AMF0Object {
 	_parseAMF0Object() {
 		let o2 = {};
 
-		//console.log("parseObject: " + this.data.length);
-
 		while (this.data.length > 0) {
 			let keylen = (this.data[0] << 8) | (this.data[1]); this.data = this.data.slice(2);
 
 			// Object end marker
 			if (keylen === 0 && this.data[0] === 9) {
-				//console.log("endmarker found");
 				this.data = this.data.slice(1);
 				return o2;
 			}
 
 			let keyName = _byteArrayToString(this.data.slice(0, keylen)); this.data = this.data.slice(keylen);
-
-			//console.log("key found: " + keyName);
 
 			const var_type = this.data.shift();
 
@@ -3198,7 +3333,7 @@ class AMF0Object {
                 break;
 
             default:
-                console.warn("var_type: " + var_type + " not yet implemented");
+				logger.w(this.TAG, "var_type: " + var_type + " not yet implemented");
                 break;
 			}
 		}
@@ -3215,8 +3350,6 @@ class AMF0Object {
 
         for(let i = 0; i < this.params.length; i++) {
             const param = this.params[i];
-
-            //console.log("Param", i, typeof param);
 
             switch(typeof param){
             case "string":
@@ -3238,8 +3371,6 @@ class AMF0Object {
                 bytes.push(0x03); // Object
 
                 for (let key in param) {
-                    //console.log("param: " + key);
-
                     let value = param[key];
                     let keylength = key.length;
 
@@ -3275,7 +3406,7 @@ class AMF0Object {
                         break;
 
                     default:
-                        console.warn(typeof value, " not yet implementd");
+						logger.w(this.TAG, typeof value, " not yet implementd");
                         break;
                     }
                 }
@@ -3292,7 +3423,7 @@ class AMF0Object {
                 break;
 
             default:
-                console.warn(typeof param, " not yet implementd");
+				logger.w(this.TAG, typeof param, " not yet implementd");
                 break;
             }
         }
@@ -3354,7 +3485,10 @@ const test = [
 
 
 
+
 class RTMPMessageHandler {
+    TAG = "RTMPMessageHandler";
+
     netconnections = {};
     chunk_stream_id = 2;
     trackedCommand = "";
@@ -3370,22 +3504,22 @@ class RTMPMessageHandler {
         this.media_handler = new rtmp_RTMPMediaMessageHandler();
 
         this.media_handler.onError = (type, info)=>{
-            console.log(type, info);
+            logger.d(this.TAG, type, info);
             postMessage(["onError", type, info]);
         }
 
         this.media_handler.onMediaInfo = (mediainfo)=>{
-            console.log(mediainfo);
+            logger.d(this.TAG, mediainfo);
             postMessage(["onMediaInfo", mediainfo]);
         }
 
         this.media_handler.onTrackMetadata = (type, metadata)=>{
-            console.log(type, metadata);
+            logger.d(this.TAG, type, metadata);
             postMessage(["onTrackMetadata", type, metadata]);
         }
 
         this.media_handler.onDataAvailable = (videoTrack, audioTrack)=>{
-            console.log(videoTrack, audioTrack);
+            logger.d(this.TAG, videoTrack, audioTrack);
             postMessage(["onDataAvailable", videoTrack, audioTrack]);
         }
 
@@ -3415,7 +3549,7 @@ class RTMPMessageHandler {
      * @param {Uint8Array} data
      */
     parseChunk(data){
-        console.log("[ RTMPMessageHandler ] parseChunk: " + data.length);
+        logger.d(this.TAG, "parseChunk: " + data.length);
         this.chunk_parser.parseChunk(data);
     }
 
@@ -3424,7 +3558,7 @@ class RTMPMessageHandler {
      * @param {RTMPMessage} msg
      */
     onMessage(msg){
-        console.log("[ RTMPMessageHandler ] onMessage: " + msg.getMessageType() + " StreamID:" + msg.getMessageStreamID());
+        logger.d(this.TAG, " onMessage: " + msg.getMessageType() + " StreamID:" + msg.getMessageStreamID());
 
         switch(msg.getMessageType()){
         case 1:         // PCM Set Chunk Size
@@ -3440,17 +3574,17 @@ class RTMPMessageHandler {
             break;
 
         case 8:         // Audio Message
-            console.log("[ RTMPMessageHandler ] AUDIOFRAME: ", msg.getPayload());
+            logger.d(this.TAG, "AUDIOFRAME: ", msg.getPayload());
             this.media_handler.handleMediaMessage(msg);
             break;
 
         case 9:         // Video Message
-            console.log("[ RTMPMessageHandler ] VIDEOFRAME: ", msg.getPayload());
+            logger.d(this.TAG, "VIDEOFRAME: ", msg.getPayload());
             this.media_handler.handleMediaMessage(msg);
             break;
 
         case 18:        // Data Message AMF0
-            console.log("[ RTMPMessageHandler ] DATAFRAME: ", msg.getPayload());
+            logger.d(this.TAG, "DATAFRAME: ", msg.getPayload());
             this.media_handler.handleMediaMessage(msg);
             break;
 
@@ -3462,14 +3596,14 @@ class RTMPMessageHandler {
             const command = new rtmp_AMF0Object();
             let cmd = command.parseAMF0(msg.getPayload());
 
-            console.log("[ RTMPMessageHandler ] AMF0", cmd);
+            logger.d(this.TAG, "AMF0", cmd);
 
             switch(cmd[0]) {
             case "_result":
                 switch(this.trackedCommand){
                 case "connect":
                     if(cmd[3].code == "NetConnection.Connect.Success") {
-                        console.log("[ RTMPMessageHandler ] got _result: " + cmd[3].code);
+                        logger.d(this.TAG,"got _result: " + cmd[3].code);
                         postMessage([cmd[3].code]);
                         this.createStream();
                     }
@@ -3485,12 +3619,12 @@ class RTMPMessageHandler {
                 break;
 
             case "onStatus":
-                console.log("[ RTMPMessageHandler ] onStatus: " + cmd[3].code);
+                logger.d(this.TAG,"onStatus: " + cmd[3].code);
                 postMessage([cmd[3].code]);
                 break;
 
             default:
-                console.warn("[ RTMPMessageHandler ] CommandMessage " + cmd[0] + " not yet implemented");
+                logger.w(this.TAG,"CommandMessage " + cmd[0] + " not yet implemented");
                 break;
             }
 
@@ -3502,11 +3636,11 @@ class RTMPMessageHandler {
         case 15:        // Data Message AMF3
         case 16:        // Shared Object Message AMF3
         case 17:        // Command Message AMF3
-            console.error("[ RTMPMessageHandler ] AMF3 is not yet implemented");
+            logger.e(this.TAG,"AMF3 is not yet implemented");
             break;
 
         default:
-            console.warn("[ RTMPMessageHandler ] MessageType: " + rtmp_RTMPMessage.MessageTypes[msg.getMessageType()] + "(" + msg.getMessageType() + ")");
+            logger.d(this.TAG,"[MessageType: " + rtmp_RTMPMessage.MessageTypes[msg.getMessageType()] + "(" + msg.getMessageType() + ")");
             break;
 
         }
@@ -3677,7 +3811,7 @@ class RTMPMessageHandler {
             const chunk = new rtmp_Chunk(m2);
             chunk.setChunkStreamID(2);  // Control Channel
 
-            console.log("send Pong");
+            logger.i(this.TAG,"send Pong");
             this.socket.send(chunk.getBytes());
         }
     }
@@ -3691,16 +3825,21 @@ class RTMPMessageHandler {
 
 
 
-const port = 9001;
+
+const TAG = "WebRTMP Worker";
+
+let port = 9001;
 let host;
 let message_handler;
+logger.WITH_STACKTRACE = false;
+logger.LEVEL = logger.TRACE;
 
 const wss_manager = new wss_WSSConnectionManager();
 
 self.addEventListener('message', function(e) {
 	let data = e.data;
 
-	console.log("[ WebRTMP Worker ] CMD: " + data.cmd);
+	logger.d(TAG, "CMD: " + data.cmd);
 
 	switch(data.cmd) {
 		case "createConnection":    // connect WebSocket
@@ -3716,7 +3855,7 @@ self.addEventListener('message', function(e) {
 						if(success){
 							message_handler = new rtmp_RTMPMessageHandler(wss_manager.getSocket());
 
-							console.log("[ WebRTMP Worker ] connect to RTMPManager");
+							logger.d(TAG, "connect to RTMPManager");
 
 							wss_manager.registerMessageHandler((e)=> {
 								// connect to chunkparser
@@ -3726,7 +3865,7 @@ self.addEventListener('message', function(e) {
 							postMessage(["RTMPHandshakeDone"]);
 
 						} else {
-							console.error("[ WebRTMP Worker ] Handshake failed");
+							logger.e(TAG, "Handshake failed");
 						}
 					};
 
@@ -3741,7 +3880,7 @@ self.addEventListener('message', function(e) {
 
 		case "connect":             // RTMP Connect Application
 			message_handler.connect(makeDefaultConnectionParams(data.appName), ()=>{
-				console.log("connected");
+				logger.v(TAG, "connected");
 				postMessage(["RTMPConnected"]);
 			});
 			break;
@@ -3759,7 +3898,7 @@ self.addEventListener('message', function(e) {
             break;
 
 		default:
-			console.warn("[ WebRTMP Worker ] Unknown CMD: " + data.cmd);
+			logger.w(TAG, "Unknown CMD: " + data.cmd);
 			break;
 	}
 

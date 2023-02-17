@@ -1,17 +1,22 @@
 import WSSConnectionManager from "./WSSConnectionManager";
 import RTMPHandshake from "../rtmp/RTMPHandshake";
 import RTMPMessageHandler from "../rtmp/RTMPMessageHandler";
+import Log from "../utils/logger";
 
-const port = 9001;
+const TAG = "WebRTMP Worker";
+
+let port = 9001;
 let host;
 let message_handler;
+Log.WITH_STACKTRACE = false;
+Log.LEVEL = Log.TRACE;
 
 const wss_manager = new WSSConnectionManager();
 
 self.addEventListener('message', function(e) {
 	let data = e.data;
 
-	console.log("[ WebRTMP Worker ] CMD: " + data.cmd);
+	Log.d(TAG, "CMD: " + data.cmd);
 
 	switch(data.cmd) {
 		case "createConnection":    // connect WebSocket
@@ -27,7 +32,7 @@ self.addEventListener('message', function(e) {
 						if(success){
 							message_handler = new RTMPMessageHandler(wss_manager.getSocket());
 
-							console.log("[ WebRTMP Worker ] connect to RTMPManager");
+							Log.d(TAG, "connect to RTMPManager");
 
 							wss_manager.registerMessageHandler((e)=> {
 								// connect to chunkparser
@@ -37,7 +42,7 @@ self.addEventListener('message', function(e) {
 							postMessage(["RTMPHandshakeDone"]);
 
 						} else {
-							console.error("[ WebRTMP Worker ] Handshake failed");
+							Log.e(TAG, "Handshake failed");
 						}
 					};
 
@@ -52,7 +57,7 @@ self.addEventListener('message', function(e) {
 
 		case "connect":             // RTMP Connect Application
 			message_handler.connect(makeDefaultConnectionParams(data.appName), ()=>{
-				console.log("connected");
+				Log.v(TAG, "connected");
 				postMessage(["RTMPConnected"]);
 			});
 			break;
@@ -70,7 +75,7 @@ self.addEventListener('message', function(e) {
             break;
 
 		default:
-			console.warn("[ WebRTMP Worker ] Unknown CMD: " + data.cmd);
+			Log.w(TAG, "Unknown CMD: " + data.cmd);
 			break;
 	}
 

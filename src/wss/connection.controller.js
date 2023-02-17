@@ -1,18 +1,17 @@
 import EventEmitter from "../utils/event_emitter";
+import Log from "../utils/logger";
 
 class WebRTMP_Controller {
+	TAG = "WebRTMP_Controller";
 	host = document.location.host;
+	WSSReconnect = false;
+	isConnected = false;
 
 	WebRTMPWorker = new Worker(new URL('connection.worker.js', import.meta.url), {
 		name: "webrtmp.worker",
 		type: "module"
 		/* webpackEntryOptions: { filename: "[name].js" } */
 	});
-
-
-	DEBUG = false;
-
-	isConnected = false;
 
 	constructor() {
 		this.e = new EventEmitter();
@@ -34,7 +33,7 @@ class WebRTMP_Controller {
 	 * MQTT Verbindung trennen
 	 */
 	disconnect() {
-		this.MQTT_Reconnect = true;
+		this.WSSReconnect = true;
 		this.WebRTMPWorker.postMessage({cmd: "disconnect"});
 	}
 
@@ -73,15 +72,15 @@ class WebRTMP_Controller {
 		switch(data[0]){
 			case "ConnectionLost":
 				this.e.emit("ConnectionLost");
-				console.log("[ WorkerListener ] Event ConnectionLost");
+				Log.d(this.TAG, "Event ConnectionLost");
 
 				this.isConnected = false;
 
-				if(this.MQTT_Reconnect) {
-					console.log("[ WorkerListener ] Reconnect timed");
+				if(this.WSSReconnect) {
+					Log.w(this.TAG,"[ WorkerListener ] Reconnect timed");
 
 					window.setTimeout(()=>{
-						console.log("[ WorkerListener ] timed Reconnect");
+						Log.w(this.TAG, "timed Reconnect");
 						this.createConnection();
 					}, 1000)
 				}
@@ -89,13 +88,13 @@ class WebRTMP_Controller {
 				break;
 
 			case "Connected":
-				console.log("[ WorkerListener ] Event Connected");
+				Log.d(this.TAG, "Event Connected");
 				this.e.emit("Connected");
 				this.isConnected = true;
 				break;
 
 			case "Started":
-				console.log("[ WorkerListener ] Event Started");
+				Log.d(this.TAG, "Event Started");
 
 				this.createConnection();
 				/*

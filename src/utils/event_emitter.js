@@ -1,5 +1,8 @@
+import Log from "../utils/logger";
+
 class EventEmitter{
 	ListenerList = [];
+	TAG = "EventEmitter";
 
 	constructor() {
 	}
@@ -51,7 +54,7 @@ class EventEmitter{
 	 * @param data
 	 */
 	emit(event, data){
-		console.log("emit EVENT: " + event, data);
+		Log.d(this.TAG, "emit EVENT: " + event, data);
 		for(let i = 0; i < this.ListenerList.length;i++){
 			let entry = this.ListenerList[i];
 			if(entry[0] == event){

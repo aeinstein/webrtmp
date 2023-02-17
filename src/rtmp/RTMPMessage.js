@@ -1,6 +1,9 @@
 import {_concatArrayBuffers} from "../utils/utils";
+import Log from "../utils/logger";
 
 class RTMPMessage{
+	TAG = "RTMPMessage";
+
     static MessageTypes = ["dummy", "PCMSetChunkSize", "PCMAbortMessage", "PCMAcknolegement", "UserControlMessage", "WindowAcknowledgementSize", "PCMSetPeerBandwidth",
         "dummy", "AudioMessage", "VideoMessage", "dummy", "dummy", "dummy", "dummy", "dummy", "DataMessageAMF3", "Shared Object Message AMF3", "CommandMessageAMF3",
         "DataMessageAMF0", "SharedObjectMessageAMF0", "CommandMessageAMF0", "dummy", "Aggregate Message"];
@@ -109,13 +112,13 @@ class RTMPMessage{
 	 */
 	addPayload(data){
 		if(data.length > this.bytesMissing()) {
-			console.error("try to add too much data");
+			Log.e(this.TAG, "try to add too much data");
 			return;
 		}
 
 		this.payload = _concatArrayBuffers(this.payload, data);
 		this.length = this.payload.length;
-		console.log("[ RTMPMessage ] payload size is now: " + this.length);
+		Log.d(this.TAG, "[ RTMPMessage ] payload size is now: " + this.length);
 	}
 
 	getPayload(){

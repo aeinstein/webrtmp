@@ -64,28 +64,205 @@ var __webpack_exports__ = {};
 
 ;// CONCATENATED MODULE: ./utils/logger.js
 class logger_Log {
-    static v(...params){
-        console.log(...params);
+    static OFF = -1;
+    static TRACE = 0;
+    static DEBUG = 1;
+    static INFO = 1;
+    static WARN = 3;
+    static ERROR = 4;
+    static CRITICAL = 5;
+    static WITH_STACKTRACE = false;
+
+    static LEVEL = logger_Log.DEBUG;
+
+    /**
+     *
+     * @param {Number} level
+     * @param {String} tag
+     * @param txt
+     * @private
+     */
+    static _output = function output(level, tag, ...txt){
+        if(logger_Log.LEVEL === logger_Log.OFF) return;
+        if(level < logger_Log.LEVEL) return;
+
+        const callstack = logger_Log.getStackTrace();
+
+        // debug aufruf entfernen
+        callstack.shift();
+        callstack.shift();
+
+        let color = "color: silver";
+
+        switch(level) {
+            case logger_Log.TRACE:	// TRACE
+                color = "background-color: gray";
+                break;
+
+            case logger_Log.DEBUG:	// DEBUG
+
+                break;
+
+            case logger_Log.INFO:	// INFO
+                color = "color: green";
+                break;
+
+            case logger_Log.WARN:	// WARN
+                color = "color: orange; background-color: #EAA80035";
+                break;
+
+            case logger_Log.ERROR:	// ERROR
+                color = "color: red; background-color: #FF000020";
+                break;
+
+            case logger_Log.CRITICAL:	// CRITICAL
+                color = "color: red";
+                break;
+        }
+
+        logger_Log._print(callstack, color, tag, ...txt);
+    };
+
+    static _print(callstack, color, tag, ...txt){
+        if(logger_Log.WITH_STACKTRACE || logger_Log.LEVEL === logger_Log.TRACE || logger_Log.LEVEL === logger_Log.ERROR){
+            console.groupCollapsed("%c " + tag, "%o", color, ...txt);
+
+            for(let i = 0; i < callstack.length; i++) {
+                console.log("%c" + callstack[i], color);
+            }
+            console.groupEnd();
+
+        } else {
+            console.log("%c" + tag, "%o", color, ...txt)
+        }
     }
 
-    static e(...params){
-        console.error(...params);
+    static getStackTrace = function() {
+        let callstack = [];
+
+        try {
+            i.dont.exist+=0; //doesn't exist- that's the point
+
+        } catch(e) {
+            if (e.stack) { //Firefox
+                let lines = e.stack.split('\n');
+
+                for (let i=0; i < lines.length; i++) {
+                    callstack.push(lines[i]);
+                }
+
+                //Ersten Eintrag entfernen
+                callstack.shift();
+                callstack.shift();
+                //this.isCallstackPopulated = true;
+            }
+        }
+
+        return(callstack);
+    };
+
+    static c(tag, ...msg) {
+        logger_Log._output(logger_Log.CRITICAL, tag, ...msg);
     }
 
-    static w(...params){
-        console.warn(...params);
+    static e(tag, ...msg) {
+        logger_Log._output(logger_Log.ERROR, tag, ...msg);
     }
 
-    static t(...params){
-        console.trace(...params);
+    static i(tag, ...msg) {
+        logger_Log._output(logger_Log.INFO, tag, ...msg);
     }
 
-    static i(...params){
-        console.info(...params);
+    static w(tag, ...msg) {
+        logger_Log._output(logger_Log.WARN, tag, ...msg);
+    }
+
+    static d(tag, ...msg) {
+        logger_Log._output(logger_Log.DEBUG, tag, ...msg);
+    }
+
+    static v(tag, ...msg) {
+        logger_Log._output(logger_Log.DEBUG, tag, ...msg);
+    }
+
+    static t(tag, ...msg) {
+        logger_Log._output(logger_Log.TRACE, tag, ...msg);
     }
 }
 
-;// CONCATENATED MODULE: ./utils/mse-controller.js
+/* harmony default export */ const logger = (logger_Log);
+
+;// CONCATENATED MODULE: ./utils/event_emitter.js
+
+
+class EventEmitter{
+	ListenerList = [];
+	TAG = "EventEmitter";
+
+	constructor() {
+	}
+
+	/**
+	 *
+	 * @param {String} event
+	 * @param {Function} listener
+	 */
+	addEventListener(event, listener){
+		this.ListenerList.push([event, listener]);
+	}
+
+	/**
+	 *
+	 * @param {String} event
+	 * @param {Function} listener
+	 */
+	addListener(event, listener){
+		this.ListenerList.push([event, listener]);
+	}
+
+
+	/**
+	 *
+	 * @param {String} event
+	 * @param {Function} listener
+	 */
+	removeListener(event, listener){
+		for(let i = 0; i < this.ListenerList.length;i++){
+			let entry = this.ListenerList[i];
+			if(entry[0] == event && entry[1] == listener){
+				this.ListenerList.splice(i,1);
+				return;
+			}
+		}
+	}
+
+	/**
+	 * Remove all listener
+	 */
+	removeAllListeners(){
+		this.ListenerList = [];
+	}
+
+	/**
+	 *
+	 * @param {String} event
+	 * @param data
+	 */
+	emit(event, data){
+		logger.d(this.TAG, "emit EVENT: " + event, data);
+		for(let i = 0; i < this.ListenerList.length;i++){
+			let entry = this.ListenerList[i];
+			if(entry[0] == event){
+				entry[1].call(this, data);
+			}
+		}
+	}
+}
+
+/* harmony default export */ const event_emitter = (EventEmitter);
+
+
+;// CONCATENATED MODULE: ./formats/media-segment-info.js
 /*
  * Copyright (C) 2016 Bilibili. All Rights Reserved.
  *
@@ -104,523 +281,284 @@ class logger_Log {
  * limitations under the License.
  */
 
-
-// Media Source Extensions controller
-
-
-class MSEController {
-
-	constructor(config) {
-		this.TAG = 'MSEController';
-
-		this._config = config;
-		this._emitter = new EventEmitter();
-
-		if (this._config.isLive && this._config.autoCleanupSourceBuffer == undefined) {
-			// For live stream, do auto cleanup by default
-			this._config.autoCleanupSourceBuffer = true;
-		}
-
-		this.e = {
-			onSourceOpen: this._onSourceOpen.bind(this),
-			onSourceEnded: this._onSourceEnded.bind(this),
-			onSourceClose: this._onSourceClose.bind(this),
-			onSourceBufferError: this._onSourceBufferError.bind(this),
-			onSourceBufferUpdateEnd: this._onSourceBufferUpdateEnd.bind(this)
-		};
-
-		this._mediaSource = null;
-		this._mediaSourceObjectURL = null;
-		this._mediaElement = null;
-
-		this._isBufferFull = false;
-		this._hasPendingEos = false;
-
-		this._requireSetMediaDuration = false;
-		this._pendingMediaDuration = 0;
-
-		this._pendingSourceBufferInit = [];
-		this._mimeTypes = {
-			video: null,
-			audio: null
-		};
-		this._sourceBuffers = {
-			video: null,
-			audio: null
-		};
-		this._lastInitSegments = {
-			video: null,
-			audio: null
-		};
-		this._pendingSegments = {
-			video: [],
-			audio: []
-		};
-		this._pendingRemoveRanges = {
-			video: [],
-			audio: []
-		};
-		this._idrList = new IDRSampleList();
-	}
-
-	destroy() {
-		if (this._mediaElement || this._mediaSource) {
-			this.detachMediaElement();
-		}
-		this.e = null;
-		this._emitter.removeAllListeners();
-		this._emitter = null;
-	}
-
-	on(event, listener) {
-		this._emitter.addListener(event, listener);
-	}
-
-	off(event, listener) {
-		this._emitter.removeListener(event, listener);
-	}
-
-	attachMediaElement(mediaElement) {
-		if (this._mediaSource) {
-			throw new IllegalStateException('MediaSource has been attached to an HTMLMediaElement!');
-		}
-		let ms = this._mediaSource = new window.MediaSource();
-		ms.addEventListener('sourceopen', this.e.onSourceOpen);
-		ms.addEventListener('sourceended', this.e.onSourceEnded);
-		ms.addEventListener('sourceclose', this.e.onSourceClose);
-
-		this._mediaElement = mediaElement;
-		this._mediaSourceObjectURL = window.URL.createObjectURL(this._mediaSource);
-		mediaElement.src = this._mediaSourceObjectURL;
-	}
-
-	detachMediaElement() {
-		if (this._mediaSource) {
-			let ms = this._mediaSource;
-			for (let type in this._sourceBuffers) {
-				// pending segments should be discard
-				let ps = this._pendingSegments[type];
-				ps.splice(0, ps.length);
-				this._pendingSegments[type] = null;
-				this._pendingRemoveRanges[type] = null;
-				this._lastInitSegments[type] = null;
-
-				// remove all sourcebuffers
-				let sb = this._sourceBuffers[type];
-				if (sb) {
-					if (ms.readyState !== 'closed') {
-						// ms edge can throw an error: Unexpected call to method or property access
-						try {
-							ms.removeSourceBuffer(sb);
-						} catch (error) {
-							logger_Log.e(this.TAG, error.message);
-						}
-						sb.removeEventListener('error', this.e.onSourceBufferError);
-						sb.removeEventListener('updateend', this.e.onSourceBufferUpdateEnd);
-					}
-					this._mimeTypes[type] = null;
-					this._sourceBuffers[type] = null;
-				}
-			}
-			if (ms.readyState === 'open') {
-				try {
-					ms.endOfStream();
-				} catch (error) {
-					logger_Log.e(this.TAG, error.message);
-				}
-			}
-			ms.removeEventListener('sourceopen', this.e.onSourceOpen);
-			ms.removeEventListener('sourceended', this.e.onSourceEnded);
-			ms.removeEventListener('sourceclose', this.e.onSourceClose);
-			this._pendingSourceBufferInit = [];
-			this._isBufferFull = false;
-			this._idrList.clear();
-			this._mediaSource = null;
-		}
-
-		if (this._mediaElement) {
-			this._mediaElement.src = '';
-			this._mediaElement.removeAttribute('src');
-			this._mediaElement = null;
-		}
-		if (this._mediaSourceObjectURL) {
-			window.URL.revokeObjectURL(this._mediaSourceObjectURL);
-			this._mediaSourceObjectURL = null;
-		}
-	}
-
-	appendInitSegment(initSegment, deferred) {
-		if (!this._mediaSource || this._mediaSource.readyState !== 'open') {
-			// sourcebuffer creation requires mediaSource.readyState === 'open'
-			// so we defer the sourcebuffer creation, until sourceopen event triggered
-			this._pendingSourceBufferInit.push(initSegment);
-			// make sure that this InitSegment is in the front of pending segments queue
-			this._pendingSegments[initSegment.type].push(initSegment);
-			return;
-		}
-
-		let is = initSegment;
-		let mimeType = `${is.container}`;
-		if (is.codec && is.codec.length > 0) {
-			mimeType += `;codecs=${is.codec}`;
-		}
-
-		let firstInitSegment = false;
-
-		logger_Log.v(this.TAG, 'Received Initialization Segment, mimeType: ' + mimeType);
-		this._lastInitSegments[is.type] = is;
-
-		if (mimeType !== this._mimeTypes[is.type]) {
-			if (!this._mimeTypes[is.type]) {  // empty, first chance create sourcebuffer
-				firstInitSegment = true;
-				try {
-					let sb = this._sourceBuffers[is.type] = this._mediaSource.addSourceBuffer(mimeType);
-					sb.addEventListener('error', this.e.onSourceBufferError);
-					sb.addEventListener('updateend', this.e.onSourceBufferUpdateEnd);
-				} catch (error) {
-					logger_Log.e(this.TAG, error.message);
-					this._emitter.emit(MSEEvents.ERROR, {code: error.code, msg: error.message});
-					return;
-				}
-			} else {
-				logger_Log.v(this.TAG, `Notice: ${is.type} mimeType changed, origin: ${this._mimeTypes[is.type]}, target: ${mimeType}`);
-			}
-			this._mimeTypes[is.type] = mimeType;
-		}
-
-		if (!deferred) {
-			// deferred means this InitSegment has been pushed to pendingSegments queue
-			this._pendingSegments[is.type].push(is);
-		}
-		if (!firstInitSegment) {  // append immediately only if init segment in subsequence
-			if (this._sourceBuffers[is.type] && !this._sourceBuffers[is.type].updating) {
-				this._doAppendSegments();
-			}
-		}
-		if (Browser.safari && is.container === 'audio/mpeg' && is.mediaDuration > 0) {
-			// 'audio/mpeg' track under Safari may cause MediaElement's duration to be NaN
-			// Manually correct MediaSource.duration to make progress bar seekable, and report right duration
-			this._requireSetMediaDuration = true;
-			this._pendingMediaDuration = is.mediaDuration / 1000;  // in seconds
-			this._updateMediaSourceDuration();
-		}
-	}
-
-	appendMediaSegment(mediaSegment) {
-		let ms = mediaSegment;
-		this._pendingSegments[ms.type].push(ms);
-
-		if (this._config.autoCleanupSourceBuffer && this._needCleanupSourceBuffer()) {
-			this._doCleanupSourceBuffer();
-		}
-
-		let sb = this._sourceBuffers[ms.type];
-		if (sb && !sb.updating && !this._hasPendingRemoveRanges()) {
-			this._doAppendSegments();
-		}
-	}
-
-	seek(seconds) {
-		// remove all appended buffers
-		for (let type in this._sourceBuffers) {
-			if (!this._sourceBuffers[type]) {
-				continue;
-			}
-
-			// abort current buffer append algorithm
-			let sb = this._sourceBuffers[type];
-			if (this._mediaSource.readyState === 'open') {
-				try {
-					// If range removal algorithm is running, InvalidStateError will be throwed
-					// Ignore it.
-					sb.abort();
-				} catch (error) {
-					logger_Log.e(this.TAG, error.message);
-				}
-			}
-
-			// IDRList should be clear
-			this._idrList.clear();
-
-			// pending segments should be discard
-			let ps = this._pendingSegments[type];
-			ps.splice(0, ps.length);
-
-			if (this._mediaSource.readyState === 'closed') {
-				// Parent MediaSource object has been detached from HTMLMediaElement
-				continue;
-			}
-
-			// record ranges to be remove from SourceBuffer
-			for (let i = 0; i < sb.buffered.length; i++) {
-				let start = sb.buffered.start(i);
-				let end = sb.buffered.end(i);
-				this._pendingRemoveRanges[type].push({start, end});
-			}
-
-			// if sb is not updating, let's remove ranges now!
-			if (!sb.updating) {
-				this._doRemoveRanges();
-			}
-
-			// Safari 10 may get InvalidStateError in the later appendBuffer() after SourceBuffer.remove() call
-			// Internal parser's state may be invalid at this time. Re-append last InitSegment to workaround.
-			// Related issue: https://bugs.webkit.org/show_bug.cgi?id=159230
-			if (Browser.safari) {
-				let lastInitSegment = this._lastInitSegments[type];
-				if (lastInitSegment) {
-					this._pendingSegments[type].push(lastInitSegment);
-					if (!sb.updating) {
-						this._doAppendSegments();
-					}
-				}
-			}
-		}
-	}
-
-	endOfStream() {
-		let ms = this._mediaSource;
-		let sb = this._sourceBuffers;
-		if (!ms || ms.readyState !== 'open') {
-			if (ms && ms.readyState === 'closed' && this._hasPendingSegments()) {
-				// If MediaSource hasn't turned into open state, and there're pending segments
-				// Mark pending endOfStream, defer call until all pending segments appended complete
-				this._hasPendingEos = true;
-			}
-			return;
-		}
-		if (sb.video && sb.video.updating || sb.audio && sb.audio.updating) {
-			// If any sourcebuffer is updating, defer endOfStream operation
-			// See _onSourceBufferUpdateEnd()
-			this._hasPendingEos = true;
-		} else {
-			this._hasPendingEos = false;
-			// Notify media data loading complete
-			// This is helpful for correcting total duration to match last media segment
-			// Otherwise MediaElement's ended event may not be triggered
-			ms.endOfStream();
-		}
-	}
-
-	getNearestKeyframe(dts) {
-		return this._idrList.getLastSyncPointBeforeDts(dts);
-	}
-
-	_needCleanupSourceBuffer() {
-		if (!this._config.autoCleanupSourceBuffer) {
-			return false;
-		}
-
-		let currentTime = this._mediaElement.currentTime;
-
-		for (let type in this._sourceBuffers) {
-			let sb = this._sourceBuffers[type];
-			if (sb) {
-				let buffered = sb.buffered;
-				if (buffered.length >= 1) {
-					if (currentTime - buffered.start(0) >= this._config.autoCleanupMaxBackwardDuration) {
-						return true;
-					}
-				}
-			}
-		}
-
-		return false;
-	}
-
-	_doCleanupSourceBuffer() {
-		let currentTime = this._mediaElement.currentTime;
-
-		for (let type in this._sourceBuffers) {
-			let sb = this._sourceBuffers[type];
-			if (sb) {
-				let buffered = sb.buffered;
-				let doRemove = false;
-
-				for (let i = 0; i < buffered.length; i++) {
-					let start = buffered.start(i);
-					let end = buffered.end(i);
-
-					if (start <= currentTime && currentTime < end + 3) {  // padding 3 seconds
-						if (currentTime - start >= this._config.autoCleanupMaxBackwardDuration) {
-							doRemove = true;
-							let removeEnd = currentTime - this._config.autoCleanupMinBackwardDuration;
-							this._pendingRemoveRanges[type].push({start: start, end: removeEnd});
-						}
-					} else if (end < currentTime) {
-						doRemove = true;
-						this._pendingRemoveRanges[type].push({start: start, end: end});
-					}
-				}
-
-				if (doRemove && !sb.updating) {
-					this._doRemoveRanges();
-				}
-			}
-		}
-	}
-
-	_updateMediaSourceDuration() {
-		let sb = this._sourceBuffers;
-		if (this._mediaElement.readyState === 0 || this._mediaSource.readyState !== 'open') {
-			return;
-		}
-		if ((sb.video && sb.video.updating) || (sb.audio && sb.audio.updating)) {
-			return;
-		}
-
-		let current = this._mediaSource.duration;
-		let target = this._pendingMediaDuration;
-
-		if (target > 0 && (isNaN(current) || target > current)) {
-			logger_Log.v(this.TAG, `Update MediaSource duration from ${current} to ${target}`);
-			this._mediaSource.duration = target;
-		}
-
-		this._requireSetMediaDuration = false;
-		this._pendingMediaDuration = 0;
-	}
-
-	_doRemoveRanges() {
-		for (let type in this._pendingRemoveRanges) {
-			if (!this._sourceBuffers[type] || this._sourceBuffers[type].updating) {
-				continue;
-			}
-			let sb = this._sourceBuffers[type];
-			let ranges = this._pendingRemoveRanges[type];
-			while (ranges.length && !sb.updating) {
-				let range = ranges.shift();
-				sb.remove(range.start, range.end);
-			}
-		}
-	}
-
-	_doAppendSegments() {
-		let pendingSegments = this._pendingSegments;
-
-		for (let type in pendingSegments) {
-			if (!this._sourceBuffers[type] || this._sourceBuffers[type].updating) {
-				continue;
-			}
-
-			if (pendingSegments[type].length > 0) {
-				let segment = pendingSegments[type].shift();
-
-				if (segment.timestampOffset) {
-					// For MPEG audio stream in MSE, if unbuffered-seeking occurred
-					// We need explicitly set timestampOffset to the desired point in timeline for mpeg SourceBuffer.
-					let currentOffset = this._sourceBuffers[type].timestampOffset;
-					let targetOffset = segment.timestampOffset / 1000;  // in seconds
-
-					let delta = Math.abs(currentOffset - targetOffset);
-					if (delta > 0.1) {  // If time delta > 100ms
-						logger_Log.v(this.TAG, `Update MPEG audio timestampOffset from ${currentOffset} to ${targetOffset}`);
-						this._sourceBuffers[type].timestampOffset = targetOffset;
-					}
-					delete segment.timestampOffset;
-				}
-
-				if (!segment.data || segment.data.byteLength === 0) {
-					// Ignore empty buffer
-					continue;
-				}
-
-				try {
-					this._sourceBuffers[type].appendBuffer(segment.data);
-					this._isBufferFull = false;
-					if (type === 'video' && segment.hasOwnProperty('info')) {
-						this._idrList.appendArray(segment.info.syncPoints);
-					}
-				} catch (error) {
-					this._pendingSegments[type].unshift(segment);
-					if (error.code === 22) {  // QuotaExceededError
-						/* Notice that FireFox may not throw QuotaExceededError if SourceBuffer is full
-						 * Currently we can only do lazy-load to avoid SourceBuffer become scattered.
-						 * SourceBuffer eviction policy may be changed in future version of FireFox.
-						 *
-						 * Related issues:
-						 * https://bugzilla.mozilla.org/show_bug.cgi?id=1279885
-						 * https://bugzilla.mozilla.org/show_bug.cgi?id=1280023
-						 */
-
-						// report buffer full, abort network IO
-						if (!this._isBufferFull) {
-							this._emitter.emit(MSEEvents.BUFFER_FULL);
-						}
-						this._isBufferFull = true;
-					} else {
-						logger_Log.e(this.TAG, error.message);
-						this._emitter.emit(MSEEvents.ERROR, {code: error.code, msg: error.message});
-					}
-				}
-			}
-		}
-	}
-
-	_onSourceOpen() {
-		logger_Log.v(this.TAG, 'MediaSource onSourceOpen');
-		this._mediaSource.removeEventListener('sourceopen', this.e.onSourceOpen);
-		// deferred sourcebuffer creation / initialization
-		if (this._pendingSourceBufferInit.length > 0) {
-			let pendings = this._pendingSourceBufferInit;
-			while (pendings.length) {
-				let segment = pendings.shift();
-				this.appendInitSegment(segment, true);
-			}
-		}
-		// there may be some pending media segments, append them
-		if (this._hasPendingSegments()) {
-			this._doAppendSegments();
-		}
-		this._emitter.emit(MSEEvents.SOURCE_OPEN);
-	}
-
-	_onSourceEnded() {
-		// fired on endOfStream
-		logger_Log.v(this.TAG, 'MediaSource onSourceEnded');
-	}
-
-	_onSourceClose() {
-		// fired on detaching from media element
-		logger_Log.v(this.TAG, 'MediaSource onSourceClose');
-		if (this._mediaSource && this.e != null) {
-			this._mediaSource.removeEventListener('sourceopen', this.e.onSourceOpen);
-			this._mediaSource.removeEventListener('sourceended', this.e.onSourceEnded);
-			this._mediaSource.removeEventListener('sourceclose', this.e.onSourceClose);
-		}
-	}
-
-	_hasPendingSegments() {
-		let ps = this._pendingSegments;
-		return ps.video.length > 0 || ps.audio.length > 0;
-	}
-
-	_hasPendingRemoveRanges() {
-		let prr = this._pendingRemoveRanges;
-		return prr.video.length > 0 || prr.audio.length > 0;
-	}
-
-	_onSourceBufferUpdateEnd() {
-		if (this._requireSetMediaDuration) {
-			this._updateMediaSourceDuration();
-		} else if (this._hasPendingRemoveRanges()) {
-			this._doRemoveRanges();
-		} else if (this._hasPendingSegments()) {
-			this._doAppendSegments();
-		} else if (this._hasPendingEos) {
-			this.endOfStream();
-		}
-		this._emitter.emit(MSEEvents.UPDATE_END);
-	}
-
-	_onSourceBufferError(e) {
-		logger_Log.e(this.TAG, `SourceBuffer Error: ${e}`);
-		// this error might not always be fatal, just ignore it
+// Represents an media sample (audio / video)
+class SampleInfo {
+
+	constructor(dts, pts, duration, originalDts, isSync) {
+		this.dts = dts;
+		this.pts = pts;
+		this.duration = duration;
+		this.originalDts = originalDts;
+		this.isSyncPoint = isSync;
+		this.fileposition = null;
 	}
 
 }
 
-/* harmony default export */ const mse_controller = (MSEController);
+// Media Segment concept is defined in Media Source Extensions spec.
+// Particularly in ISO BMFF format, an Media Segment contains a moof box followed by a mdat box.
+class MediaSegmentInfo {
+
+	constructor() {
+		this.beginDts = 0;
+		this.endDts = 0;
+		this.beginPts = 0;
+		this.endPts = 0;
+		this.originalBeginDts = 0;
+		this.originalEndDts = 0;
+		this.syncPoints = [];     // SampleInfo[n], for video IDR frames only
+		this.firstSample = null;  // SampleInfo
+		this.lastSample = null;   // SampleInfo
+	}
+
+	appendSyncPoint(sampleInfo) {  // also called Random Access Point
+		sampleInfo.isSyncPoint = true;
+		this.syncPoints.push(sampleInfo);
+	}
+
+}
+
+// Ordered list for recording video IDR frames, sorted by originalDts
+class IDRSampleList {
+
+	constructor() {
+		this._list = [];
+	}
+
+	clear() {
+		this._list = [];
+	}
+
+	appendArray(syncPoints) {
+		let list = this._list;
+
+		if (syncPoints.length === 0) {
+			return;
+		}
+
+		if (list.length > 0 && syncPoints[0].originalDts < list[list.length - 1].originalDts) {
+			this.clear();
+		}
+
+		Array.prototype.push.apply(list, syncPoints);
+	}
+
+	getLastSyncPointBeforeDts(dts) {
+		if (this._list.length == 0) {
+			return null;
+		}
+
+		let list = this._list;
+		let idx = 0;
+		let last = list.length - 1;
+		let mid = 0;
+		let lbound = 0;
+		let ubound = last;
+
+		if (dts < list[0].dts) {
+			idx = 0;
+			lbound = ubound + 1;
+		}
+
+		while (lbound <= ubound) {
+			mid = lbound + Math.floor((ubound - lbound) / 2);
+			if (mid === last || (dts >= list[mid].dts && dts < list[mid + 1].dts)) {
+				idx = mid;
+				break;
+			} else if (list[mid].dts < dts) {
+				lbound = mid + 1;
+			} else {
+				ubound = mid - 1;
+			}
+		}
+		return this._list[idx];
+	}
+
+}
+
+// Data structure for recording information of media segments in single track.
+class MediaSegmentInfoList {
+
+	constructor(type) {
+		this._type = type;
+		this._list = [];
+		this._lastAppendLocation = -1;  // cached last insert location
+	}
+
+	get type() {
+		return this._type;
+	}
+
+	get length() {
+		return this._list.length;
+	}
+
+	isEmpty() {
+		return this._list.length === 0;
+	}
+
+	clear() {
+		this._list = [];
+		this._lastAppendLocation = -1;
+	}
+
+	_searchNearestSegmentBefore(originalBeginDts) {
+		let list = this._list;
+		if (list.length === 0) {
+			return -2;
+		}
+		let last = list.length - 1;
+		let mid = 0;
+		let lbound = 0;
+		let ubound = last;
+
+		let idx = 0;
+
+		if (originalBeginDts < list[0].originalBeginDts) {
+			idx = -1;
+			return idx;
+		}
+
+		while (lbound <= ubound) {
+			mid = lbound + Math.floor((ubound - lbound) / 2);
+			if (mid === last || (originalBeginDts > list[mid].lastSample.originalDts &&
+				(originalBeginDts < list[mid + 1].originalBeginDts))) {
+				idx = mid;
+				break;
+			} else if (list[mid].originalBeginDts < originalBeginDts) {
+				lbound = mid + 1;
+			} else {
+				ubound = mid - 1;
+			}
+		}
+		return idx;
+	}
+
+	_searchNearestSegmentAfter(originalBeginDts) {
+		return this._searchNearestSegmentBefore(originalBeginDts) + 1;
+	}
+
+	append(mediaSegmentInfo) {
+		let list = this._list;
+		let msi = mediaSegmentInfo;
+		let lastAppendIdx = this._lastAppendLocation;
+		let insertIdx = 0;
+
+		if (lastAppendIdx !== -1 && lastAppendIdx < list.length &&
+			msi.originalBeginDts >= list[lastAppendIdx].lastSample.originalDts &&
+			((lastAppendIdx === list.length - 1) ||
+				(lastAppendIdx < list.length - 1 &&
+					msi.originalBeginDts < list[lastAppendIdx + 1].originalBeginDts))) {
+			insertIdx = lastAppendIdx + 1;  // use cached location idx
+		} else {
+			if (list.length > 0) {
+				insertIdx = this._searchNearestSegmentBefore(msi.originalBeginDts) + 1;
+			}
+		}
+
+		this._lastAppendLocation = insertIdx;
+		this._list.splice(insertIdx, 0, msi);
+	}
+
+	getLastSegmentBefore(originalBeginDts) {
+		let idx = this._searchNearestSegmentBefore(originalBeginDts);
+		if (idx >= 0) {
+			return this._list[idx];
+		} else {  // -1
+			return null;
+		}
+	}
+
+	getLastSampleBefore(originalBeginDts) {
+		let segment = this.getLastSegmentBefore(originalBeginDts);
+		if (segment != null) {
+			return segment.lastSample;
+		} else {
+			return null;
+		}
+	}
+
+	getLastSyncPointBefore(originalBeginDts) {
+		let segmentIdx = this._searchNearestSegmentBefore(originalBeginDts);
+		let syncPoints = this._list[segmentIdx].syncPoints;
+		while (syncPoints.length === 0 && segmentIdx > 0) {
+			segmentIdx--;
+			syncPoints = this._list[segmentIdx].syncPoints;
+		}
+		if (syncPoints.length > 0) {
+			return syncPoints[syncPoints.length - 1];
+		} else {
+			return null;
+		}
+	}
+}
+
+;// CONCATENATED MODULE: ./utils/exception.js
+/*
+ * Copyright (C) 2016 Bilibili. All Rights Reserved.
+ *
+ * @author zheng qian <xqq@xqq.im>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+class RuntimeException {
+    constructor(message) {
+        this._message = message;
+    }
+
+    get name() {
+        return 'RuntimeException';
+    }
+
+    get message() {
+        return this._message;
+    }
+
+    toString() {
+        return this.name + ': ' + this.message;
+    }
+}
+
+class IllegalStateException extends RuntimeException {
+    constructor(message) {
+        super(message);
+    }
+
+    get name() {
+        return 'IllegalStateException';
+    }
+}
+
+class InvalidArgumentException extends RuntimeException {
+    constructor(message) {
+        super(message);
+    }
+
+    get name() {
+        return 'InvalidArgumentException';
+    }
+}
+
+class NotImplementedException extends RuntimeException {
+    constructor(message) {
+        super(message);
+    }
+
+    get name() {
+        return 'NotImplementedException';
+    }
+}
 
 ;// CONCATENATED MODULE: ./utils/utils.js
 /**
@@ -738,7 +676,7 @@ const defaultConfig = {
 };
 
 
-const utils_TransmuxingEvents = {
+const TransmuxingEvents = {
     IO_ERROR: 'io_error',
     DEMUX_ERROR: 'demux_error',
     INIT_SEGMENT: 'init_segment',
@@ -759,14 +697,14 @@ const DemuxErrors = {
     CODEC_UNSUPPORTED: 'CodecUnsupported'
 };
 
-const utils_MSEEvents = {
+const MSEEvents = {
     ERROR: 'error',
     SOURCE_OPEN: 'source_open',
     UPDATE_END: 'update_end',
     BUFFER_FULL: 'buffer_full'
 };
 
-const utils_PlayerEvents = {
+const PlayerEvents = {
     ERROR: 'error',
     LOADING_COMPLETE: 'loading_complete',
     RECOVERED_EARLY_EOF: 'recovered_early_eof',
@@ -776,7 +714,7 @@ const utils_PlayerEvents = {
     STATISTICS_INFO: 'statistics_info'
 };
 
-const utils_ErrorTypes = {
+const ErrorTypes = {
     NETWORK_ERROR: 'NetworkError',
     MEDIA_ERROR: 'MediaError',
     OTHER_ERROR: 'OtherError'
@@ -791,7 +729,7 @@ const LoaderErrors = {
     UNRECOVERABLE_EARLY_EOF: 'UnrecoverableEarlyEof'
 };
 
-const utils_ErrorDetails = {
+const ErrorDetails = {
     NETWORK_EXCEPTION: LoaderErrors.EXCEPTION,
     NETWORK_STATUS_CODE_INVALID: LoaderErrors.HTTP_STATUS_CODE_INVALID,
     NETWORK_TIMEOUT: LoaderErrors.CONNECTING_TIMEOUT,
@@ -804,89 +742,690 @@ const utils_ErrorDetails = {
     MEDIA_CODEC_UNSUPPORTED: DemuxErrors.CODEC_UNSUPPORTED
 };
 
-;// CONCATENATED MODULE: ./utils/event_emitter.js
-class event_emitter_EventEmitter{
-	ListenerList = [];
+;// CONCATENATED MODULE: ./utils/browser.js
+/*
+ * Copyright (C) 2016 Bilibili. All Rights Reserved.
+ *
+ * @author zheng qian <xqq@xqq.im>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-	constructor() {
-	}
+let browser_Browser = {};
 
-	/**
-	 *
-	 * @param {String} event
-	 * @param {Function} listener
-	 */
-	addEventListener(event, listener){
-		this.ListenerList.push([event, listener]);
-	}
+function detect() {
+	// modified from jquery-browser-plugin
 
-	/**
-	 *
-	 * @param {String} event
-	 * @param {Function} listener
-	 */
-	addListener(event, listener){
-		this.ListenerList.push([event, listener]);
-	}
+	let ua = self.navigator.userAgent.toLowerCase();
 
+	let match = /(edge)\/([\w.]+)/.exec(ua) ||
+		/(opr)[\/]([\w.]+)/.exec(ua) ||
+		/(chrome)[ \/]([\w.]+)/.exec(ua) ||
+		/(iemobile)[\/]([\w.]+)/.exec(ua) ||
+		/(version)(applewebkit)[ \/]([\w.]+).*(safari)[ \/]([\w.]+)/.exec(ua) ||
+		/(webkit)[ \/]([\w.]+).*(version)[ \/]([\w.]+).*(safari)[ \/]([\w.]+)/.exec(ua) ||
+		/(webkit)[ \/]([\w.]+)/.exec(ua) ||
+		/(opera)(?:.*version|)[ \/]([\w.]+)/.exec(ua) ||
+		/(msie) ([\w.]+)/.exec(ua) ||
+		ua.indexOf('trident') >= 0 && /(rv)(?::| )([\w.]+)/.exec(ua) ||
+		ua.indexOf('compatible') < 0 && /(firefox)[ \/]([\w.]+)/.exec(ua) ||
+		[];
 
-	/**
-	 *
-	 * @param {String} event
-	 * @param {Function} listener
-	 */
-	removeListener(event, listener){
-		for(let i = 0; i < this.ListenerList.length;i++){
-			let entry = this.ListenerList[i];
-			if(entry[0] == event && entry[1] == listener){
-				this.ListenerList.splice(i,1);
-				return;
-			}
+	let platform_match = /(ipad)/.exec(ua) ||
+		/(ipod)/.exec(ua) ||
+		/(windows phone)/.exec(ua) ||
+		/(iphone)/.exec(ua) ||
+		/(kindle)/.exec(ua) ||
+		/(android)/.exec(ua) ||
+		/(windows)/.exec(ua) ||
+		/(mac)/.exec(ua) ||
+		/(linux)/.exec(ua) ||
+		/(cros)/.exec(ua) ||
+		[];
+
+	let matched = {
+		browser: match[5] || match[3] || match[1] || '',
+		version: match[2] || match[4] || '0',
+		majorVersion: match[4] || match[2] || '0',
+		platform: platform_match[0] || ''
+	};
+
+	let browser = {};
+	if (matched.browser) {
+		browser[matched.browser] = true;
+
+		let versionArray = matched.majorVersion.split('.');
+		browser.version = {
+			major: parseInt(matched.majorVersion, 10),
+			string: matched.version
+		};
+		if (versionArray.length > 1) {
+			browser.version.minor = parseInt(versionArray[1], 10);
+		}
+		if (versionArray.length > 2) {
+			browser.version.build = parseInt(versionArray[2], 10);
 		}
 	}
 
-	/**
-	 * Remove all listener
-	 */
-	removeAllListeners(){
-		this.ListenerList = [];
+	if (matched.platform) {
+		browser[matched.platform] = true;
 	}
 
-	/**
-	 *
-	 * @param {String} event
-	 * @param data
-	 */
-	emit(event, data){
-		console.log("emit EVENT: " + event, data);
-		for(let i = 0; i < this.ListenerList.length;i++){
-			let entry = this.ListenerList[i];
-			if(entry[0] == event){
-				entry[1].call(this, data);
-			}
+	if (browser.chrome || browser.opr || browser.safari) {
+		browser.webkit = true;
+	}
+
+	// MSIE. IE11 has 'rv' identifer
+	if (browser.rv || browser.iemobile) {
+		if (browser.rv) {
+			delete browser.rv;
+		}
+		let msie = 'msie';
+		matched.browser = msie;
+		browser[msie] = true;
+	}
+
+	// Microsoft Edge
+	if (browser.edge) {
+		delete browser.edge;
+		let msedge = 'msedge';
+		matched.browser = msedge;
+		browser[msedge] = true;
+	}
+
+	// Opera 15+
+	if (browser.opr) {
+		let opera = 'opera';
+		matched.browser = opera;
+		browser[opera] = true;
+	}
+
+	// Stock android browsers are marked as Safari
+	if (browser.safari && browser.android) {
+		let android = 'android';
+		matched.browser = android;
+		browser[android] = true;
+	}
+
+	browser.name = matched.browser;
+	browser.platform = matched.platform;
+
+	for (let key in browser_Browser) {
+		if (browser_Browser.hasOwnProperty(key)) {
+			delete browser_Browser[key];
 		}
 	}
+	Object.assign(browser_Browser, browser);
 }
 
-/* harmony default export */ const event_emitter = (event_emitter_EventEmitter);
+detect();
 
+/* harmony default export */ const browser = (browser_Browser);
+
+;// CONCATENATED MODULE: ./utils/mse-controller.js
+/*
+ * Copyright (C) 2016 Bilibili. All Rights Reserved.
+ *
+ * @author zheng qian <xqq@xqq.im>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
+
+
+
+
+
+
+class MSEController {
+	TAG = 'MSEController';
+
+	constructor(config) {
+		this._config = config;
+		this._emitter = new event_emitter();
+
+		if (this._config.isLive && this._config.autoCleanupSourceBuffer == undefined) {
+			// For live stream, do auto cleanup by default
+			this._config.autoCleanupSourceBuffer = true;
+		}
+
+		this.e = {
+			onSourceOpen: this._onSourceOpen.bind(this),
+			onSourceEnded: this._onSourceEnded.bind(this),
+			onSourceClose: this._onSourceClose.bind(this),
+			onSourceBufferError: this._onSourceBufferError.bind(this),
+			onSourceBufferUpdateEnd: this._onSourceBufferUpdateEnd.bind(this)
+		};
+
+		this._mediaSource = null;
+		this._mediaSourceObjectURL = null;
+		this._mediaElement = null;
+
+		this._isBufferFull = false;
+		this._hasPendingEos = false;
+
+		this._requireSetMediaDuration = false;
+		this._pendingMediaDuration = 0;
+
+		this._pendingSourceBufferInit = [];
+		this._mimeTypes = {
+			video: null,
+			audio: null
+		};
+		this._sourceBuffers = {
+			video: null,
+			audio: null
+		};
+		this._lastInitSegments = {
+			video: null,
+			audio: null
+		};
+		this._pendingSegments = {
+			video: [],
+			audio: []
+		};
+		this._pendingRemoveRanges = {
+			video: [],
+			audio: []
+		};
+		this._idrList = new IDRSampleList();
+	}
+
+	destroy() {
+		if (this._mediaElement || this._mediaSource) {
+			this.detachMediaElement();
+		}
+		this.e = null;
+		this._emitter.removeAllListeners();
+		this._emitter = null;
+	}
+
+	on(event, listener) {
+		this._emitter.addListener(event, listener);
+	}
+
+	off(event, listener) {
+		this._emitter.removeListener(event, listener);
+	}
+
+	attachMediaElement(mediaElement) {
+		if (this._mediaSource) {
+			throw new IllegalStateException('MediaSource has been attached to an HTMLMediaElement!');
+		}
+		let ms = this._mediaSource = new window.MediaSource();
+		ms.addEventListener('sourceopen', this.e.onSourceOpen);
+		ms.addEventListener('sourceended', this.e.onSourceEnded);
+		ms.addEventListener('sourceclose', this.e.onSourceClose);
+
+		this._mediaElement = mediaElement;
+		this._mediaSourceObjectURL = window.URL.createObjectURL(this._mediaSource);
+		mediaElement.src = this._mediaSourceObjectURL;
+	}
+
+	detachMediaElement() {
+		if (this._mediaSource) {
+			let ms = this._mediaSource;
+			for (let type in this._sourceBuffers) {
+				// pending segments should be discard
+				let ps = this._pendingSegments[type];
+				ps.splice(0, ps.length);
+				this._pendingSegments[type] = null;
+				this._pendingRemoveRanges[type] = null;
+				this._lastInitSegments[type] = null;
+
+				// remove all sourcebuffers
+				let sb = this._sourceBuffers[type];
+				if (sb) {
+					if (ms.readyState !== 'closed') {
+						// ms edge can throw an error: Unexpected call to method or property access
+						try {
+							ms.removeSourceBuffer(sb);
+						} catch (error) {
+							logger.e(this.TAG, error.message);
+						}
+						sb.removeEventListener('error', this.e.onSourceBufferError);
+						sb.removeEventListener('updateend', this.e.onSourceBufferUpdateEnd);
+					}
+					this._mimeTypes[type] = null;
+					this._sourceBuffers[type] = null;
+				}
+			}
+			if (ms.readyState === 'open') {
+				try {
+					ms.endOfStream();
+				} catch (error) {
+					logger.e(this.TAG, error.message);
+				}
+			}
+			ms.removeEventListener('sourceopen', this.e.onSourceOpen);
+			ms.removeEventListener('sourceended', this.e.onSourceEnded);
+			ms.removeEventListener('sourceclose', this.e.onSourceClose);
+			this._pendingSourceBufferInit = [];
+			this._isBufferFull = false;
+			this._idrList.clear();
+			this._mediaSource = null;
+		}
+
+		if (this._mediaElement) {
+			this._mediaElement.src = '';
+			this._mediaElement.removeAttribute('src');
+			this._mediaElement = null;
+		}
+		if (this._mediaSourceObjectURL) {
+			window.URL.revokeObjectURL(this._mediaSourceObjectURL);
+			this._mediaSourceObjectURL = null;
+		}
+	}
+
+	appendInitSegment(initSegment, deferred) {
+		if (!this._mediaSource || this._mediaSource.readyState !== 'open') {
+			// sourcebuffer creation requires mediaSource.readyState === 'open'
+			// so we defer the sourcebuffer creation, until sourceopen event triggered
+			this._pendingSourceBufferInit.push(initSegment);
+			// make sure that this InitSegment is in the front of pending segments queue
+			this._pendingSegments[initSegment.type].push(initSegment);
+			return;
+		}
+
+		let is = initSegment;
+		let mimeType = `${is.container}`;
+		if (is.codec && is.codec.length > 0) {
+			mimeType += `;codecs=${is.codec}`;
+		}
+
+		let firstInitSegment = false;
+
+		logger.v(this.TAG, 'Received Initialization Segment, mimeType: ' + mimeType);
+		this._lastInitSegments[is.type] = is;
+
+		if (mimeType !== this._mimeTypes[is.type]) {
+			if (!this._mimeTypes[is.type]) {  // empty, first chance create sourcebuffer
+				firstInitSegment = true;
+				try {
+					let sb = this._sourceBuffers[is.type] = this._mediaSource.addSourceBuffer(mimeType);
+					sb.addEventListener('error', this.e.onSourceBufferError);
+					sb.addEventListener('updateend', this.e.onSourceBufferUpdateEnd);
+				} catch (error) {
+					logger.e(this.TAG, error.message);
+					this._emitter.emit(MSEEvents.ERROR, {code: error.code, msg: error.message});
+					return;
+				}
+			} else {
+				logger.v(this.TAG, `Notice: ${is.type} mimeType changed, origin: ${this._mimeTypes[is.type]}, target: ${mimeType}`);
+			}
+			this._mimeTypes[is.type] = mimeType;
+		}
+
+		if (!deferred) {
+			// deferred means this InitSegment has been pushed to pendingSegments queue
+			this._pendingSegments[is.type].push(is);
+		}
+		if (!firstInitSegment) {  // append immediately only if init segment in subsequence
+			if (this._sourceBuffers[is.type] && !this._sourceBuffers[is.type].updating) {
+				this._doAppendSegments();
+			}
+		}
+		if (browser.safari && is.container === 'audio/mpeg' && is.mediaDuration > 0) {
+			// 'audio/mpeg' track under Safari may cause MediaElement's duration to be NaN
+			// Manually correct MediaSource.duration to make progress bar seekable, and report right duration
+			this._requireSetMediaDuration = true;
+			this._pendingMediaDuration = is.mediaDuration / 1000;  // in seconds
+			this._updateMediaSourceDuration();
+		}
+	}
+
+	appendMediaSegment(mediaSegment) {
+		let ms = mediaSegment;
+		this._pendingSegments[ms.type].push(ms);
+
+		if (this._config.autoCleanupSourceBuffer && this._needCleanupSourceBuffer()) {
+			this._doCleanupSourceBuffer();
+		}
+
+		let sb = this._sourceBuffers[ms.type];
+		if (sb && !sb.updating && !this._hasPendingRemoveRanges()) {
+			this._doAppendSegments();
+		}
+	}
+
+	seek(seconds) {
+		// remove all appended buffers
+		for (let type in this._sourceBuffers) {
+			if (!this._sourceBuffers[type]) {
+				continue;
+			}
+
+			// abort current buffer append algorithm
+			let sb = this._sourceBuffers[type];
+			if (this._mediaSource.readyState === 'open') {
+				try {
+					// If range removal algorithm is running, InvalidStateError will be throwed
+					// Ignore it.
+					sb.abort();
+				} catch (error) {
+					logger.e(this.TAG, error.message);
+				}
+			}
+
+			// IDRList should be clear
+			this._idrList.clear();
+
+			// pending segments should be discard
+			let ps = this._pendingSegments[type];
+			ps.splice(0, ps.length);
+
+			if (this._mediaSource.readyState === 'closed') {
+				// Parent MediaSource object has been detached from HTMLMediaElement
+				continue;
+			}
+
+			// record ranges to be remove from SourceBuffer
+			for (let i = 0; i < sb.buffered.length; i++) {
+				let start = sb.buffered.start(i);
+				let end = sb.buffered.end(i);
+				this._pendingRemoveRanges[type].push({start, end});
+			}
+
+			// if sb is not updating, let's remove ranges now!
+			if (!sb.updating) {
+				this._doRemoveRanges();
+			}
+
+			// Safari 10 may get InvalidStateError in the later appendBuffer() after SourceBuffer.remove() call
+			// Internal parser's state may be invalid at this time. Re-append last InitSegment to workaround.
+			// Related issue: https://bugs.webkit.org/show_bug.cgi?id=159230
+			if (browser.safari) {
+				let lastInitSegment = this._lastInitSegments[type];
+				if (lastInitSegment) {
+					this._pendingSegments[type].push(lastInitSegment);
+					if (!sb.updating) {
+						this._doAppendSegments();
+					}
+				}
+			}
+		}
+	}
+
+	endOfStream() {
+		let ms = this._mediaSource;
+		let sb = this._sourceBuffers;
+		if (!ms || ms.readyState !== 'open') {
+			if (ms && ms.readyState === 'closed' && this._hasPendingSegments()) {
+				// If MediaSource hasn't turned into open state, and there're pending segments
+				// Mark pending endOfStream, defer call until all pending segments appended complete
+				this._hasPendingEos = true;
+			}
+			return;
+		}
+		if (sb.video && sb.video.updating || sb.audio && sb.audio.updating) {
+			// If any sourcebuffer is updating, defer endOfStream operation
+			// See _onSourceBufferUpdateEnd()
+			this._hasPendingEos = true;
+		} else {
+			this._hasPendingEos = false;
+			// Notify media data loading complete
+			// This is helpful for correcting total duration to match last media segment
+			// Otherwise MediaElement's ended event may not be triggered
+			ms.endOfStream();
+		}
+	}
+
+	getNearestKeyframe(dts) {
+		return this._idrList.getLastSyncPointBeforeDts(dts);
+	}
+
+	_needCleanupSourceBuffer() {
+		if (!this._config.autoCleanupSourceBuffer) {
+			return false;
+		}
+
+		let currentTime = this._mediaElement.currentTime;
+
+		for (let type in this._sourceBuffers) {
+			let sb = this._sourceBuffers[type];
+			if (sb) {
+				let buffered = sb.buffered;
+				if (buffered.length >= 1) {
+					if (currentTime - buffered.start(0) >= this._config.autoCleanupMaxBackwardDuration) {
+						return true;
+					}
+				}
+			}
+		}
+
+		return false;
+	}
+
+	_doCleanupSourceBuffer() {
+		let currentTime = this._mediaElement.currentTime;
+
+		for (let type in this._sourceBuffers) {
+			let sb = this._sourceBuffers[type];
+			if (sb) {
+				let buffered = sb.buffered;
+				let doRemove = false;
+
+				for (let i = 0; i < buffered.length; i++) {
+					let start = buffered.start(i);
+					let end = buffered.end(i);
+
+					if (start <= currentTime && currentTime < end + 3) {  // padding 3 seconds
+						if (currentTime - start >= this._config.autoCleanupMaxBackwardDuration) {
+							doRemove = true;
+							let removeEnd = currentTime - this._config.autoCleanupMinBackwardDuration;
+							this._pendingRemoveRanges[type].push({start: start, end: removeEnd});
+						}
+					} else if (end < currentTime) {
+						doRemove = true;
+						this._pendingRemoveRanges[type].push({start: start, end: end});
+					}
+				}
+
+				if (doRemove && !sb.updating) {
+					this._doRemoveRanges();
+				}
+			}
+		}
+	}
+
+	_updateMediaSourceDuration() {
+		let sb = this._sourceBuffers;
+		if (this._mediaElement.readyState === 0 || this._mediaSource.readyState !== 'open') {
+			return;
+		}
+		if ((sb.video && sb.video.updating) || (sb.audio && sb.audio.updating)) {
+			return;
+		}
+
+		let current = this._mediaSource.duration;
+		let target = this._pendingMediaDuration;
+
+		if (target > 0 && (isNaN(current) || target > current)) {
+			logger.v(this.TAG, `Update MediaSource duration from ${current} to ${target}`);
+			this._mediaSource.duration = target;
+		}
+
+		this._requireSetMediaDuration = false;
+		this._pendingMediaDuration = 0;
+	}
+
+	_doRemoveRanges() {
+		for (let type in this._pendingRemoveRanges) {
+			if (!this._sourceBuffers[type] || this._sourceBuffers[type].updating) {
+				continue;
+			}
+			let sb = this._sourceBuffers[type];
+			let ranges = this._pendingRemoveRanges[type];
+			while (ranges.length && !sb.updating) {
+				let range = ranges.shift();
+				sb.remove(range.start, range.end);
+			}
+		}
+	}
+
+	_doAppendSegments() {
+		let pendingSegments = this._pendingSegments;
+
+		for (let type in pendingSegments) {
+			if (!this._sourceBuffers[type] || this._sourceBuffers[type].updating) {
+				continue;
+			}
+
+			if (pendingSegments[type].length > 0) {
+				let segment = pendingSegments[type].shift();
+
+				if (segment.timestampOffset) {
+					// For MPEG audio stream in MSE, if unbuffered-seeking occurred
+					// We need explicitly set timestampOffset to the desired point in timeline for mpeg SourceBuffer.
+					let currentOffset = this._sourceBuffers[type].timestampOffset;
+					let targetOffset = segment.timestampOffset / 1000;  // in seconds
+
+					let delta = Math.abs(currentOffset - targetOffset);
+					if (delta > 0.1) {  // If time delta > 100ms
+						logger.v(this.TAG, `Update MPEG audio timestampOffset from ${currentOffset} to ${targetOffset}`);
+						this._sourceBuffers[type].timestampOffset = targetOffset;
+					}
+					delete segment.timestampOffset;
+				}
+
+				if (!segment.data || segment.data.byteLength === 0) {
+					// Ignore empty buffer
+					continue;
+				}
+
+				try {
+					this._sourceBuffers[type].appendBuffer(segment.data);
+					this._isBufferFull = false;
+					if (type === 'video' && segment.hasOwnProperty('info')) {
+						this._idrList.appendArray(segment.info.syncPoints);
+					}
+				} catch (error) {
+					this._pendingSegments[type].unshift(segment);
+					if (error.code === 22) {  // QuotaExceededError
+						/* Notice that FireFox may not throw QuotaExceededError if SourceBuffer is full
+						 * Currently we can only do lazy-load to avoid SourceBuffer become scattered.
+						 * SourceBuffer eviction policy may be changed in future version of FireFox.
+						 *
+						 * Related issues:
+						 * https://bugzilla.mozilla.org/show_bug.cgi?id=1279885
+						 * https://bugzilla.mozilla.org/show_bug.cgi?id=1280023
+						 */
+
+						// report buffer full, abort network IO
+						if (!this._isBufferFull) {
+							this._emitter.emit(MSEEvents.BUFFER_FULL);
+						}
+						this._isBufferFull = true;
+					} else {
+						logger.e(this.TAG, error.message);
+						this._emitter.emit(MSEEvents.ERROR, {code: error.code, msg: error.message});
+					}
+				}
+			}
+		}
+	}
+
+	_onSourceOpen() {
+		logger.v(this.TAG, 'MediaSource onSourceOpen');
+		this._mediaSource.removeEventListener('sourceopen', this.e.onSourceOpen);
+		// deferred sourcebuffer creation / initialization
+		if (this._pendingSourceBufferInit.length > 0) {
+			let pendings = this._pendingSourceBufferInit;
+			while (pendings.length) {
+				let segment = pendings.shift();
+				this.appendInitSegment(segment, true);
+			}
+		}
+		// there may be some pending media segments, append them
+		if (this._hasPendingSegments()) {
+			this._doAppendSegments();
+		}
+		this._emitter.emit(MSEEvents.SOURCE_OPEN);
+	}
+
+	_onSourceEnded() {
+		// fired on endOfStream
+		logger.v(this.TAG, 'MediaSource onSourceEnded');
+	}
+
+	_onSourceClose() {
+		// fired on detaching from media element
+		logger.v(this.TAG, 'MediaSource onSourceClose');
+		if (this._mediaSource && this.e != null) {
+			this._mediaSource.removeEventListener('sourceopen', this.e.onSourceOpen);
+			this._mediaSource.removeEventListener('sourceended', this.e.onSourceEnded);
+			this._mediaSource.removeEventListener('sourceclose', this.e.onSourceClose);
+		}
+	}
+
+	_hasPendingSegments() {
+		let ps = this._pendingSegments;
+		return ps.video.length > 0 || ps.audio.length > 0;
+	}
+
+	_hasPendingRemoveRanges() {
+		let prr = this._pendingRemoveRanges;
+		return prr.video.length > 0 || prr.audio.length > 0;
+	}
+
+	_onSourceBufferUpdateEnd() {
+		if (this._requireSetMediaDuration) {
+			this._updateMediaSourceDuration();
+		} else if (this._hasPendingRemoveRanges()) {
+			this._doRemoveRanges();
+		} else if (this._hasPendingSegments()) {
+			this._doAppendSegments();
+		} else if (this._hasPendingEos) {
+			this.endOfStream();
+		}
+		this._emitter.emit(MSEEvents.UPDATE_END);
+	}
+
+	_onSourceBufferError(e) {
+		logger.e(this.TAG, `SourceBuffer Error: ${e}`);
+		// this error might not always be fatal, just ignore it
+	}
+
+}
+
+/* harmony default export */ const mse_controller = (MSEController);
 
 ;// CONCATENATED MODULE: ./wss/connection.controller.js
 
 
+
 class WebRTMP_Controller {
+	TAG = "WebRTMP_Controller";
 	host = document.location.host;
+	WSSReconnect = false;
+	isConnected = false;
 
 	WebRTMPWorker = new Worker(new URL(/* worker import */ __webpack_require__.p + __webpack_require__.u(306), __webpack_require__.b), {
 		name: "webrtmp.worker",
 		type: undefined
 		/* webpackEntryOptions: { filename: "[name].js" } */
 	});
-
-
-	DEBUG = false;
-
-	isConnected = false;
 
 	constructor() {
 		this.e = new event_emitter();
@@ -908,7 +1447,7 @@ class WebRTMP_Controller {
 	 * MQTT Verbindung trennen
 	 */
 	disconnect() {
-		this.MQTT_Reconnect = true;
+		this.WSSReconnect = true;
 		this.WebRTMPWorker.postMessage({cmd: "disconnect"});
 	}
 
@@ -947,15 +1486,15 @@ class WebRTMP_Controller {
 		switch(data[0]){
 			case "ConnectionLost":
 				this.e.emit("ConnectionLost");
-				console.log("[ WorkerListener ] Event ConnectionLost");
+				logger.d(this.TAG, "Event ConnectionLost");
 
 				this.isConnected = false;
 
-				if(this.MQTT_Reconnect) {
-					console.log("[ WorkerListener ] Reconnect timed");
+				if(this.WSSReconnect) {
+					logger.w(this.TAG,"[ WorkerListener ] Reconnect timed");
 
 					window.setTimeout(()=>{
-						console.log("[ WorkerListener ] timed Reconnect");
+						logger.w(this.TAG, "timed Reconnect");
 						this.createConnection();
 					}, 1000)
 				}
@@ -963,13 +1502,13 @@ class WebRTMP_Controller {
 				break;
 
 			case "Connected":
-				console.log("[ WorkerListener ] Event Connected");
+				logger.d(this.TAG, "Event Connected");
 				this.e.emit("Connected");
 				this.isConnected = true;
 				break;
 
 			case "Started":
-				console.log("[ WorkerListener ] Event Started");
+				logger.d(this.TAG, "Event Started");
 
 				this.createConnection();
 				/*
@@ -1555,237 +2094,6 @@ MP4.init();
 
 /* harmony default export */ const mp4 = (MP4);
 
-;// CONCATENATED MODULE: ./formats/media-segment-info.js
-/*
- * Copyright (C) 2016 Bilibili. All Rights Reserved.
- *
- * @author zheng qian <xqq@xqq.im>
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-// Represents an media sample (audio / video)
-class SampleInfo {
-
-	constructor(dts, pts, duration, originalDts, isSync) {
-		this.dts = dts;
-		this.pts = pts;
-		this.duration = duration;
-		this.originalDts = originalDts;
-		this.isSyncPoint = isSync;
-		this.fileposition = null;
-	}
-
-}
-
-// Media Segment concept is defined in Media Source Extensions spec.
-// Particularly in ISO BMFF format, an Media Segment contains a moof box followed by a mdat box.
-class MediaSegmentInfo {
-
-	constructor() {
-		this.beginDts = 0;
-		this.endDts = 0;
-		this.beginPts = 0;
-		this.endPts = 0;
-		this.originalBeginDts = 0;
-		this.originalEndDts = 0;
-		this.syncPoints = [];     // SampleInfo[n], for video IDR frames only
-		this.firstSample = null;  // SampleInfo
-		this.lastSample = null;   // SampleInfo
-	}
-
-	appendSyncPoint(sampleInfo) {  // also called Random Access Point
-		sampleInfo.isSyncPoint = true;
-		this.syncPoints.push(sampleInfo);
-	}
-
-}
-
-// Ordered list for recording video IDR frames, sorted by originalDts
-class media_segment_info_IDRSampleList {
-
-	constructor() {
-		this._list = [];
-	}
-
-	clear() {
-		this._list = [];
-	}
-
-	appendArray(syncPoints) {
-		let list = this._list;
-
-		if (syncPoints.length === 0) {
-			return;
-		}
-
-		if (list.length > 0 && syncPoints[0].originalDts < list[list.length - 1].originalDts) {
-			this.clear();
-		}
-
-		Array.prototype.push.apply(list, syncPoints);
-	}
-
-	getLastSyncPointBeforeDts(dts) {
-		if (this._list.length == 0) {
-			return null;
-		}
-
-		let list = this._list;
-		let idx = 0;
-		let last = list.length - 1;
-		let mid = 0;
-		let lbound = 0;
-		let ubound = last;
-
-		if (dts < list[0].dts) {
-			idx = 0;
-			lbound = ubound + 1;
-		}
-
-		while (lbound <= ubound) {
-			mid = lbound + Math.floor((ubound - lbound) / 2);
-			if (mid === last || (dts >= list[mid].dts && dts < list[mid + 1].dts)) {
-				idx = mid;
-				break;
-			} else if (list[mid].dts < dts) {
-				lbound = mid + 1;
-			} else {
-				ubound = mid - 1;
-			}
-		}
-		return this._list[idx];
-	}
-
-}
-
-// Data structure for recording information of media segments in single track.
-class MediaSegmentInfoList {
-
-	constructor(type) {
-		this._type = type;
-		this._list = [];
-		this._lastAppendLocation = -1;  // cached last insert location
-	}
-
-	get type() {
-		return this._type;
-	}
-
-	get length() {
-		return this._list.length;
-	}
-
-	isEmpty() {
-		return this._list.length === 0;
-	}
-
-	clear() {
-		this._list = [];
-		this._lastAppendLocation = -1;
-	}
-
-	_searchNearestSegmentBefore(originalBeginDts) {
-		let list = this._list;
-		if (list.length === 0) {
-			return -2;
-		}
-		let last = list.length - 1;
-		let mid = 0;
-		let lbound = 0;
-		let ubound = last;
-
-		let idx = 0;
-
-		if (originalBeginDts < list[0].originalBeginDts) {
-			idx = -1;
-			return idx;
-		}
-
-		while (lbound <= ubound) {
-			mid = lbound + Math.floor((ubound - lbound) / 2);
-			if (mid === last || (originalBeginDts > list[mid].lastSample.originalDts &&
-				(originalBeginDts < list[mid + 1].originalBeginDts))) {
-				idx = mid;
-				break;
-			} else if (list[mid].originalBeginDts < originalBeginDts) {
-				lbound = mid + 1;
-			} else {
-				ubound = mid - 1;
-			}
-		}
-		return idx;
-	}
-
-	_searchNearestSegmentAfter(originalBeginDts) {
-		return this._searchNearestSegmentBefore(originalBeginDts) + 1;
-	}
-
-	append(mediaSegmentInfo) {
-		let list = this._list;
-		let msi = mediaSegmentInfo;
-		let lastAppendIdx = this._lastAppendLocation;
-		let insertIdx = 0;
-
-		if (lastAppendIdx !== -1 && lastAppendIdx < list.length &&
-			msi.originalBeginDts >= list[lastAppendIdx].lastSample.originalDts &&
-			((lastAppendIdx === list.length - 1) ||
-				(lastAppendIdx < list.length - 1 &&
-					msi.originalBeginDts < list[lastAppendIdx + 1].originalBeginDts))) {
-			insertIdx = lastAppendIdx + 1;  // use cached location idx
-		} else {
-			if (list.length > 0) {
-				insertIdx = this._searchNearestSegmentBefore(msi.originalBeginDts) + 1;
-			}
-		}
-
-		this._lastAppendLocation = insertIdx;
-		this._list.splice(insertIdx, 0, msi);
-	}
-
-	getLastSegmentBefore(originalBeginDts) {
-		let idx = this._searchNearestSegmentBefore(originalBeginDts);
-		if (idx >= 0) {
-			return this._list[idx];
-		} else {  // -1
-			return null;
-		}
-	}
-
-	getLastSampleBefore(originalBeginDts) {
-		let segment = this.getLastSegmentBefore(originalBeginDts);
-		if (segment != null) {
-			return segment.lastSample;
-		} else {
-			return null;
-		}
-	}
-
-	getLastSyncPointBefore(originalBeginDts) {
-		let segmentIdx = this._searchNearestSegmentBefore(originalBeginDts);
-		let syncPoints = this._list[segmentIdx].syncPoints;
-		while (syncPoints.length === 0 && segmentIdx > 0) {
-			segmentIdx--;
-			syncPoints = this._list[segmentIdx].syncPoints;
-		}
-		if (syncPoints.length > 0) {
-			return syncPoints[syncPoints.length - 1];
-		} else {
-			return null;
-		}
-	}
-}
-
 ;// CONCATENATED MODULE: ./formats/aac-silent.js
 /*
  * Copyright (C) 2016 Bilibili. All Rights Reserved.
@@ -1842,203 +2150,6 @@ class AAC {
 }
 
 /* harmony default export */ const aac_silent = (AAC);
-
-;// CONCATENATED MODULE: ./utils/exception.js
-/*
- * Copyright (C) 2016 Bilibili. All Rights Reserved.
- *
- * @author zheng qian <xqq@xqq.im>
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-class RuntimeException {
-    constructor(message) {
-        this._message = message;
-    }
-
-    get name() {
-        return 'RuntimeException';
-    }
-
-    get message() {
-        return this._message;
-    }
-
-    toString() {
-        return this.name + ': ' + this.message;
-    }
-}
-
-class exception_IllegalStateException extends RuntimeException {
-    constructor(message) {
-        super(message);
-    }
-
-    get name() {
-        return 'IllegalStateException';
-    }
-}
-
-class InvalidArgumentException extends RuntimeException {
-    constructor(message) {
-        super(message);
-    }
-
-    get name() {
-        return 'InvalidArgumentException';
-    }
-}
-
-class NotImplementedException extends RuntimeException {
-    constructor(message) {
-        super(message);
-    }
-
-    get name() {
-        return 'NotImplementedException';
-    }
-}
-
-;// CONCATENATED MODULE: ./utils/browser.js
-/*
- * Copyright (C) 2016 Bilibili. All Rights Reserved.
- *
- * @author zheng qian <xqq@xqq.im>
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-let browser_Browser = {};
-
-function detect() {
-	// modified from jquery-browser-plugin
-
-	let ua = self.navigator.userAgent.toLowerCase();
-
-	let match = /(edge)\/([\w.]+)/.exec(ua) ||
-		/(opr)[\/]([\w.]+)/.exec(ua) ||
-		/(chrome)[ \/]([\w.]+)/.exec(ua) ||
-		/(iemobile)[\/]([\w.]+)/.exec(ua) ||
-		/(version)(applewebkit)[ \/]([\w.]+).*(safari)[ \/]([\w.]+)/.exec(ua) ||
-		/(webkit)[ \/]([\w.]+).*(version)[ \/]([\w.]+).*(safari)[ \/]([\w.]+)/.exec(ua) ||
-		/(webkit)[ \/]([\w.]+)/.exec(ua) ||
-		/(opera)(?:.*version|)[ \/]([\w.]+)/.exec(ua) ||
-		/(msie) ([\w.]+)/.exec(ua) ||
-		ua.indexOf('trident') >= 0 && /(rv)(?::| )([\w.]+)/.exec(ua) ||
-		ua.indexOf('compatible') < 0 && /(firefox)[ \/]([\w.]+)/.exec(ua) ||
-		[];
-
-	let platform_match = /(ipad)/.exec(ua) ||
-		/(ipod)/.exec(ua) ||
-		/(windows phone)/.exec(ua) ||
-		/(iphone)/.exec(ua) ||
-		/(kindle)/.exec(ua) ||
-		/(android)/.exec(ua) ||
-		/(windows)/.exec(ua) ||
-		/(mac)/.exec(ua) ||
-		/(linux)/.exec(ua) ||
-		/(cros)/.exec(ua) ||
-		[];
-
-	let matched = {
-		browser: match[5] || match[3] || match[1] || '',
-		version: match[2] || match[4] || '0',
-		majorVersion: match[4] || match[2] || '0',
-		platform: platform_match[0] || ''
-	};
-
-	let browser = {};
-	if (matched.browser) {
-		browser[matched.browser] = true;
-
-		let versionArray = matched.majorVersion.split('.');
-		browser.version = {
-			major: parseInt(matched.majorVersion, 10),
-			string: matched.version
-		};
-		if (versionArray.length > 1) {
-			browser.version.minor = parseInt(versionArray[1], 10);
-		}
-		if (versionArray.length > 2) {
-			browser.version.build = parseInt(versionArray[2], 10);
-		}
-	}
-
-	if (matched.platform) {
-		browser[matched.platform] = true;
-	}
-
-	if (browser.chrome || browser.opr || browser.safari) {
-		browser.webkit = true;
-	}
-
-	// MSIE. IE11 has 'rv' identifer
-	if (browser.rv || browser.iemobile) {
-		if (browser.rv) {
-			delete browser.rv;
-		}
-		let msie = 'msie';
-		matched.browser = msie;
-		browser[msie] = true;
-	}
-
-	// Microsoft Edge
-	if (browser.edge) {
-		delete browser.edge;
-		let msedge = 'msedge';
-		matched.browser = msedge;
-		browser[msedge] = true;
-	}
-
-	// Opera 15+
-	if (browser.opr) {
-		let opera = 'opera';
-		matched.browser = opera;
-		browser[opera] = true;
-	}
-
-	// Stock android browsers are marked as Safari
-	if (browser.safari && browser.android) {
-		let android = 'android';
-		matched.browser = android;
-		browser[android] = true;
-	}
-
-	browser.name = matched.browser;
-	browser.platform = matched.platform;
-
-	for (let key in browser_Browser) {
-		if (browser_Browser.hasOwnProperty(key)) {
-			delete browser_Browser[key];
-		}
-	}
-	Object.assign(browser_Browser, browser);
-}
-
-detect();
-
-/* harmony default export */ const browser = (browser_Browser);
 
 ;// CONCATENATED MODULE: ./formats/mp4-remuxer.js
 /*
@@ -2156,7 +2267,7 @@ class MP4Remuxer {
 
 	remux(audioTrack, videoTrack) {
 		if (!this._onMediaSegment) {
-			throw new exception_IllegalStateException('MP4Remuxer: onMediaSegment callback must be specificed!');
+			throw new IllegalStateException('MP4Remuxer: onMediaSegment callback must be specificed!');
 		}
 		if (!this._dtsBaseInited) {
 			this._calculateDtsBase(audioTrack, videoTrack);
@@ -2191,7 +2302,7 @@ class MP4Remuxer {
 
 		// dispatch metabox (Initialization Segment)
 		if (!this._onInitSegment) {
-			throw new exception_IllegalStateException('MP4Remuxer: onInitSegment callback must be specified!');
+			throw new IllegalStateException('MP4Remuxer: onInitSegment callback must be specified!');
 		}
 		this._onInitSegment(type, {
 			type: type,
@@ -3151,11 +3262,11 @@ class Transmuxer {
     }
 
     _onMetaDataArrived(metadata) {
-        this._emitter.emit(utils_TransmuxingEvents.METADATA_ARRIVED, metadata);
+        this._emitter.emit(TransmuxingEvents.METADATA_ARRIVED, metadata);
     }
 
     _onScriptDataArrived(data) {
-        this._emitter.emit(utils_TransmuxingEvents.SCRIPTDATA_ARRIVED, data);
+        this._emitter.emit(TransmuxingEvents.SCRIPTDATA_ARRIVED, data);
     }
 
     _onIOSeeked() {
@@ -3172,7 +3283,7 @@ class Transmuxer {
             this._loadSegment(nextSegmentIndex);
         } else {
             this._remuxer.flushStashedSamples();
-            this._emitter.emit(utils_TransmuxingEvents.LOADING_COMPLETE);
+            this._emitter.emit(TransmuxingEvents.LOADING_COMPLETE);
             this._disableStatisticsReporter();
         }
     }
@@ -3183,22 +3294,22 @@ class Transmuxer {
     }
 
     _onIORecoveredEarlyEof() {
-        this._emitter.emit(utils_TransmuxingEvents.RECOVERED_EARLY_EOF);
+        this._emitter.emit(TransmuxingEvents.RECOVERED_EARLY_EOF);
     }
 
     _onIOException(type, info) {
         Log.e(this.TAG, `IOException: type = ${type}, code = ${info.code}, msg = ${info.msg}`);
-        this._emitter.emit(utils_TransmuxingEvents.IO_ERROR, type, info);
+        this._emitter.emit(TransmuxingEvents.IO_ERROR, type, info);
         this._disableStatisticsReporter();
     }
 
     _onDemuxException(type, info) {
         Log.e(this.TAG, `DemuxException: type = ${type}, info = ${info}`);
-        this._emitter.emit(utils_TransmuxingEvents.DEMUX_ERROR, type, info);
+        this._emitter.emit(TransmuxingEvents.DEMUX_ERROR, type, info);
     }
 
     _onRemuxerInitSegmentArrival(type, initSegment) {
-        this._emitter.emit(utils_TransmuxingEvents.INIT_SEGMENT, type, initSegment);
+        this._emitter.emit(TransmuxingEvents.INIT_SEGMENT, type, initSegment);
     }
 
     _onRemuxerMediaSegmentArrival(type, mediaSegment) {
@@ -3206,7 +3317,7 @@ class Transmuxer {
             // Media segments after new-segment cross-seeking should be dropped.
             return;
         }
-        this._emitter.emit(utils_TransmuxingEvents.MEDIA_SEGMENT, type, mediaSegment);
+        this._emitter.emit(TransmuxingEvents.MEDIA_SEGMENT, type, mediaSegment);
 
         // Resolve pending seekPoint
         if (this._pendingResolveSeekPoint != null && type === 'video') {
@@ -3220,7 +3331,7 @@ class Transmuxer {
             }
             // else: use original DTS (keyframe.milliseconds)
 
-            this._emitter.emit(utils_TransmuxingEvents.RECOMMEND_SEEKPOINT, seekpoint);
+            this._emitter.emit(TransmuxingEvents.RECOMMEND_SEEKPOINT, seekpoint);
         }
     }
 
@@ -3248,7 +3359,7 @@ class Transmuxer {
         delete exportInfo.segments;
         delete exportInfo.keyframesIndex;
 
-        this._emitter.emit(utils_TransmuxingEvents.MEDIA_INFO, exportInfo);
+        this._emitter.emit(TransmuxingEvents.MEDIA_INFO, exportInfo);
     }
 
     _reportStatisticsInfo() {
@@ -3265,7 +3376,7 @@ class Transmuxer {
         info.currentSegmentIndex = this._currentSegmentIndex;
         info.totalSegmentCount = this._mediaDataSource.segments.length;
 
-        this._emitter.emit(utils_TransmuxingEvents.STATISTICS_INFO, info);
+        this._emitter.emit(TransmuxingEvents.STATISTICS_INFO, info);
     }
 
 }
@@ -3282,30 +3393,29 @@ class Transmuxer {
 
 class WebRTMP{
 	TAG = 'WebRTMP';
-	_type = 'WebRTMP';
 
-	constructor(mediaDataSource, config) {
+	constructor() {
 		this.wss = new connection_controller();
 
 		this.wss.addEventListener("Connected", ()=>{
-			console.log("[ WebRTMP ] Connected");
+			logger.d(this.TAG, "Connected");
 		});
 
 		this.wss.addEventListener("RTMPConnected", ()=>{
-			console.log("RTMPConnected");
+			logger.d(this.TAG,"RTMPConnected");
 		});
 
 		this.wss.addEventListener("RTMPMessageArrived", (data)=>{
-			console.log("RTMPMessageArrived", data);
+			logger.d(this.TAG,"RTMPMessageArrived", data);
 		});
 
 
 		this.wss.addEventListener("ProtocolControlMessage", (data)=>{
-			console.log("ProtocolControlMessage", data);
+			logger.d(this.TAG,"ProtocolControlMessage", data);
 		});
 
 		this.wss.addEventListener("UserControlMessage", (data)=>{
-			console.log("UserControlMessage", data);
+			logger.d(this.TAG,"UserControlMessage", data);
 		});
 
 		this.wss.addEventListener("Started", ()=>{});
@@ -3329,7 +3439,7 @@ class WebRTMP{
 			Object.assign(this._config, config);
 		}
 
-		this._transmuxer = new transmuxer(mediaDataSource, this._config);
+		this._transmuxer = new transmuxer(this._config);
 	}
 
 	_onvLoadedMetadata(e) {
@@ -3357,7 +3467,7 @@ class WebRTMP{
 	}
 
 	_onmseBufferFull() {
-		logger_Log.v(this.TAG, 'MSE SourceBuffer is full, suspend transmuxing task');
+		logger.v(this.TAG, 'MSE SourceBuffer is full, suspend transmuxing task');
 		if (this._progressChecker == null) {
 			this._suspendTransmuxer();
 		}
@@ -3384,7 +3494,7 @@ class WebRTMP{
 		}
 
 		if (currentRangeEnd >= currentTime + this._config.lazyLoadMaxDuration && this._progressChecker == null) {
-			logger_Log.v(this.TAG, 'Maximum buffering duration exceeded, suspend transmuxing task');
+			logger.v(this.TAG, 'Maximum buffering duration exceeded, suspend transmuxing task');
 			this._suspendTransmuxer();
 		}
 	}
@@ -3492,7 +3602,7 @@ class WebRTMP{
 				let currentTime = this._mediaElement.currentTime;
 				if (ms.info.endDts >= (currentTime + this._config.lazyLoadMaxDuration) * 1000) {
 					if (this._progressChecker == null) {
-						logger_Log.v(this.TAG, 'Maximum buffering duration exceeded, suspend transmuxing task');
+						logger.v(this.TAG, 'Maximum buffering duration exceeded, suspend transmuxing task');
 						this._suspendTransmuxer();
 					}
 				}
@@ -3500,10 +3610,14 @@ class WebRTMP{
 		});
 	}
 }
-
-window["webrtmp"] = new WebRTMP();
+logger.LEVEL = logger.TRACE;
+logger.WITH_STACKTRACE = false;
 
 /* harmony default export */ const webrtmp = (WebRTMP);
+
+window["Log"] = logger;
+window["webrtmp"] = new WebRTMP();
+
 
 /******/ })()
 ;

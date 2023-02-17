@@ -16,15 +16,17 @@
  * limitations under the License.
  */
 
-
-// Media Source Extensions controller
-import {Log} from "./logger";
+import Log from "./logger";
+import EventEmitter from "./event_emitter";
+import {IDRSampleList} from "../formats/media-segment-info";
+import {IllegalStateException} from "./exception";
+import {MSEEvents} from "./utils";
+import Browser from "./browser";
 
 class MSEController {
+	TAG = 'MSEController';
 
 	constructor(config) {
-		this.TAG = 'MSEController';
-
 		this._config = config;
 		this._emitter = new EventEmitter();
 

@@ -29,7 +29,7 @@ class MP4Remuxer {
 
 	constructor(config) {
 		this._config = config;
-		this._isLive = (config.isLive === true) ? true : false;
+		this._isLive = (config.isLive === true);
 
 		this._dtsBase = -1;
 		this._dtsBaseInited = false;
@@ -134,7 +134,7 @@ class MP4Remuxer {
 				// 'audio/mpeg' for MP3 audio track
 				container = 'mpeg';
 				codec = '';
-				metabox = new Uint8Array();
+				metabox = new Uint8Array(0);
 			} else {
 				// 'audio/mp4, codecs="codec"'
 				metabox = MP4.generateInitSegment(metadata);
@@ -394,7 +394,7 @@ class MP4Remuxer {
 							}
 						};
 						silentFrames.push(frame);
-						mdatBytes += frame.size;;
+						mdatBytes += frame.size;
 
 					}
 
@@ -512,11 +512,11 @@ class MP4Remuxer {
 		track.samples = mp4Samples;
 		track.sequenceNumber++;
 
-		let moofbox = null;
+		let moofbox;
 
 		if (mpegRawTrack) {
 			// Generate empty buffer, because useless for raw mpeg
-			moofbox = new Uint8Array();
+			moofbox = new Uint8Array(0);
 		} else {
 			// Generate moof for fmp4 segment
 			moofbox = MP4.moof(track, firstDts);

@@ -79,7 +79,7 @@ export class IDRSampleList {
 	}
 
 	getLastSyncPointBeforeDts(dts) {
-		if (this._list.length == 0) {
+		if (this._list.length === 0) {
 			return null;
 		}
 

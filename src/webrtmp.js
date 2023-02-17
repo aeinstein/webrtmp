@@ -61,10 +61,6 @@ class WebRTMP{
 		};
 
 		this._config = defaultConfig;
-		if (typeof config === 'object') {
-			Object.assign(this._config, config);
-		}
-
 		this._transmuxer = new Transmuxer(this._config);
 	}
 

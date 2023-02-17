@@ -17,6 +17,8 @@
  */
 
 // Exponential-Golomb buffer decoder
+import {IllegalStateException, InvalidArgumentException} from "../utils/exception";
+
 class ExpGolomb {
 
     constructor(uint8array) {

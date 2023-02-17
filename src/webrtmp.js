@@ -34,6 +34,18 @@ class WebRTMP{
 
 		this.wss.addEventListener("Started", ()=>{});
 
+		this.wss.addEventListener("onDataAvailable", (e)=>{
+			this._transmuxer._onRemuxerMediaSegmentArrival(e.type, e);
+		});
+
+		this.wss.addEventListener("onTrackMetaData", (type, metadata)=>{
+			this._transmuxer._onMetaDataArrived(metadata);
+		});
+
+		this.wss.addEventListener("onMediaInfo", (mediaInfo)=>{
+			this._transmuxer._onMediaInfo(mediaInfo);
+		});
+
 		this.wss.addEventListener("ConnectionLost", ()=>{});
 
 		this.wss.addEventListener("ConnectionLost", ()=>{});

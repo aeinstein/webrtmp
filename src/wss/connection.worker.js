@@ -34,7 +34,6 @@ self.addEventListener('message', function(e) {
 							Log.d(TAG, "connect to RTMPManager");
 
 							wss_manager.registerMessageHandler((e)=> {
-								// connect to chunkparser
 								message_handler.parseChunk(new Uint8Array(e.data));
 							});
 

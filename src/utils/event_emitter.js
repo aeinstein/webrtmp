@@ -53,12 +53,12 @@ class EventEmitter{
 	 * @param {String} event
 	 * @param data
 	 */
-	emit(event, data){
-		Log.d(this.TAG, "emit EVENT: " + event, data);
+	emit(event, ...data){
+		Log.t(this.TAG, "emit EVENT: " + event, ...data);
 		for(let i = 0; i < this.ListenerList.length;i++){
 			let entry = this.ListenerList[i];
-			if(entry[0] == event){
-				entry[1].call(this, data);
+			if(entry[0] === event){
+				entry[1].call(this, ...data);
 			}
 		}
 	}

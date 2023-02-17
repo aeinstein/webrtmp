@@ -59,8 +59,12 @@ class Log {
     };
 
     static _print(callstack, color, tag, ...txt){
-        if(Log.WITH_STACKTRACE || Log.LEVEL === Log.TRACE || Log.LEVEL === Log.ERROR){
-            console.groupCollapsed("%c[" + tag + "]", color, ...txt);
+        if(Log.WITH_STACKTRACE){
+            if(Log.LEVEL === Log.ERROR){
+                console.group("%c[" + tag + "]", color, ...txt);
+            } else {
+                console.groupCollapsed("%c[" + tag + "]", color, ...txt);
+            }
 
             for(let i = 0; i < callstack.length; i++) {
                 console.log("%c" + callstack[i], color);
@@ -90,7 +94,6 @@ class Log {
                 //Ersten Eintrag entfernen
                 callstack.shift();
                 callstack.shift();
-                //this.isCallstackPopulated = true;
             }
         }
 

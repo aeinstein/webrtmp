@@ -124,8 +124,12 @@ class logger_Log {
     };
 
     static _print(callstack, color, tag, ...txt){
-        if(logger_Log.WITH_STACKTRACE || logger_Log.LEVEL === logger_Log.TRACE || logger_Log.LEVEL === logger_Log.ERROR){
-            console.groupCollapsed("%c[" + tag + "]", color, ...txt);
+        if(logger_Log.WITH_STACKTRACE){
+            if(logger_Log.LEVEL === logger_Log.ERROR){
+                console.group("%c[" + tag + "]", color, ...txt);
+            } else {
+                console.groupCollapsed("%c[" + tag + "]", color, ...txt);
+            }
 
             for(let i = 0; i < callstack.length; i++) {
                 console.log("%c" + callstack[i], color);
@@ -155,7 +159,6 @@ class logger_Log {
                 //Ersten Eintrag entfernen
                 callstack.shift();
                 callstack.shift();
-                //this.isCallstackPopulated = true;
             }
         }
 
@@ -249,12 +252,12 @@ class EventEmitter{
 	 * @param {String} event
 	 * @param data
 	 */
-	emit(event, data){
-		logger.d(this.TAG, "emit EVENT: " + event, data);
+	emit(event, ...data){
+		logger.t(this.TAG, "emit EVENT: " + event, ...data);
 		for(let i = 0; i < this.ListenerList.length;i++){
 			let entry = this.ListenerList[i];
-			if(entry[0] == event){
-				entry[1].call(this, data);
+			if(entry[0] === event){
+				entry[1].call(this, ...data);
 			}
 		}
 	}
@@ -1519,6 +1522,7 @@ class WebRTMP_Controller {
 				break;
 
 			default:
+				logger.d(this.TAG, data[0], data[1]);
 				this.e.emit(data[0], data[1]);
 				break;
 		}
@@ -3420,6 +3424,18 @@ class WebRTMP{
 		});
 
 		this.wss.addEventListener("Started", ()=>{});
+
+		this.wss.addEventListener("onDataAvailable", (e)=>{
+			this._transmuxer._onRemuxerMediaSegmentArrival(e.type, e);
+		});
+
+		this.wss.addEventListener("onTrackMetaData", (type, metadata)=>{
+			this._transmuxer._onMetaDataArrived(metadata);
+		});
+
+		this.wss.addEventListener("onMediaInfo", (mediaInfo)=>{
+			this._transmuxer._onMediaInfo(mediaInfo);
+		});
 
 		this.wss.addEventListener("ConnectionLost", ()=>{});
 

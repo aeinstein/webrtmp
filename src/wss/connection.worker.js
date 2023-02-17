@@ -8,8 +8,7 @@ const TAG = "WebRTMP Worker";
 let port = 9001;
 let host;
 let message_handler;
-Log.WITH_STACKTRACE = false;
-Log.LEVEL = Log.TRACE;
+Log.LEVEL = Log.DEBUG;
 
 const wss_manager = new WSSConnectionManager();
 

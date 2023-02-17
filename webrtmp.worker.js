@@ -10,13 +10,13 @@ class Log {
     static OFF = -1;
     static TRACE = 0;
     static DEBUG = 1;
-    static INFO = 1;
+    static INFO = 2;
     static WARN = 3;
     static ERROR = 4;
     static CRITICAL = 5;
-    static WITH_STACKTRACE = false;
+    static WITH_STACKTRACE = true;
 
-    static LEVEL = Log.DEBUG;
+    static LEVEL = Log.INFO;
 
     /**
      *
@@ -68,15 +68,16 @@ class Log {
 
     static _print(callstack, color, tag, ...txt){
         if(Log.WITH_STACKTRACE || Log.LEVEL === Log.TRACE || Log.LEVEL === Log.ERROR){
-            console.groupCollapsed("%c " + tag, "%o", color, ...txt);
+            console.groupCollapsed("%c[" + tag + "]", color, ...txt);
 
             for(let i = 0; i < callstack.length; i++) {
                 console.log("%c" + callstack[i], color);
             }
+
             console.groupEnd();
 
         } else {
-            console.log("%c" + tag, "%o", color, ...txt)
+            console.log("%c[" + tag + "]", color, ...txt)
         }
     }
 
@@ -3831,8 +3832,7 @@ const TAG = "WebRTMP Worker";
 let port = 9001;
 let host;
 let message_handler;
-logger.WITH_STACKTRACE = false;
-logger.LEVEL = logger.TRACE;
+logger.LEVEL = logger.DEBUG;
 
 const wss_manager = new wss_WSSConnectionManager();
 

@@ -67,13 +67,13 @@ class logger_Log {
     static OFF = -1;
     static TRACE = 0;
     static DEBUG = 1;
-    static INFO = 1;
+    static INFO = 2;
     static WARN = 3;
     static ERROR = 4;
     static CRITICAL = 5;
-    static WITH_STACKTRACE = false;
+    static WITH_STACKTRACE = true;
 
-    static LEVEL = logger_Log.DEBUG;
+    static LEVEL = logger_Log.INFO;
 
     /**
      *
@@ -125,15 +125,16 @@ class logger_Log {
 
     static _print(callstack, color, tag, ...txt){
         if(logger_Log.WITH_STACKTRACE || logger_Log.LEVEL === logger_Log.TRACE || logger_Log.LEVEL === logger_Log.ERROR){
-            console.groupCollapsed("%c " + tag, "%o", color, ...txt);
+            console.groupCollapsed("%c[" + tag + "]", color, ...txt);
 
             for(let i = 0; i < callstack.length; i++) {
                 console.log("%c" + callstack[i], color);
             }
+
             console.groupEnd();
 
         } else {
-            console.log("%c" + tag, "%o", color, ...txt)
+            console.log("%c[" + tag + "]", color, ...txt)
         }
     }
 
@@ -3610,8 +3611,7 @@ class WebRTMP{
 		});
 	}
 }
-logger.LEVEL = logger.TRACE;
-logger.WITH_STACKTRACE = false;
+logger.LEVEL = logger.DEBUG;
 
 /* harmony default export */ const webrtmp = (WebRTMP);
 

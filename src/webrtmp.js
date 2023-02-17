@@ -224,8 +224,7 @@ class WebRTMP{
 		});
 	}
 }
-Log.LEVEL = Log.TRACE;
-Log.WITH_STACKTRACE = false;
+Log.LEVEL = Log.DEBUG;
 
 export default WebRTMP;
 

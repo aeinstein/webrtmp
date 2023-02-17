@@ -3116,6 +3116,10 @@ class Transmuxer {
         this._emitter.removeListener(event, listener);
     }
 
+    remux(audioTrack, videoTrack){
+        this._remuxer.remux(audioTrack, videoTrack);
+    }
+
     /*
     _loadSegment(segmentIndex, optionalFrom) {
         this._currentSegmentIndex = segmentIndex;
@@ -3425,8 +3429,8 @@ class WebRTMP{
 
 		this.wss.addEventListener("Started", ()=>{});
 
-		this.wss.addEventListener("onDataAvailable", (e)=>{
-			this._transmuxer._onRemuxerMediaSegmentArrival(e.type, e);
+		this.wss.addEventListener("onDataAvailable", (audioTrack, videoTrack)=>{
+			this._transmuxer.remux(audioTrack, videoTrack);
 		});
 
 		this.wss.addEventListener("onTrackMetaData", (type, metadata)=>{

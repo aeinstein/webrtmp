@@ -13,6 +13,10 @@ class AMF0Object {
 
     params;
 
+	/**
+	 *
+	 * @param {Object} params
+	 */
 	constructor(params) {
 		if(params) {
             this.params = params;

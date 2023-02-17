@@ -34,8 +34,8 @@ class WebRTMP{
 
 		this.wss.addEventListener("Started", ()=>{});
 
-		this.wss.addEventListener("onDataAvailable", (e)=>{
-			this._transmuxer._onRemuxerMediaSegmentArrival(e.type, e);
+		this.wss.addEventListener("onDataAvailable", (audioTrack, videoTrack)=>{
+			this._transmuxer.remux(audioTrack, videoTrack);
 		});
 
 		this.wss.addEventListener("onTrackMetaData", (type, metadata)=>{

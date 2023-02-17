@@ -133,15 +133,27 @@ class Chunk{
         this.CHUNK_SIZE = size;
     }
 
+    /**
+     *
+     * @param {Number} chunk_stream_id
+     */
     setChunkStreamID(chunk_stream_id) {
         console.log("[ Chunk ] setChunkStreamID:" + chunk_stream_id);
         this.chunk_stream_id = chunk_stream_id;
     }
 
+    /**
+     *
+     * @param {Number} message_stream_id
+     */
     setMessageStreamID(message_stream_id) {
         this.message_stream_id = message_stream_id;
     }
 
+    /**
+     *
+     * @param {Number} timestamp
+     */
     setTimestamp(timestamp){
         this.timestamp = timestamp;
     }

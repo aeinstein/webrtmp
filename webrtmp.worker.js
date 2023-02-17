@@ -46,30 +46,65 @@ class WSSConnectionManager{
 
 /* harmony default export */ const wss_WSSConnectionManager = (WSSConnectionManager);
 
+;// CONCATENATED MODULE: ./utils/logger.js
+class Log {
+    static v(...params){
+        console.log(...params);
+    }
+
+    static e(...params){
+        console.error(...params);
+    }
+
+    static w(...params){
+        console.warn(...params);
+    }
+
+    static t(...params){
+        console.trace(...params);
+    }
+
+    static i(...params){
+        console.info(...params);
+    }
+}
+
 ;// CONCATENATED MODULE: ./rtmp/RTMPHandshake.js
+
+
 class RTMPHandshake{
+    TAG = "RTMPHandshake";
     state = 0;
+    onHandshakeDone = null;
     c1;
     c2;
-    s1;
-    s2;
 
+    /**
+     *
+     * @param {WebSocket} socket
+     */
     constructor(socket) {
         this.socket = socket;
 
         this.socket.onmessage = (e)=>{
-            this.processServerInput(e.data);
+            Log.v(this.TAG, e.data);
+            this.processServerInput(new Uint8Array(e.data));
         }
     }
 
+    /**
+     * Do RTMP Handshake
+     */
     do(){
-        console.log("send C0");
+        if(!this.onHandshakeDone) {
+            Log.e(this.TAG, "onHandshakeDone not defined");
+        }
+        Log.v(this.TAG, "send C0");
         this.socket.send(new Uint8Array([0x03]));
         this.state = 1;
 
-        this._generateC1();
-        console.log("send C1");
-        this.socket.send(this.c1);
+        Log.v(this.TAG, "send C1");
+        this.socket.send(this._generateC1());
         this.state = 2;
     }
 
@@ -93,64 +128,76 @@ class RTMPHandshake{
         c1[7] = 0;
 
         this.c1 = c1;
+        return c1;
     }
 
-    _generateC2(){
-        console.log("[ RTMPHandshake ] send C2");
-        this.socket.send(this.s1);
-        this.state = 5;
+    _generateC2(s1){
+        this.c2 = s1;
+        return this.c2;
     }
 
+    /**
+     *
+     * @param {Uint8Array} data
+     * @private
+     */
     _parseS0(data){
-        console.log("[ RTMPHandshake ] S0: ", data);
+        Log.v(this.TAG, "S0: ", data);
 
-        let buffer = new Uint8Array(data);
-
-        if(buffer.at(0) != 0x03) {
-            console.error("[ RTMPHandshake ] S0 response not 0x03");
+        if(data[0] !== 0x03) {
+            Log.e(this.TAG, "S0 response not 0x03");
 
         } else {
-            console.log("1st Byte OK");
+            Log.v(this.TAG, "1st Byte OK");
         }
 
         this.state = 3;
 
-        if(buffer.length > 1) {
-            console.log("S1 included");
-            data = data.slice(1);
-            this.processServerInput(data);
+        if(data.length > 1) {
+            Log.v(this.TAG, "S1 included");
+            this._parseS1(data.slice(1));
         }
     }
 
+    /**
+     *
+     * @param {Uint8Array} data
+     * @private
+     */
     _parseS1(data){
-        console.log("[ RTMPHandshake ] parse S1: ", data);
+        Log.v(this.TAG, "parse S1: ", data);
         this.state = 4;
 
-        this.s1 = data;
+        let s1 = data.slice(0, 1536);
 
-        this._generateC2();
+        Log.v(this.TAG, "send C2");
+        this.socket.send(this._generateC2(s1));
+
+        this.state = 5;
+
+        if(data.length > 0) {
+            Log.v(this.TAG, "S2 included");
+            this._parseS2(data.slice(1536));
+        }
     }
 
+    /**
+     *
+     * @param {Uint8Array} data
+     * @private
+     */
     _parseS2(data) {
-        console.log("[ RTMPHandshake ] parse S2: ", data);
+        Log.v(this.TAG, "parse S2: ", data);
 
-        let newdata = [];
-
-        if(data.length > 1536) {
-            console.log("data stripped");
-            data = data.slice(1536);
-        }
-
-
-        if(!this._compare(this.c1, new Uint8Array(data))) {
-            console.warn("C1 S1 not equal");
+        if(!this._compare(this.c1, data)) {
+            Log.e(this.TAG, "C1 S1 not equal");
             this.onHandshakeDone(false);
             return;
         }
 
         this.state = 6;
 
-        console.log("[ RTMPHandshake ] RTMP Connection established");
+        Log.v(this.TAG, "[ RTMPHandshake ] RTMP Connection established");
 
         this.onHandshakeDone(true);
     }
@@ -163,12 +210,13 @@ class RTMPHandshake{
         return true;
     }
 
-    onHandshakeDone(){
 
-    }
-
+    /**
+     *
+     * @param {Uint8Array} data
+     */
     processServerInput(data){
-        console.log("[ Connection Worker ] processing mode " + this.state + ": ", data);
+        Log.v(this.TAG, "processing mode " + this.state + ": ", data);
 
         switch(this.state){
             case 2:		//
@@ -205,6 +253,12 @@ function _concatArrayBuffers(...bufs){
     return result;
 }
 
+/**
+ *
+ * @param {String} str
+ * @returns {*[]}
+ * @private
+ */
 function _stringToByteArray(str) {
     const bytes = [];
 
@@ -219,12 +273,24 @@ function _stringToByteArray(str) {
     return bytes;
 }
 
+/**
+ *
+ * @param {Number} num
+ * @returns {*[]}
+ * @private
+ */
 function _numberToByteArray(num) {
     const buffer = new ArrayBuffer(8);
     new DataView(buffer).setFloat64(0, num, false);
     return [].slice.call(new Uint8Array(buffer));
 }
 
+/**
+ *
+ * @param {byte[]} ba
+ * @returns {number}
+ * @private
+ */
 function _byteArrayToNumber(ba){
     let buf = new ArrayBuffer(ba.length);
     let view = new DataView(buf);
@@ -236,6 +302,12 @@ function _byteArrayToNumber(ba){
     return view.getFloat64(0);
 }
 
+/**
+ *
+ * @param {byte[]} ba
+ * @returns {string}
+ * @private
+ */
 function _byteArrayToString(ba){
     let ret = "";
 
@@ -398,6 +470,10 @@ class RTMPMessage{
 		return _concatArrayBuffers(this.header, this.payload);
 	}
 
+	/**
+	 *
+	 * @param {Number} message_type
+	 */
     setMessageType(message_type){
         this.messageType = message_type;
         switch(message_type){
@@ -448,6 +524,10 @@ class RTMPMessage{
         return this.extendedTimestamp;
     }
 
+	/**
+	 *
+	 * @param {Uint8Array} data
+	 */
 	addPayload(data){
 		if(data.length > this.bytesMissing()) {
 			console.error("try to add too much data");
@@ -619,15 +699,27 @@ class Chunk{
         this.CHUNK_SIZE = size;
     }
 
+    /**
+     *
+     * @param {Number} chunk_stream_id
+     */
     setChunkStreamID(chunk_stream_id) {
         console.log("[ Chunk ] setChunkStreamID:" + chunk_stream_id);
         this.chunk_stream_id = chunk_stream_id;
     }
 
+    /**
+     *
+     * @param {Number} message_stream_id
+     */
     setMessageStreamID(message_stream_id) {
         this.message_stream_id = message_stream_id;
     }
 
+    /**
+     *
+     * @param {Number} timestamp
+     */
     setTimestamp(timestamp){
         this.timestamp = timestamp;
     }
@@ -1567,29 +1659,6 @@ class AMF {
 
 /* harmony default export */ const amf_parser = (AMF);
 
-;// CONCATENATED MODULE: ./utils/logger.js
-class Log {
-    static v(...params){
-        console.log(...params);
-    }
-
-    static e(...params){
-        console.error(...params);
-    }
-
-    static w(...params){
-        console.warn(...params);
-    }
-
-    static t(...params){
-        console.trace(...params);
-    }
-
-    static i(...params){
-        console.info(...params);
-    }
-}
-
 ;// CONCATENATED MODULE: ./flv/exp-golomb.js
 /*
  * Copyright (C) 2016 Bilibili. All Rights Reserved.
@@ -2001,7 +2070,7 @@ class SPSParser {
 class RTMPMediaMessageHandler{
     TAG = "RTMPMediaMessageHandler";
 
-    constructor(probeData, config) {
+    constructor(config) {
         this._config = config;
 
         this._onError = null;
@@ -3645,8 +3714,6 @@ self.addEventListener('message', function(e) {
 
 					handshake.onHandshakeDone = (success)=>{
 						if(success){
-							postMessage(["RTMPHandshakeDone"]);
-
 							message_handler = new rtmp_RTMPMessageHandler(wss_manager.getSocket());
 
 							console.log("[ WebRTMP Worker ] connect to RTMPManager");
@@ -3655,6 +3722,8 @@ self.addEventListener('message', function(e) {
 								// connect to chunkparser
 								message_handler.parseChunk(new Uint8Array(e.data));
 							});
+
+							postMessage(["RTMPHandshakeDone"]);
 
 						} else {
 							console.error("[ WebRTMP Worker ] Handshake failed");

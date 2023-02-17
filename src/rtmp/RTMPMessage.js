@@ -49,6 +49,10 @@ class RTMPMessage{
 		return _concatArrayBuffers(this.header, this.payload);
 	}
 
+	/**
+	 *
+	 * @param {Number} message_type
+	 */
     setMessageType(message_type){
         this.messageType = message_type;
         switch(message_type){
@@ -99,6 +103,10 @@ class RTMPMessage{
         return this.extendedTimestamp;
     }
 
+	/**
+	 *
+	 * @param {Uint8Array} data
+	 */
 	addPayload(data){
 		if(data.length > this.bytesMissing()) {
 			console.error("try to add too much data");

@@ -25,10 +25,9 @@ import {IllegalStateException} from "../utils/exception";
 import Browser from "../utils/browser";
 
 class MP4Remuxer {
+	TAG = 'MP4Remuxer'
 
 	constructor(config) {
-		this.TAG = 'MP4Remuxer';
-
 		this._config = config;
 		this._isLive = (config.isLive === true) ? true : false;
 

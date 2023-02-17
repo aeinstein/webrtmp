@@ -25,8 +25,6 @@ self.addEventListener('message', function(e) {
 
 					handshake.onHandshakeDone = (success)=>{
 						if(success){
-							postMessage(["RTMPHandshakeDone"]);
-
 							message_handler = new RTMPMessageHandler(wss_manager.getSocket());
 
 							console.log("[ WebRTMP Worker ] connect to RTMPManager");
@@ -35,6 +33,8 @@ self.addEventListener('message', function(e) {
 								// connect to chunkparser
 								message_handler.parseChunk(new Uint8Array(e.data));
 							});
+
+							postMessage(["RTMPHandshakeDone"]);
 
 						} else {
 							console.error("[ WebRTMP Worker ] Handshake failed");

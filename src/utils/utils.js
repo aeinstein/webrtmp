@@ -14,6 +14,12 @@ export function _concatArrayBuffers(...bufs){
     return result;
 }
 
+/**
+ *
+ * @param {String} str
+ * @returns {*[]}
+ * @private
+ */
 export function _stringToByteArray(str) {
     const bytes = [];
 
@@ -28,12 +34,24 @@ export function _stringToByteArray(str) {
     return bytes;
 }
 
+/**
+ *
+ * @param {Number} num
+ * @returns {*[]}
+ * @private
+ */
 export function _numberToByteArray(num) {
     const buffer = new ArrayBuffer(8);
     new DataView(buffer).setFloat64(0, num, false);
     return [].slice.call(new Uint8Array(buffer));
 }
 
+/**
+ *
+ * @param {byte[]} ba
+ * @returns {number}
+ * @private
+ */
 export function _byteArrayToNumber(ba){
     let buf = new ArrayBuffer(ba.length);
     let view = new DataView(buf);
@@ -45,6 +63,12 @@ export function _byteArrayToNumber(ba){
     return view.getFloat64(0);
 }
 
+/**
+ *
+ * @param {byte[]} ba
+ * @returns {string}
+ * @private
+ */
 export function _byteArrayToString(ba){
     let ret = "";
 

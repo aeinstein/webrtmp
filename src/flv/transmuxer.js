@@ -21,17 +21,16 @@
 import {TransmuxingEvents} from "../utils/utils";
 import EventEmitter from "../utils/event_emitter";
 import MP4Remuxer from "../formats/mp4-remuxer";
+import MediaInfo from "../formats/media-info";
 
 class Transmuxer {
 
-    constructor(mediaDataSource, config) {
+    constructor(config) {
         this.TAG = 'Transmuxer';
         this._emitter = new EventEmitter();
 
         this._config = config;
 
-
-        this._mediaDataSource = mediaDataSource;
         this._currentSegmentIndex = 0;
 
         this._mediaInfo = null;
@@ -57,10 +56,7 @@ class Transmuxer {
             this._ioctl.destroy();
             this._ioctl = null;
         }
-        if (this._demuxer) {
-            this._demuxer.destroy();
-            this._demuxer = null;
-        }
+
         if (this._remuxer) {
             this._remuxer.destroy();
             this._remuxer = null;

@@ -8,7 +8,7 @@ import SPSParser from "../flv/sps-parser";
 class RTMPMediaMessageHandler{
     TAG = "RTMPMediaMessageHandler";
 
-    constructor(probeData, config) {
+    constructor(config) {
         this._config = config;
 
         this._onError = null;

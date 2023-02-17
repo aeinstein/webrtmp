@@ -1,3 +1,5 @@
+import EventEmitter from "../utils/event_emitter";
+
 class WebRTMP_Controller {
 	host = document.location.host;
 
@@ -12,9 +14,9 @@ class WebRTMP_Controller {
 
 	isConnected = false;
 
-	ListenerList = [];
-
 	constructor() {
+		this.e = new EventEmitter();
+
 		this.WebRTMPWorker.addEventListener("message", (e)=>{
 			this.WorkerListener(e);
 		})
@@ -55,39 +57,10 @@ class WebRTMP_Controller {
 	 * @param listener
 	 */
 	addEventListener(type, listener){
-		switch(type) {
-			case "MessageArrived":
-			case "Connected":
-			case "ConnectionLost":
-			case "Started":
-			case "Subscribed":
-			case "RTMPConnected":
-			case "RTMPMessageArrived":
-			case "ProtocolControlMessage":
-			case "UserControlMessage":
-            case "NetConnection.Connect.Success":
-				this.ListenerList[this.ListenerList.length] = {type: type, listener: listener};
-				break;
-
-			default:
-				console.error("Event " + type + " not recognized");
-				break;
-		}
+		this.e.addEventListener(type, listener);
 	}
 
-	/**
-	 * intern: Feuert Event
-	 * @param type
-	 * @param message
-	 */
-	fireEvent(type, message){
-		for(let i = 0; i < this.ListenerList.length; i++){
-			let evt = this.ListenerList[i];
-			if(evt.type === type) {
-				evt.listener.call(this, message);
-			}
-		}
-	}
+
 
 	/**
 	 * Verarbeitet MQTT Events
@@ -99,7 +72,7 @@ class WebRTMP_Controller {
 
 		switch(data[0]){
 			case "ConnectionLost":
-				this.fireEvent("ConnectionLost");
+				this.e.emit("ConnectionLost");
 				console.log("[ WorkerListener ] Event ConnectionLost");
 
 				this.isConnected = false;
@@ -117,9 +90,8 @@ class WebRTMP_Controller {
 
 			case "Connected":
 				console.log("[ WorkerListener ] Event Connected");
-				this.fireEvent("Connected");
+				this.e.emit("Connected");
 				this.isConnected = true;
-				this.streams = []; // Streams löschen, damit Änderung erkannt wird nach einloggen und Liste aktualisiert
 				break;
 
 			case "Started":
@@ -133,7 +105,7 @@ class WebRTMP_Controller {
 				break;
 
 			default:
-				this.fireEvent(data[0], data[1]);
+				this.e.emit(data[0], data[1]);
 				break;
 		}
 	}

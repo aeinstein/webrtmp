@@ -57,7 +57,7 @@
 /************************************************************************/
 var __webpack_exports__ = {};
 /*!*********************************!*\
-  !*** ./webrtmp.js + 12 modules ***!
+  !*** ./webrtmp.js + 13 modules ***!
   \*********************************/
 
 // UNUSED EXPORTS: default
@@ -639,6 +639,12 @@ function _concatArrayBuffers(...bufs){
     return result;
 }
 
+/**
+ *
+ * @param {String} str
+ * @returns {*[]}
+ * @private
+ */
 function _stringToByteArray(str) {
     const bytes = [];
 
@@ -653,12 +659,24 @@ function _stringToByteArray(str) {
     return bytes;
 }
 
+/**
+ *
+ * @param {Number} num
+ * @returns {*[]}
+ * @private
+ */
 function _numberToByteArray(num) {
     const buffer = new ArrayBuffer(8);
     new DataView(buffer).setFloat64(0, num, false);
     return [].slice.call(new Uint8Array(buffer));
 }
 
+/**
+ *
+ * @param {byte[]} ba
+ * @returns {number}
+ * @private
+ */
 function _byteArrayToNumber(ba){
     let buf = new ArrayBuffer(ba.length);
     let view = new DataView(buf);
@@ -670,6 +688,12 @@ function _byteArrayToNumber(ba){
     return view.getFloat64(0);
 }
 
+/**
+ *
+ * @param {byte[]} ba
+ * @returns {string}
+ * @private
+ */
 function _byteArrayToString(ba){
     let ret = "";
 
@@ -780,7 +804,76 @@ const utils_ErrorDetails = {
     MEDIA_CODEC_UNSUPPORTED: DemuxErrors.CODEC_UNSUPPORTED
 };
 
+;// CONCATENATED MODULE: ./utils/event_emitter.js
+class event_emitter_EventEmitter{
+	ListenerList = [];
+
+	constructor() {
+	}
+
+	/**
+	 *
+	 * @param {String} event
+	 * @param {Function} listener
+	 */
+	addEventListener(event, listener){
+		this.ListenerList.push([event, listener]);
+	}
+
+	/**
+	 *
+	 * @param {String} event
+	 * @param {Function} listener
+	 */
+	addListener(event, listener){
+		this.ListenerList.push([event, listener]);
+	}
+
+
+	/**
+	 *
+	 * @param {String} event
+	 * @param {Function} listener
+	 */
+	removeListener(event, listener){
+		for(let i = 0; i < this.ListenerList.length;i++){
+			let entry = this.ListenerList[i];
+			if(entry[0] == event && entry[1] == listener){
+				this.ListenerList.splice(i,1);
+				return;
+			}
+		}
+	}
+
+	/**
+	 * Remove all listener
+	 */
+	removeAllListeners(){
+		this.ListenerList = [];
+	}
+
+	/**
+	 *
+	 * @param {String} event
+	 * @param data
+	 */
+	emit(event, data){
+		console.log("emit EVENT: " + event, data);
+		for(let i = 0; i < this.ListenerList.length;i++){
+			let entry = this.ListenerList[i];
+			if(entry[0] == event){
+				entry[1].call(this, data);
+			}
+		}
+	}
+}
+
+/* harmony default export */ const event_emitter = (event_emitter_EventEmitter);
+
+
 ;// CONCATENATED MODULE: ./wss/connection.controller.js
+
+
 class WebRTMP_Controller {
 	host = document.location.host;
 
@@ -795,9 +888,9 @@ class WebRTMP_Controller {
 
 	isConnected = false;
 
-	ListenerList = [];
-
 	constructor() {
+		this.e = new event_emitter();
+
 		this.WebRTMPWorker.addEventListener("message", (e)=>{
 			this.WorkerListener(e);
 		})
@@ -838,39 +931,10 @@ class WebRTMP_Controller {
 	 * @param listener
 	 */
 	addEventListener(type, listener){
-		switch(type) {
-			case "MessageArrived":
-			case "Connected":
-			case "ConnectionLost":
-			case "Started":
-			case "Subscribed":
-			case "RTMPConnected":
-			case "RTMPMessageArrived":
-			case "ProtocolControlMessage":
-			case "UserControlMessage":
-            case "NetConnection.Connect.Success":
-				this.ListenerList[this.ListenerList.length] = {type: type, listener: listener};
-				break;
-
-			default:
-				console.error("Event " + type + " not recognized");
-				break;
-		}
+		this.e.addEventListener(type, listener);
 	}
 
-	/**
-	 * intern: Feuert Event
-	 * @param type
-	 * @param message
-	 */
-	fireEvent(type, message){
-		for(let i = 0; i < this.ListenerList.length; i++){
-			let evt = this.ListenerList[i];
-			if(evt.type === type) {
-				evt.listener.call(this, message);
-			}
-		}
-	}
+
 
 	/**
 	 * Verarbeitet MQTT Events
@@ -882,7 +946,7 @@ class WebRTMP_Controller {
 
 		switch(data[0]){
 			case "ConnectionLost":
-				this.fireEvent("ConnectionLost");
+				this.e.emit("ConnectionLost");
 				console.log("[ WorkerListener ] Event ConnectionLost");
 
 				this.isConnected = false;
@@ -900,9 +964,8 @@ class WebRTMP_Controller {
 
 			case "Connected":
 				console.log("[ WorkerListener ] Event Connected");
-				this.fireEvent("Connected");
+				this.e.emit("Connected");
 				this.isConnected = true;
-				this.streams = []; // Streams löschen, damit Änderung erkannt wird nach einloggen und Liste aktualisiert
 				break;
 
 			case "Started":
@@ -916,52 +979,13 @@ class WebRTMP_Controller {
 				break;
 
 			default:
-				this.fireEvent(data[0], data[1]);
+				this.e.emit(data[0], data[1]);
 				break;
 		}
 	}
 }
 
 /* harmony default export */ const connection_controller = (WebRTMP_Controller);
-
-;// CONCATENATED MODULE: ./utils/event_emitter.js
-class event_emitter_EventEmitter{
-	ListenerList = [];
-
-	constructor() {
-	}
-
-	addListener(event, listener){
-		this.ListenerList.push([event, listener]);
-	}
-
-	removeListener(event, listener){
-		for(let i = 0; i < this.ListenerList.length;i++){
-			let entry = this.ListenerList[i];
-			if(entry[0] == event && entry[1] == listener){
-				this.ListenerList.splice(i,1);
-				return;
-			}
-		}
-	}
-
-	removeAllListeners(){
-		this.ListenerList = [];
-	}
-
-	emit(event, data){
-		console.log("emit EVENT: " + event, data);
-		for(let i = 0; i < this.ListenerList.length;i++){
-			let entry = this.ListenerList[i];
-			if(entry[0] == event){
-				entry[1].call(this, data);
-			}
-		}
-	}
-}
-
-/* harmony default export */ const event_emitter = (event_emitter_EventEmitter);
-
 
 ;// CONCATENATED MODULE: ./formats/mp4.js
 /*
@@ -2044,10 +2068,9 @@ detect();
 
 
 class MP4Remuxer {
+	TAG = 'MP4Remuxer'
 
 	constructor(config) {
-		this.TAG = 'MP4Remuxer';
-
 		this._config = config;
 		this._isLive = (config.isLive === true) ? true : false;
 
@@ -2768,6 +2791,138 @@ class MP4Remuxer {
 
 /* harmony default export */ const mp4_remuxer = (MP4Remuxer);
 
+;// CONCATENATED MODULE: ./formats/media-info.js
+/*
+ * Copyright (C) 2016 Bilibili. All Rights Reserved.
+ *
+ * @author zheng qian <xqq@xqq.im>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+class MediaInfo {
+
+	constructor() {
+		this.mimeType = null;
+		this.duration = null;
+
+		this.hasAudio = null;
+		this.hasVideo = null;
+		this.audioCodec = null;
+		this.videoCodec = null;
+		this.audioDataRate = null;
+		this.videoDataRate = null;
+
+		this.audioSampleRate = null;
+		this.audioChannelCount = null;
+
+		this.width = null;
+		this.height = null;
+		this.fps = null;
+		this.profile = null;
+		this.level = null;
+		this.refFrames = null;
+		this.chromaFormat = null;
+		this.sarNum = null;
+		this.sarDen = null;
+
+		this.metadata = null;
+		this.segments = null;  // MediaInfo[]
+		this.segmentCount = null;
+		this.hasKeyframesIndex = null;
+		this.keyframesIndex = null;
+	}
+
+	isComplete() {
+		let audioInfoComplete = (this.hasAudio === false) ||
+			(this.hasAudio === true &&
+				this.audioCodec != null &&
+				this.audioSampleRate != null &&
+				this.audioChannelCount != null);
+
+		let videoInfoComplete = (this.hasVideo === false) ||
+			(this.hasVideo === true &&
+				this.videoCodec != null &&
+				this.width != null &&
+				this.height != null &&
+				this.fps != null &&
+				this.profile != null &&
+				this.level != null &&
+				this.refFrames != null &&
+				this.chromaFormat != null &&
+				this.sarNum != null &&
+				this.sarDen != null);
+
+		// keyframesIndex may not be present
+		return this.mimeType != null &&
+			this.duration != null &&
+			this.metadata != null &&
+			this.hasKeyframesIndex != null &&
+			audioInfoComplete &&
+			videoInfoComplete;
+	}
+
+	isSeekable() {
+		return this.hasKeyframesIndex === true;
+	}
+
+	getNearestKeyframe(milliseconds) {
+		if (this.keyframesIndex == null) {
+			return null;
+		}
+
+		let table = this.keyframesIndex;
+		let keyframeIdx = this._search(table.times, milliseconds);
+
+		return {
+			index: keyframeIdx,
+			milliseconds: table.times[keyframeIdx],
+			fileposition: table.filepositions[keyframeIdx]
+		};
+	}
+
+	_search(list, value) {
+		let idx = 0;
+
+		let last = list.length - 1;
+		let mid = 0;
+		let lbound = 0;
+		let ubound = last;
+
+		if (value < list[0]) {
+			idx = 0;
+			lbound = ubound + 1;  // skip search
+		}
+
+		while (lbound <= ubound) {
+			mid = lbound + Math.floor((ubound - lbound) / 2);
+			if (mid === last || (value >= list[mid] && value < list[mid + 1])) {
+				idx = mid;
+				break;
+			} else if (list[mid] < value) {
+				lbound = mid + 1;
+			} else {
+				ubound = mid - 1;
+			}
+		}
+
+		return idx;
+	}
+
+}
+
+/* harmony default export */ const media_info = (MediaInfo);
+
 ;// CONCATENATED MODULE: ./flv/transmuxer.js
 /*
  * Copyright (C) 2016 Bilibili. All Rights Reserved.
@@ -2793,16 +2948,15 @@ class MP4Remuxer {
 
 
 
+
 class Transmuxer {
 
-    constructor(mediaDataSource, config) {
+    constructor(config) {
         this.TAG = 'Transmuxer';
         this._emitter = new event_emitter();
 
         this._config = config;
 
-
-        this._mediaDataSource = mediaDataSource;
         this._currentSegmentIndex = 0;
 
         this._mediaInfo = null;
@@ -2828,10 +2982,7 @@ class Transmuxer {
             this._ioctl.destroy();
             this._ioctl = null;
         }
-        if (this._demuxer) {
-            this._demuxer.destroy();
-            this._demuxer = null;
-        }
+
         if (this._remuxer) {
             this._remuxer.destroy();
             this._remuxer = null;
@@ -2980,11 +3131,11 @@ class Transmuxer {
             this._mediaInfo.keyframesIndex = null;
             this._mediaInfo.segments = [];
             this._mediaInfo.segmentCount = this._mediaDataSource.segments.length;
-            Object.setPrototypeOf(this._mediaInfo, MediaInfo.prototype);
+            Object.setPrototypeOf(this._mediaInfo, media_info.prototype);
         }
 
         let segmentInfo = Object.assign({}, mediaInfo);
-        Object.setPrototypeOf(segmentInfo, MediaInfo.prototype);
+        Object.setPrototypeOf(segmentInfo, media_info.prototype);
         this._mediaInfo.segments[this._currentSegmentIndex] = segmentInfo;
 
         // notify mediaInfo update

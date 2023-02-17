@@ -4,10 +4,30 @@ class EventEmitter{
 	constructor() {
 	}
 
+	/**
+	 *
+	 * @param {String} event
+	 * @param {Function} listener
+	 */
+	addEventListener(event, listener){
+		this.ListenerList.push([event, listener]);
+	}
+
+	/**
+	 *
+	 * @param {String} event
+	 * @param {Function} listener
+	 */
 	addListener(event, listener){
 		this.ListenerList.push([event, listener]);
 	}
 
+
+	/**
+	 *
+	 * @param {String} event
+	 * @param {Function} listener
+	 */
 	removeListener(event, listener){
 		for(let i = 0; i < this.ListenerList.length;i++){
 			let entry = this.ListenerList[i];
@@ -18,10 +38,18 @@ class EventEmitter{
 		}
 	}
 
+	/**
+	 * Remove all listener
+	 */
 	removeAllListeners(){
 		this.ListenerList = [];
 	}
 
+	/**
+	 *
+	 * @param {String} event
+	 * @param data
+	 */
 	emit(event, data){
 		console.log("emit EVENT: " + event, data);
 		for(let i = 0; i < this.ListenerList.length;i++){

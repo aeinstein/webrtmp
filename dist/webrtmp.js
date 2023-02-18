@@ -56,14 +56,14 @@
 /******/ 	
 /************************************************************************/
 var __webpack_exports__ = {};
-/*!*********************************!*\
-  !*** ./webrtmp.js + 13 modules ***!
-  \*********************************/
+/*!********************************!*\
+  !*** ./webrtmp.js + 8 modules ***!
+  \********************************/
 
 // UNUSED EXPORTS: default
 
 ;// CONCATENATED MODULE: ./utils/logger.js
-class logger_Log {
+class Log {
     static OFF = -1;
     static TRACE = 0;
     static DEBUG = 1;
@@ -73,7 +73,7 @@ class logger_Log {
     static CRITICAL = 5;
     static WITH_STACKTRACE = true;
 
-    static LEVEL = logger_Log.INFO;
+    static LEVEL = Log.INFO;
 
     static loglevels = [];
 
@@ -85,14 +85,14 @@ class logger_Log {
      * @private
      */
     static _output = function output(level, tag, ...txt){
-        let tmpLevel = logger_Log.LEVEL;
+        let tmpLevel = Log.LEVEL;
 
-        if(logger_Log.loglevels[tag]) tmpLevel = logger_Log.loglevels[tag];
+        if(Log.loglevels[tag]) tmpLevel = Log.loglevels[tag];
 
-        if(tmpLevel === logger_Log.OFF) return;
+        if(tmpLevel === Log.OFF) return;
         if(tmpLevel > level) return;
 
-        const callstack = logger_Log.getStackTrace();
+        const callstack = Log.getStackTrace();
 
 
 
@@ -103,37 +103,37 @@ class logger_Log {
         let color = "color: silver";
 
         switch(level) {
-            case logger_Log.TRACE:	// TRACE
+            case Log.TRACE:	// TRACE
                 color = "background-color: gray";
                 break;
 
-            case logger_Log.DEBUG:	// DEBUG
+            case Log.DEBUG:	// DEBUG
 
                 break;
 
-            case logger_Log.INFO:	// INFO
+            case Log.INFO:	// INFO
                 color = "color: green";
                 break;
 
-            case logger_Log.WARN:	// WARN
+            case Log.WARN:	// WARN
                 color = "color: orange; background-color: #EAA80035";
                 break;
 
-            case logger_Log.ERROR:	// ERROR
+            case Log.ERROR:	// ERROR
                 color = "color: red; background-color: #FF000020";
                 break;
 
-            case logger_Log.CRITICAL:	// CRITICAL
+            case Log.CRITICAL:	// CRITICAL
                 color = "color: red";
                 break;
         }
 
-        logger_Log._print(callstack, color, tag, ...txt);
+        Log._print(callstack, color, tag, ...txt);
     };
 
     static _print(callstack, color, tag, ...txt){
-        if(logger_Log.WITH_STACKTRACE){
-            if(logger_Log.LEVEL === logger_Log.ERROR){
+        if(Log.WITH_STACKTRACE){
+            if(Log.LEVEL === Log.ERROR){
                 console.group("%c[" + tag + "]", color, ...txt);
             } else {
                 console.groupCollapsed("%c[" + tag + "]", color, ...txt);
@@ -174,35 +174,35 @@ class logger_Log {
     };
 
     static c(tag, ...msg) {
-        logger_Log._output(logger_Log.CRITICAL, tag, ...msg);
+        Log._output(Log.CRITICAL, tag, ...msg);
     }
 
     static e(tag, ...msg) {
-        logger_Log._output(logger_Log.ERROR, tag, ...msg);
+        Log._output(Log.ERROR, tag, ...msg);
     }
 
     static i(tag, ...msg) {
-        logger_Log._output(logger_Log.INFO, tag, ...msg);
+        Log._output(Log.INFO, tag, ...msg);
     }
 
     static w(tag, ...msg) {
-        logger_Log._output(logger_Log.WARN, tag, ...msg);
+        Log._output(Log.WARN, tag, ...msg);
     }
 
     static d(tag, ...msg) {
-        logger_Log._output(logger_Log.DEBUG, tag, ...msg);
+        Log._output(Log.DEBUG, tag, ...msg);
     }
 
     static v(tag, ...msg) {
-        logger_Log._output(logger_Log.DEBUG, tag, ...msg);
+        Log._output(Log.DEBUG, tag, ...msg);
     }
 
     static t(tag, ...msg) {
-        logger_Log._output(logger_Log.TRACE, tag, ...msg);
+        Log._output(Log.TRACE, tag, ...msg);
     }
 }
 
-/* harmony default export */ const logger = (logger_Log);
+/* harmony default export */ const logger = (Log);
 
 ;// CONCATENATED MODULE: ./utils/event_emitter.js
 
@@ -773,7 +773,7 @@ const ErrorDetails = {
  * limitations under the License.
  */
 
-let browser_Browser = {};
+let Browser = {};
 
 function detect() {
 	// modified from jquery-browser-plugin
@@ -872,17 +872,17 @@ function detect() {
 	browser.name = matched.browser;
 	browser.platform = matched.platform;
 
-	for (let key in browser_Browser) {
-		if (browser_Browser.hasOwnProperty(key)) {
-			delete browser_Browser[key];
+	for (let key in Browser) {
+		if (Browser.hasOwnProperty(key)) {
+			delete Browser[key];
 		}
 	}
-	Object.assign(browser_Browser, browser);
+	Object.assign(Browser, browser);
 }
 
 detect();
 
-/* harmony default export */ const browser = (browser_Browser);
+/* harmony default export */ const browser = (Browser);
 
 ;// CONCATENATED MODULE: ./utils/mse-controller.js
 /*
@@ -1051,7 +1051,7 @@ class MSEController {
 	}
 
 	appendInitSegment(initSegment, deferred) {
-		logger.i(this.TAG, "appendInitSegment");
+		logger.i(this.TAG, "appendInitSegment", initSegment);
 		if (!this._mediaSource || this._mediaSource.readyState !== 'open') {
 			// sourcebuffer creation requires mediaSource.readyState === 'open'
 			// so we defer the sourcebuffer creation, until sourceopen event triggered
@@ -1425,1748 +1425,6 @@ class MSEController {
 
 /* harmony default export */ const mse_controller = (MSEController);
 
-;// CONCATENATED MODULE: ./formats/mp4.js
-/*
- * Copyright (C) 2016 Bilibili. All Rights Reserved.
- *
- * This file is derived from dailymotion's hls.js library (hls.js/src/remux/mp4-generator.js)
- * @author zheng qian <xqq@xqq.im>
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-//  MP4 boxes generator for ISO BMFF (ISO Base Media File Format, defined in ISO/IEC 14496-12)
-class MP4 {
-    static init() {
-        MP4.types = {
-            avc1: [], avcC: [], btrt: [], dinf: [],
-            dref: [], esds: [], ftyp: [], hdlr: [],
-            mdat: [], mdhd: [], mdia: [], mfhd: [],
-            minf: [], moof: [], moov: [], mp4a: [],
-            mvex: [], mvhd: [], sdtp: [], stbl: [],
-            stco: [], stsc: [], stsd: [], stsz: [],
-            stts: [], tfdt: [], tfhd: [], traf: [],
-            trak: [], trun: [], trex: [], tkhd: [],
-            vmhd: [], smhd: [], '.mp3': []
-        };
-
-        for (let name in MP4.types) {
-            if (MP4.types.hasOwnProperty(name)) {
-                MP4.types[name] = [
-                    name.charCodeAt(0),
-                    name.charCodeAt(1),
-                    name.charCodeAt(2),
-                    name.charCodeAt(3)
-                ];
-            }
-        }
-
-        let constants = MP4.constants = {};
-
-        constants.FTYP = new Uint8Array([
-            0x69, 0x73, 0x6F, 0x6D,  // major_brand: isom
-            0x0,  0x0,  0x0,  0x1,   // minor_version: 0x01
-            0x69, 0x73, 0x6F, 0x6D,  // isom
-            0x61, 0x76, 0x63, 0x31   // avc1
-        ]);
-
-        constants.STSD_PREFIX = new Uint8Array([
-            0x00, 0x00, 0x00, 0x00,  // version(0) + flags
-            0x00, 0x00, 0x00, 0x01   // entry_count
-        ]);
-
-        constants.STTS = new Uint8Array([
-            0x00, 0x00, 0x00, 0x00,  // version(0) + flags
-            0x00, 0x00, 0x00, 0x00   // entry_count
-        ]);
-
-        constants.STSC = constants.STCO = constants.STTS;
-
-        constants.STSZ = new Uint8Array([
-            0x00, 0x00, 0x00, 0x00,  // version(0) + flags
-            0x00, 0x00, 0x00, 0x00,  // sample_size
-            0x00, 0x00, 0x00, 0x00   // sample_count
-        ]);
-
-        constants.HDLR_VIDEO = new Uint8Array([
-            0x00, 0x00, 0x00, 0x00,  // version(0) + flags
-            0x00, 0x00, 0x00, 0x00,  // pre_defined
-            0x76, 0x69, 0x64, 0x65,  // handler_type: 'vide'
-            0x00, 0x00, 0x00, 0x00,  // reserved: 3 * 4 bytes
-            0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00,
-            0x56, 0x69, 0x64, 0x65,
-            0x6F, 0x48, 0x61, 0x6E,
-            0x64, 0x6C, 0x65, 0x72, 0x00  // name: VideoHandler
-        ]);
-
-        constants.HDLR_AUDIO = new Uint8Array([
-            0x00, 0x00, 0x00, 0x00,  // version(0) + flags
-            0x00, 0x00, 0x00, 0x00,  // pre_defined
-            0x73, 0x6F, 0x75, 0x6E,  // handler_type: 'soun'
-            0x00, 0x00, 0x00, 0x00,  // reserved: 3 * 4 bytes
-            0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00,
-            0x53, 0x6F, 0x75, 0x6E,
-            0x64, 0x48, 0x61, 0x6E,
-            0x64, 0x6C, 0x65, 0x72, 0x00  // name: SoundHandler
-        ]);
-
-        constants.DREF = new Uint8Array([
-            0x00, 0x00, 0x00, 0x00,  // version(0) + flags
-            0x00, 0x00, 0x00, 0x01,  // entry_count
-            0x00, 0x00, 0x00, 0x0C,  // entry_size
-            0x75, 0x72, 0x6C, 0x20,  // type 'url '
-            0x00, 0x00, 0x00, 0x01   // version(0) + flags
-        ]);
-
-        // Sound media header
-        constants.SMHD = new Uint8Array([
-            0x00, 0x00, 0x00, 0x00,  // version(0) + flags
-            0x00, 0x00, 0x00, 0x00   // balance(2) + reserved(2)
-        ]);
-
-        // video media header
-        constants.VMHD = new Uint8Array([
-            0x00, 0x00, 0x00, 0x01,  // version(0) + flags
-            0x00, 0x00,              // graphicsmode: 2 bytes
-            0x00, 0x00, 0x00, 0x00,  // opcolor: 3 * 2 bytes
-            0x00, 0x00
-        ]);
-    }
-
-    // Generate a box
-    static box(type) {
-        let size = 8;
-        let result;
-        let datas = Array.prototype.slice.call(arguments, 1);
-        let arrayCount = datas.length;
-
-        for (let i = 0; i < arrayCount; i++) {
-            size += datas[i].byteLength;
-        }
-
-        result = new Uint8Array(size);
-        result[0] = (size >>> 24) & 0xFF;  // size
-        result[1] = (size >>> 16) & 0xFF;
-        result[2] = (size >>>  8) & 0xFF;
-        result[3] = (size) & 0xFF;
-
-        result.set(type, 4);  // type
-
-        let offset = 8;
-        for (let i = 0; i < arrayCount; i++) {  // data body
-            result.set(datas[i], offset);
-            offset += datas[i].byteLength;
-        }
-
-        return result;
-    }
-
-    // emit ftyp & moov
-    static generateInitSegment(meta) {
-        let ftyp = MP4.box(MP4.types.ftyp, MP4.constants.FTYP);
-        let moov = MP4.moov(meta);
-
-        let result = new Uint8Array(ftyp.byteLength + moov.byteLength);
-        result.set(ftyp, 0);
-        result.set(moov, ftyp.byteLength);
-        return result;
-    }
-
-    // Movie metadata box
-    static moov(meta) {
-        let mvhd = MP4.mvhd(meta.timescale, meta.duration);
-        let trak = MP4.trak(meta);
-        let mvex = MP4.mvex(meta);
-        return MP4.box(MP4.types.moov, mvhd, trak, mvex);
-    }
-
-    // Movie header box
-    static mvhd(timescale, duration) {
-        return MP4.box(MP4.types.mvhd, new Uint8Array([
-            0x00, 0x00, 0x00, 0x00,  // version(0) + flags
-            0x00, 0x00, 0x00, 0x00,  // creation_time
-            0x00, 0x00, 0x00, 0x00,  // modification_time
-            (timescale >>> 24) & 0xFF,  // timescale: 4 bytes
-            (timescale >>> 16) & 0xFF,
-            (timescale >>>  8) & 0xFF,
-            (timescale) & 0xFF,
-            (duration >>> 24) & 0xFF,   // duration: 4 bytes
-            (duration >>> 16) & 0xFF,
-            (duration >>>  8) & 0xFF,
-            (duration) & 0xFF,
-            0x00, 0x01, 0x00, 0x00,  // Preferred rate: 1.0
-            0x01, 0x00, 0x00, 0x00,  // PreferredVolume(1.0, 2bytes) + reserved(2bytes)
-            0x00, 0x00, 0x00, 0x00,  // reserved: 4 + 4 bytes
-            0x00, 0x00, 0x00, 0x00,
-            0x00, 0x01, 0x00, 0x00,  // ----begin composition matrix----
-            0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00,
-            0x00, 0x01, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00,
-            0x40, 0x00, 0x00, 0x00,  // ----end composition matrix----
-            0x00, 0x00, 0x00, 0x00,  // ----begin pre_defined 6 * 4 bytes----
-            0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00,  // ----end pre_defined 6 * 4 bytes----
-            0xFF, 0xFF, 0xFF, 0xFF   // next_track_ID
-        ]));
-    }
-
-    // Track box
-    static trak(meta) {
-        return MP4.box(MP4.types.trak, MP4.tkhd(meta), MP4.mdia(meta));
-    }
-
-    // Track header box
-    static tkhd(meta) {
-        let trackId = meta.id, duration = meta.duration;
-        let width = meta.presentWidth, height = meta.presentHeight;
-
-        return MP4.box(MP4.types.tkhd, new Uint8Array([
-            0x00, 0x00, 0x00, 0x07,  // version(0) + flags
-            0x00, 0x00, 0x00, 0x00,  // creation_time
-            0x00, 0x00, 0x00, 0x00,  // modification_time
-            (trackId >>> 24) & 0xFF,  // track_ID: 4 bytes
-            (trackId >>> 16) & 0xFF,
-            (trackId >>>  8) & 0xFF,
-            (trackId) & 0xFF,
-            0x00, 0x00, 0x00, 0x00,  // reserved: 4 bytes
-            (duration >>> 24) & 0xFF, // duration: 4 bytes
-            (duration >>> 16) & 0xFF,
-            (duration >>>  8) & 0xFF,
-            (duration) & 0xFF,
-            0x00, 0x00, 0x00, 0x00,  // reserved: 2 * 4 bytes
-            0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00,  // layer(2bytes) + alternate_group(2bytes)
-            0x00, 0x00, 0x00, 0x00,  // volume(2bytes) + reserved(2bytes)
-            0x00, 0x01, 0x00, 0x00,  // ----begin composition matrix----
-            0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00,
-            0x00, 0x01, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00,
-            0x40, 0x00, 0x00, 0x00,  // ----end composition matrix----
-            (width >>> 8) & 0xFF,    // width and height
-            (width) & 0xFF,
-            0x00, 0x00,
-            (height >>> 8) & 0xFF,
-            (height) & 0xFF,
-            0x00, 0x00
-        ]));
-    }
-
-    // Media Box
-    static mdia(meta) {
-        return MP4.box(MP4.types.mdia, MP4.mdhd(meta), MP4.hdlr(meta), MP4.minf(meta));
-    }
-
-    // Media header box
-    static mdhd(meta) {
-        let timescale = meta.timescale;
-        let duration = meta.duration;
-        return MP4.box(MP4.types.mdhd, new Uint8Array([
-            0x00, 0x00, 0x00, 0x00,  // version(0) + flags
-            0x00, 0x00, 0x00, 0x00,  // creation_time
-            0x00, 0x00, 0x00, 0x00,  // modification_time
-            (timescale >>> 24) & 0xFF,  // timescale: 4 bytes
-            (timescale >>> 16) & 0xFF,
-            (timescale >>>  8) & 0xFF,
-            (timescale) & 0xFF,
-            (duration >>> 24) & 0xFF,   // duration: 4 bytes
-            (duration >>> 16) & 0xFF,
-            (duration >>>  8) & 0xFF,
-            (duration) & 0xFF,
-            0x55, 0xC4,             // language: und (undetermined)
-            0x00, 0x00              // pre_defined = 0
-        ]));
-    }
-
-    // Media handler reference box
-    static hdlr(meta) {
-        let data;
-        if (meta.type === 'audio') {
-            data = MP4.constants.HDLR_AUDIO;
-        } else {
-            data = MP4.constants.HDLR_VIDEO;
-        }
-        return MP4.box(MP4.types.hdlr, data);
-    }
-
-    // Media infomation box
-    static minf(meta) {
-        let xmhd;
-        if (meta.type === 'audio') {
-            xmhd = MP4.box(MP4.types.smhd, MP4.constants.SMHD);
-        } else {
-            xmhd = MP4.box(MP4.types.vmhd, MP4.constants.VMHD);
-        }
-        return MP4.box(MP4.types.minf, xmhd, MP4.dinf(), MP4.stbl(meta));
-    }
-
-    // Data infomation box
-    static dinf() {
-        return MP4.box(MP4.types.dinf,
-            MP4.box(MP4.types.dref, MP4.constants.DREF)
-        );
-    }
-
-    // Sample table box
-    static stbl(meta) {
-        return MP4.box(MP4.types.stbl,  // type: stbl
-            MP4.stsd(meta),  // Sample Description Table
-            MP4.box(MP4.types.stts, MP4.constants.STTS),  // Time-To-Sample
-            MP4.box(MP4.types.stsc, MP4.constants.STSC),  // Sample-To-Chunk
-            MP4.box(MP4.types.stsz, MP4.constants.STSZ),  // Sample size
-            MP4.box(MP4.types.stco, MP4.constants.STCO)   // Chunk offset
-        );
-    }
-
-    // Sample description box
-    static stsd(meta) {
-        if (meta.type === 'audio') {
-            if (meta.codec === 'mp3') {
-                return MP4.box(MP4.types.stsd, MP4.constants.STSD_PREFIX, MP4.mp3(meta));
-            }
-            // else: aac -> mp4a
-            return MP4.box(MP4.types.stsd, MP4.constants.STSD_PREFIX, MP4.mp4a(meta));
-        } else {
-            return MP4.box(MP4.types.stsd, MP4.constants.STSD_PREFIX, MP4.avc1(meta));
-        }
-    }
-
-    static mp3(meta) {
-        let channelCount = meta.channelCount;
-        let sampleRate = meta.audioSampleRate;
-
-        let data = new Uint8Array([
-            0x00, 0x00, 0x00, 0x00,  // reserved(4)
-            0x00, 0x00, 0x00, 0x01,  // reserved(2) + data_reference_index(2)
-            0x00, 0x00, 0x00, 0x00,  // reserved: 2 * 4 bytes
-            0x00, 0x00, 0x00, 0x00,
-            0x00, channelCount,      // channelCount(2)
-            0x00, 0x10,              // sampleSize(2)
-            0x00, 0x00, 0x00, 0x00,  // reserved(4)
-            (sampleRate >>> 8) & 0xFF,  // Audio sample rate
-            (sampleRate) & 0xFF,
-            0x00, 0x00
-        ]);
-
-        return MP4.box(MP4.types['.mp3'], data);
-    }
-
-    static mp4a(meta) {
-        let channelCount = meta.channelCount;
-        let sampleRate = meta.audioSampleRate;
-
-        let data = new Uint8Array([
-            0x00, 0x00, 0x00, 0x00,  // reserved(4)
-            0x00, 0x00, 0x00, 0x01,  // reserved(2) + data_reference_index(2)
-            0x00, 0x00, 0x00, 0x00,  // reserved: 2 * 4 bytes
-            0x00, 0x00, 0x00, 0x00,
-            0x00, channelCount,      // channelCount(2)
-            0x00, 0x10,              // sampleSize(2)
-            0x00, 0x00, 0x00, 0x00,  // reserved(4)
-            (sampleRate >>> 8) & 0xFF,  // Audio sample rate
-            (sampleRate) & 0xFF,
-            0x00, 0x00
-        ]);
-
-        return MP4.box(MP4.types.mp4a, data, MP4.esds(meta));
-    }
-
-    static esds(meta) {
-        let config = meta.config || [];
-        let configSize = config.length;
-        let data = new Uint8Array([
-            0x00, 0x00, 0x00, 0x00,  // version 0 + flags
-
-            0x03,                    // descriptor_type
-            0x17 + configSize,       // length3
-            0x00, 0x01,              // es_id
-            0x00,                    // stream_priority
-
-            0x04,                    // descriptor_type
-            0x0F + configSize,       // length
-            0x40,                    // codec: mpeg4_audio
-            0x15,                    // stream_type: Audio
-            0x00, 0x00, 0x00,        // buffer_size
-            0x00, 0x00, 0x00, 0x00,  // maxBitrate
-            0x00, 0x00, 0x00, 0x00,  // avgBitrate
-
-            0x05                     // descriptor_type
-        ].concat([
-            configSize
-        ]).concat(
-            config
-        ).concat([
-            0x06, 0x01, 0x02         // GASpecificConfig
-        ]));
-        return MP4.box(MP4.types.esds, data);
-    }
-
-    static avc1(meta) {
-        let avcc = meta.avcc;
-        let width = meta.codecWidth, height = meta.codecHeight;
-
-        let data = new Uint8Array([
-            0x00, 0x00, 0x00, 0x00,  // reserved(4)
-            0x00, 0x00, 0x00, 0x01,  // reserved(2) + data_reference_index(2)
-            0x00, 0x00, 0x00, 0x00,  // pre_defined(2) + reserved(2)
-            0x00, 0x00, 0x00, 0x00,  // pre_defined: 3 * 4 bytes
-            0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00,
-            (width >>> 8) & 0xFF,    // width: 2 bytes
-            (width) & 0xFF,
-            (height >>> 8) & 0xFF,   // height: 2 bytes
-            (height) & 0xFF,
-            0x00, 0x48, 0x00, 0x00,  // horizresolution: 4 bytes
-            0x00, 0x48, 0x00, 0x00,  // vertresolution: 4 bytes
-            0x00, 0x00, 0x00, 0x00,  // reserved: 4 bytes
-            0x00, 0x01,              // frame_count
-            0x0A,                    // strlen
-            0x78, 0x71, 0x71, 0x2F,  // compressorname: 32 bytes
-            0x66, 0x6C, 0x76, 0x2E,
-            0x6A, 0x73, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00,
-            0x00, 0x18,              // depth
-            0xFF, 0xFF               // pre_defined = -1
-        ]);
-        return MP4.box(MP4.types.avc1, data, MP4.box(MP4.types.avcC, avcc));
-    }
-
-    // Movie Extends box
-    static mvex(meta) {
-        return MP4.box(MP4.types.mvex, MP4.trex(meta));
-    }
-
-    // Track Extends box
-    static trex(meta) {
-        let trackId = meta.id;
-        let data = new Uint8Array([
-            0x00, 0x00, 0x00, 0x00,  // version(0) + flags
-            (trackId >>> 24) & 0xFF, // track_ID
-            (trackId >>> 16) & 0xFF,
-            (trackId >>>  8) & 0xFF,
-            (trackId) & 0xFF,
-            0x00, 0x00, 0x00, 0x01,  // default_sample_description_index
-            0x00, 0x00, 0x00, 0x00,  // default_sample_duration
-            0x00, 0x00, 0x00, 0x00,  // default_sample_size
-            0x00, 0x01, 0x00, 0x01   // default_sample_flags
-        ]);
-        return MP4.box(MP4.types.trex, data);
-    }
-
-    // Movie fragment box
-    static moof(track, baseMediaDecodeTime) {
-        return MP4.box(MP4.types.moof, MP4.mfhd(track.sequenceNumber), MP4.traf(track, baseMediaDecodeTime));
-    }
-
-    static mfhd(sequenceNumber) {
-        let data = new Uint8Array([
-            0x00, 0x00, 0x00, 0x00,
-            (sequenceNumber >>> 24) & 0xFF,  // sequence_number: int32
-            (sequenceNumber >>> 16) & 0xFF,
-            (sequenceNumber >>>  8) & 0xFF,
-            (sequenceNumber) & 0xFF
-        ]);
-        return MP4.box(MP4.types.mfhd, data);
-    }
-
-    // Track fragment box
-    static traf(track, baseMediaDecodeTime) {
-        let trackId = track.id;
-
-        // Track fragment header box
-        let tfhd = MP4.box(MP4.types.tfhd, new Uint8Array([
-            0x00, 0x00, 0x00, 0x00,  // version(0) & flags
-            (trackId >>> 24) & 0xFF, // track_ID
-            (trackId >>> 16) & 0xFF,
-            (trackId >>>  8) & 0xFF,
-            (trackId) & 0xFF
-        ]));
-        // Track Fragment Decode Time
-        let tfdt = MP4.box(MP4.types.tfdt, new Uint8Array([
-            0x00, 0x00, 0x00, 0x00,  // version(0) & flags
-            (baseMediaDecodeTime >>> 24) & 0xFF,  // baseMediaDecodeTime: int32
-            (baseMediaDecodeTime >>> 16) & 0xFF,
-            (baseMediaDecodeTime >>>  8) & 0xFF,
-            (baseMediaDecodeTime) & 0xFF
-        ]));
-        let sdtp = MP4.sdtp(track);
-        let trun = MP4.trun(track, sdtp.byteLength + 16 + 16 + 8 + 16 + 8 + 8);
-
-        return MP4.box(MP4.types.traf, tfhd, tfdt, trun, sdtp);
-    }
-
-    // Sample Dependency Type box
-    static sdtp(track) {
-        let samples = track.samples || [];
-        let sampleCount = samples.length;
-        let data = new Uint8Array(4 + sampleCount);
-        // 0~4 bytes: version(0) & flags
-        for (let i = 0; i < sampleCount; i++) {
-            let flags = samples[i].flags;
-            data[i + 4] = (flags.isLeading << 6)    // is_leading: 2 (bit)
-                | (flags.dependsOn << 4)    // sample_depends_on
-                | (flags.isDependedOn << 2) // sample_is_depended_on
-                | (flags.hasRedundancy);    // sample_has_redundancy
-        }
-        return MP4.box(MP4.types.sdtp, data);
-    }
-
-    // Track fragment run box
-    static trun(track, offset) {
-        let samples = track.samples || [];
-        let sampleCount = samples.length;
-        let dataSize = 12 + 16 * sampleCount;
-        let data = new Uint8Array(dataSize);
-        offset += 8 + dataSize;
-
-        data.set([
-            0x00, 0x00, 0x0F, 0x01,      // version(0) & flags
-            (sampleCount >>> 24) & 0xFF, // sample_count
-            (sampleCount >>> 16) & 0xFF,
-            (sampleCount >>>  8) & 0xFF,
-            (sampleCount) & 0xFF,
-            (offset >>> 24) & 0xFF,      // data_offset
-            (offset >>> 16) & 0xFF,
-            (offset >>>  8) & 0xFF,
-            (offset) & 0xFF
-        ], 0);
-
-        for (let i = 0; i < sampleCount; i++) {
-            let duration = samples[i].duration;
-            let size = samples[i].size;
-            let flags = samples[i].flags;
-            let cts = samples[i].cts;
-            data.set([
-                (duration >>> 24) & 0xFF,  // sample_duration
-                (duration >>> 16) & 0xFF,
-                (duration >>>  8) & 0xFF,
-                (duration) & 0xFF,
-                (size >>> 24) & 0xFF,      // sample_size
-                (size >>> 16) & 0xFF,
-                (size >>>  8) & 0xFF,
-                (size) & 0xFF,
-                (flags.isLeading << 2) | flags.dependsOn,  // sample_flags
-                (flags.isDependedOn << 6) | (flags.hasRedundancy << 4) | flags.isNonSync,
-                0x00, 0x00,                // sample_degradation_priority
-                (cts >>> 24) & 0xFF,       // sample_composition_time_offset
-                (cts >>> 16) & 0xFF,
-                (cts >>>  8) & 0xFF,
-                (cts) & 0xFF
-            ], 12 + 16 * i);
-        }
-        return MP4.box(MP4.types.trun, data);
-    }
-
-    static mdat(data) {
-        return MP4.box(MP4.types.mdat, data);
-    }
-
-}
-
-MP4.init();
-
-/* harmony default export */ const mp4 = (MP4);
-
-;// CONCATENATED MODULE: ./formats/aac-silent.js
-/*
- * Copyright (C) 2016 Bilibili. All Rights Reserved.
- *
- * This file is modified from dailymotion's hls.js library (hls.js/src/helper/aac.js)
- * @author zheng qian <xqq@xqq.im>
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-class AAC {
-	static getSilentFrame(codec, channelCount) {
-		if (codec === 'mp4a.40.2') {
-			// handle LC-AAC
-			if (channelCount === 1) {
-				return new Uint8Array([0x00, 0xc8, 0x00, 0x80, 0x23, 0x80]);
-			} else if (channelCount === 2) {
-				return new Uint8Array([0x21, 0x00, 0x49, 0x90, 0x02, 0x19, 0x00, 0x23, 0x80]);
-			} else if (channelCount === 3) {
-				return new Uint8Array([0x00, 0xc8, 0x00, 0x80, 0x20, 0x84, 0x01, 0x26, 0x40, 0x08, 0x64, 0x00, 0x8e]);
-			} else if (channelCount === 4) {
-				return new Uint8Array([0x00, 0xc8, 0x00, 0x80, 0x20, 0x84, 0x01, 0x26, 0x40, 0x08, 0x64, 0x00, 0x80, 0x2c, 0x80, 0x08, 0x02, 0x38]);
-			} else if (channelCount === 5) {
-				return new Uint8Array([0x00, 0xc8, 0x00, 0x80, 0x20, 0x84, 0x01, 0x26, 0x40, 0x08, 0x64, 0x00, 0x82, 0x30, 0x04, 0x99, 0x00, 0x21, 0x90, 0x02, 0x38]);
-			} else if (channelCount === 6) {
-				return new Uint8Array([0x00, 0xc8, 0x00, 0x80, 0x20, 0x84, 0x01, 0x26, 0x40, 0x08, 0x64, 0x00, 0x82, 0x30, 0x04, 0x99, 0x00, 0x21, 0x90, 0x02, 0x00, 0xb2, 0x00, 0x20, 0x08, 0xe0]);
-			}
-		} else {
-			// handle HE-AAC (mp4a.40.5 / mp4a.40.29)
-			if (channelCount === 1) {
-				// ffmpeg -y -f lavfi -i "aevalsrc=0:d=0.05" -c:a libfdk_aac -profile:a aac_he -b:a 4k output.aac && hexdump -v -e '16/1 "0x%x," "\n"' -v output.aac
-				return new Uint8Array([0x1, 0x40, 0x22, 0x80, 0xa3, 0x4e, 0xe6, 0x80, 0xba, 0x8, 0x0, 0x0, 0x0, 0x1c, 0x6, 0xf1, 0xc1, 0xa, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5e]);
-			} else if (channelCount === 2) {
-				// ffmpeg -y -f lavfi -i "aevalsrc=0|0:d=0.05" -c:a libfdk_aac -profile:a aac_he_v2 -b:a 4k output.aac && hexdump -v -e '16/1 "0x%x," "\n"' -v output.aac
-				return new Uint8Array([0x1, 0x40, 0x22, 0x80, 0xa3, 0x5e, 0xe6, 0x80, 0xba, 0x8, 0x0, 0x0, 0x0, 0x0, 0x95, 0x0, 0x6, 0xf1, 0xa1, 0xa, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5e]);
-			} else if (channelCount === 3) {
-				// ffmpeg -y -f lavfi -i "aevalsrc=0|0|0:d=0.05" -c:a libfdk_aac -profile:a aac_he_v2 -b:a 4k output.aac && hexdump -v -e '16/1 "0x%x," "\n"' -v output.aac
-				return new Uint8Array([0x1, 0x40, 0x22, 0x80, 0xa3, 0x5e, 0xe6, 0x80, 0xba, 0x8, 0x0, 0x0, 0x0, 0x0, 0x95, 0x0, 0x6, 0xf1, 0xa1, 0xa, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5e]);
-			}
-		}
-		return null;
-	}
-
-}
-
-/* harmony default export */ const aac_silent = (AAC);
-
-;// CONCATENATED MODULE: ./formats/mp4-remuxer.js
-/*
- * Copyright (C) 2016 Bilibili. All Rights Reserved.
- *
- * @author zheng qian <xqq@xqq.im>
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-
-// Fragmented mp4 remuxer
-
-
-
-
-
-
-class MP4Remuxer {
-	TAG = 'MP4Remuxer'
-
-	constructor(config) {
-		this._config = config;
-		this._isLive = (config.isLive === true);
-
-		this._dtsBase = -1;
-		this._dtsBaseInited = false;
-		this._audioDtsBase = Infinity;
-		this._videoDtsBase = Infinity;
-		this._audioNextDts = undefined;
-		this._videoNextDts = undefined;
-		this._audioStashedLastSample = null;
-		this._videoStashedLastSample = null;
-
-		this._audioMeta = null;
-		this._videoMeta = null;
-
-		this._audioSegmentInfoList = new MediaSegmentInfoList('audio');
-		this._videoSegmentInfoList = new MediaSegmentInfoList('video');
-
-		this._onInitSegment = null;
-		this._onMediaSegment = null;
-
-		// Workaround for chrome < 50: Always force first sample as a Random Access Point in media segment
-		// see https://bugs.chromium.org/p/chromium/issues/detail?id=229412
-		this._forceFirstIDR = (browser.chrome &&
-			(browser.version.major < 50 ||
-				(browser.version.major === 50 && browser.version.build < 2661))) ? true : false;
-
-		// Workaround for IE11/Edge: Fill silent aac frame after keyframe-seeking
-		// Make audio beginDts equals with video beginDts, in order to fix seek freeze
-		this._fillSilentAfterSeek = (browser.msedge || browser.msie);
-
-		// While only FireFox supports 'audio/mp4, codecs="mp3"', use 'audio/mpeg' for chrome, safari, ...
-		this._mp3UseMpegAudio = !browser.firefox;
-
-		this._fillAudioTimestampGap = this._config.fixAudioTimestampGap;
-	}
-
-	destroy() {
-		this._dtsBase = -1;
-		this._dtsBaseInited = false;
-		this._audioMeta = null;
-		this._videoMeta = null;
-		this._audioSegmentInfoList.clear();
-		this._audioSegmentInfoList = null;
-		this._videoSegmentInfoList.clear();
-		this._videoSegmentInfoList = null;
-		this._onInitSegment = null;
-		this._onMediaSegment = null;
-	}
-
-	bindDataSource(producer) {
-		producer.onDataAvailable = this.remux.bind(this);
-		producer.onTrackMetadata = this._onTrackMetadataReceived.bind(this);
-		return this;
-	}
-
-	get onInitSegment() {
-		return this._onInitSegment;
-	}
-
-	set onInitSegment(callback) {
-		this._onInitSegment = callback;
-	}
-
-	get onMediaSegment() {
-		return this._onMediaSegment;
-	}
-
-	set onMediaSegment(callback) {
-		this._onMediaSegment = callback;
-	}
-
-	insertDiscontinuity() {
-		this._audioNextDts = this._videoNextDts = undefined;
-	}
-
-	seek(originalDts) {
-		this._audioStashedLastSample = null;
-		this._videoStashedLastSample = null;
-		this._videoSegmentInfoList.clear();
-		this._audioSegmentInfoList.clear();
-	}
-
-	remux(audioTrack, videoTrack) {
-		if (!this._onMediaSegment) {
-			throw new IllegalStateException('MP4Remuxer: onMediaSegment callback must be specificed!');
-		}
-		if (!this._dtsBaseInited) {
-			this._calculateDtsBase(audioTrack, videoTrack);
-		}
-		this._remuxVideo(videoTrack);
-		this._remuxAudio(audioTrack);
-	}
-
-	_onTrackMetadataReceived(type, metadata) {
-		Log.i(this.TAG, "_onTrackMetadataReceived");
-		let metabox = null;
-
-		let container = 'mp4';
-		let codec = metadata.codec;
-
-		if (type === 'audio') {
-			this._audioMeta = metadata;
-			if (metadata.codec === 'mp3' && this._mp3UseMpegAudio) {
-				// 'audio/mpeg' for MP3 audio track
-				container = 'mpeg';
-				codec = '';
-				metabox = new Uint8Array(0);
-			} else {
-				// 'audio/mp4, codecs="codec"'
-				metabox = mp4.generateInitSegment(metadata);
-			}
-		} else if (type === 'video') {
-			this._videoMeta = metadata;
-			metabox = mp4.generateInitSegment(metadata);
-		} else {
-			return;
-		}
-
-		// dispatch metabox (Initialization Segment)
-		if (!this._onInitSegment) {
-			throw new IllegalStateException('MP4Remuxer: onInitSegment callback must be specified!');
-		}
-		this._onInitSegment(type, {
-			type: type,
-			data: metabox.buffer,
-			codec: codec,
-			container: `${type}/${container}`,
-			mediaDuration: metadata.duration  // in timescale 1000 (milliseconds)
-		});
-	}
-
-	_calculateDtsBase(audioTrack, videoTrack) {
-		if (this._dtsBaseInited) {
-			return;
-		}
-
-		if (audioTrack.samples && audioTrack.samples.length) {
-			this._audioDtsBase = audioTrack.samples[0].dts;
-		}
-		if (videoTrack.samples && videoTrack.samples.length) {
-			this._videoDtsBase = videoTrack.samples[0].dts;
-		}
-
-		this._dtsBase = Math.min(this._audioDtsBase, this._videoDtsBase);
-		this._dtsBaseInited = true;
-	}
-
-	flushStashedSamples() {
-		let videoSample = this._videoStashedLastSample;
-		let audioSample = this._audioStashedLastSample;
-
-		let videoTrack = {
-			type: 'video',
-			id: 1,
-			sequenceNumber: 0,
-			samples: [],
-			length: 0
-		};
-
-		if (videoSample != null) {
-			videoTrack.samples.push(videoSample);
-			videoTrack.length = videoSample.length;
-		}
-
-		let audioTrack = {
-			type: 'audio',
-			id: 2,
-			sequenceNumber: 0,
-			samples: [],
-			length: 0
-		};
-
-		if (audioSample != null) {
-			audioTrack.samples.push(audioSample);
-			audioTrack.length = audioSample.length;
-		}
-
-		this._videoStashedLastSample = null;
-		this._audioStashedLastSample = null;
-
-		this._remuxVideo(videoTrack, true);
-		this._remuxAudio(audioTrack, true);
-	}
-
-	_remuxAudio(audioTrack, force) {
-		Log.i(this.TAG, "_remuxAudio");
-		if (this._audioMeta == null) {
-			Log.w(this.TAG, "no audioMeta");
-			return;
-		}
-
-		let track = audioTrack;
-		let samples = track.samples;
-		let dtsCorrection = undefined;
-		let firstDts = -1, lastDts = -1, lastPts = -1;
-		let refSampleDuration = this._audioMeta.refSampleDuration;
-
-		let mpegRawTrack = this._audioMeta.codec === 'mp3' && this._mp3UseMpegAudio;
-		let firstSegmentAfterSeek = this._dtsBaseInited && this._audioNextDts === undefined;
-
-		let insertPrefixSilentFrame = false;
-
-		if (!samples || samples.length === 0) {
-			Log.w(this.TAG, "no samples");
-			return;
-		}
-		if (samples.length === 1 && !force) {
-			// If [sample count in current batch] === 1 && (force != true)
-			// Ignore and keep in demuxer's queue
-			Log.w(this.TAG, "1 sample");
-			return;
-		}  // else if (force === true) do remux
-
-		let offset = 0;
-		let mdatbox = null;
-		let mdatBytes = 0;
-
-		// calculate initial mdat size
-		if (mpegRawTrack) {
-			// for raw mpeg buffer
-			offset = 0;
-			mdatBytes = track.length;
-		} else {
-			// for fmp4 mdat box
-			offset = 8;  // size + type
-			mdatBytes = 8 + track.length;
-		}
-
-
-		let lastSample = null;
-
-		// Pop the lastSample and waiting for stash
-		if (samples.length > 1) {
-			lastSample = samples.pop();
-			mdatBytes -= lastSample.length;
-		}
-
-		// Insert [stashed lastSample in the previous batch] to the front
-		if (this._audioStashedLastSample != null) {
-			let sample = this._audioStashedLastSample;
-			this._audioStashedLastSample = null;
-			samples.unshift(sample);
-			mdatBytes += sample.length;
-		}
-
-		// Stash the lastSample of current batch, waiting for next batch
-		if (lastSample != null) {
-			this._audioStashedLastSample = lastSample;
-		}
-
-
-		let firstSampleOriginalDts = samples[0].dts - this._dtsBase;
-
-		// calculate dtsCorrection
-		if (this._audioNextDts) {
-			dtsCorrection = firstSampleOriginalDts - this._audioNextDts;
-		} else {  // this._audioNextDts == undefined
-			if (this._audioSegmentInfoList.isEmpty()) {
-				dtsCorrection = 0;
-				if (this._fillSilentAfterSeek && !this._videoSegmentInfoList.isEmpty()) {
-					if (this._audioMeta.originalCodec !== 'mp3') {
-						insertPrefixSilentFrame = true;
-					}
-				}
-			} else {
-				let lastSample = this._audioSegmentInfoList.getLastSampleBefore(firstSampleOriginalDts);
-				if (lastSample != null) {
-					let distance = (firstSampleOriginalDts - (lastSample.originalDts + lastSample.duration));
-					if (distance <= 3) {
-						distance = 0;
-					}
-					let expectedDts = lastSample.dts + lastSample.duration + distance;
-					dtsCorrection = firstSampleOriginalDts - expectedDts;
-				} else { // lastSample == null, cannot found
-					dtsCorrection = 0;
-				}
-			}
-		}
-
-		if (insertPrefixSilentFrame) {
-			// align audio segment beginDts to match with current video segment's beginDts
-			let firstSampleDts = firstSampleOriginalDts - dtsCorrection;
-			let videoSegment = this._videoSegmentInfoList.getLastSegmentBefore(firstSampleOriginalDts);
-			if (videoSegment != null && videoSegment.beginDts < firstSampleDts) {
-				let silentUnit = aac_silent.getSilentFrame(this._audioMeta.originalCodec, this._audioMeta.channelCount);
-				if (silentUnit) {
-					let dts = videoSegment.beginDts;
-					let silentFrameDuration = firstSampleDts - videoSegment.beginDts;
-					Log.v(this.TAG, `InsertPrefixSilentAudio: dts: ${dts}, duration: ${silentFrameDuration}`);
-					samples.unshift({ unit: silentUnit, dts: dts, pts: dts });
-					mdatBytes += silentUnit.byteLength;
-				}  // silentUnit == null: Cannot generate, skip
-			} else {
-				insertPrefixSilentFrame = false;
-			}
-		}
-
-		let mp4Samples = [];
-
-		// Correct dts for each sample, and calculate sample duration. Then output to mp4Samples
-		for (let i = 0; i < samples.length; i++) {
-			let sample = samples[i];
-			let unit = sample.unit;
-			let originalDts = sample.dts - this._dtsBase;
-			let dts = originalDts;
-			let needFillSilentFrames = false;
-			let silentFrames = null;
-			let sampleDuration = 0;
-
-			if (originalDts < -0.001) {
-				continue; //pass the first sample with the invalid dts
-			}
-
-			if (this._audioMeta.codec !== 'mp3') {
-				// for AAC codec, we need to keep dts increase based on refSampleDuration
-				let curRefDts = originalDts;
-				const maxAudioFramesDrift = 3;
-				if (this._audioNextDts) {
-					curRefDts = this._audioNextDts;
-				}
-
-				dtsCorrection = originalDts - curRefDts;
-				if (dtsCorrection <= -maxAudioFramesDrift * refSampleDuration) {
-					// If we're overlapping by more than maxAudioFramesDrift number of frame, drop this sample
-					Log.w(this.TAG, `Dropping 1 audio frame (originalDts: ${originalDts} ms ,curRefDts: ${curRefDts} ms)  due to dtsCorrection: ${dtsCorrection} ms overlap.`);
-					continue;
-				}
-				else if (dtsCorrection >= maxAudioFramesDrift * refSampleDuration && this._fillAudioTimestampGap && !browser.safari) {
-					// Silent frame generation, if large timestamp gap detected && config.fixAudioTimestampGap
-					needFillSilentFrames = true;
-					// We need to insert silent frames to fill timestamp gap
-					let frameCount = Math.floor(dtsCorrection / refSampleDuration);
-					Log.w(this.TAG, 'Large audio timestamp gap detected, may cause AV sync to drift. ' +
-						'Silent frames will be generated to avoid unsync.\n' +
-						`originalDts: ${originalDts} ms, curRefDts: ${curRefDts} ms, ` +
-						`dtsCorrection: ${Math.round(dtsCorrection)} ms, generate: ${frameCount} frames`);
-
-
-					dts = Math.floor(curRefDts);
-					sampleDuration = Math.floor(curRefDts + refSampleDuration) - dts;
-
-					let silentUnit = aac_silent.getSilentFrame(this._audioMeta.originalCodec, this._audioMeta.channelCount);
-					if (silentUnit == null) {
-						Log.w(this.TAG, 'Unable to generate silent frame for ' +
-							`${this._audioMeta.originalCodec} with ${this._audioMeta.channelCount} channels, repeat last frame`);
-						// Repeat last frame
-						silentUnit = unit;
-					}
-					silentFrames = [];
-
-					for (let j = 0; j < frameCount; j++) {
-						curRefDts = curRefDts + refSampleDuration;
-						let intDts = Math.floor(curRefDts);  // change to integer
-						let intDuration = Math.floor(curRefDts + refSampleDuration) - intDts;
-						let frame = {
-							dts: intDts,
-							pts: intDts,
-							cts: 0,
-							unit: silentUnit,
-							size: silentUnit.byteLength,
-							duration: intDuration,  // wait for next sample
-							originalDts: originalDts,
-							flags: {
-								isLeading: 0,
-								dependsOn: 1,
-								isDependedOn: 0,
-								hasRedundancy: 0
-							}
-						};
-						silentFrames.push(frame);
-						mdatBytes += frame.size;
-
-					}
-
-					this._audioNextDts = curRefDts + refSampleDuration;
-
-				} else {
-
-					dts = Math.floor(curRefDts);
-					sampleDuration = Math.floor(curRefDts + refSampleDuration) - dts;
-					this._audioNextDts = curRefDts + refSampleDuration;
-
-				}
-			} else {
-				// keep the original dts calculate algorithm for mp3
-				dts = originalDts - dtsCorrection;
-
-
-				if (i !== samples.length - 1) {
-					let nextDts = samples[i + 1].dts - this._dtsBase - dtsCorrection;
-					sampleDuration = nextDts - dts;
-				} else {  // the last sample
-					if (lastSample != null) {  // use stashed sample's dts to calculate sample duration
-						let nextDts = lastSample.dts - this._dtsBase - dtsCorrection;
-						sampleDuration = nextDts - dts;
-					} else if (mp4Samples.length >= 1) {  // use second last sample duration
-						sampleDuration = mp4Samples[mp4Samples.length - 1].duration;
-					} else {  // the only one sample, use reference sample duration
-						sampleDuration = Math.floor(refSampleDuration);
-					}
-				}
-				this._audioNextDts = dts + sampleDuration;
-			}
-
-			if (firstDts === -1) {
-				firstDts = dts;
-			}
-			mp4Samples.push({
-				dts: dts,
-				pts: dts,
-				cts: 0,
-				unit: sample.unit,
-				size: sample.unit.byteLength,
-				duration: sampleDuration,
-				originalDts: originalDts,
-				flags: {
-					isLeading: 0,
-					dependsOn: 1,
-					isDependedOn: 0,
-					hasRedundancy: 0
-				}
-			});
-
-			if (needFillSilentFrames) {
-				// Silent frames should be inserted after wrong-duration frame
-				mp4Samples.push.apply(mp4Samples, silentFrames);
-			}
-		}
-
-		if (mp4Samples.length === 0) {
-			//no samples need to remux
-			track.samples = [];
-			track.length = 0;
-			Log.w(this.TAG, "no mp4Samples = 0");
-			return;
-		}
-
-		// allocate mdatbox
-		if (mpegRawTrack) {
-			// allocate for raw mpeg buffer
-			mdatbox = new Uint8Array(mdatBytes);
-		} else {
-			// allocate for fmp4 mdat box
-			mdatbox = new Uint8Array(mdatBytes);
-			// size field
-			mdatbox[0] = (mdatBytes >>> 24) & 0xFF;
-			mdatbox[1] = (mdatBytes >>> 16) & 0xFF;
-			mdatbox[2] = (mdatBytes >>> 8) & 0xFF;
-			mdatbox[3] = (mdatBytes) & 0xFF;
-			// type field (fourCC)
-			mdatbox.set(mp4.types.mdat, 4);
-		}
-
-		// Write samples into mdatbox
-		for (let i = 0; i < mp4Samples.length; i++) {
-			let unit = mp4Samples[i].unit;
-			mdatbox.set(unit, offset);
-			offset += unit.byteLength;
-		}
-
-		let latest = mp4Samples[mp4Samples.length - 1];
-		lastDts = latest.dts + latest.duration;
-		//this._audioNextDts = lastDts;
-
-		// fill media segment info & add to info list
-		let info = new MediaSegmentInfo();
-		info.beginDts = firstDts;
-		info.endDts = lastDts;
-		info.beginPts = firstDts;
-		info.endPts = lastDts;
-		info.originalBeginDts = mp4Samples[0].originalDts;
-		info.originalEndDts = latest.originalDts + latest.duration;
-		info.firstSample = new SampleInfo(mp4Samples[0].dts,
-			mp4Samples[0].pts,
-			mp4Samples[0].duration,
-			mp4Samples[0].originalDts,
-			false);
-		info.lastSample = new SampleInfo(latest.dts,
-			latest.pts,
-			latest.duration,
-			latest.originalDts,
-			false);
-		if (!this._isLive) {
-			this._audioSegmentInfoList.append(info);
-		}
-
-		track.samples = mp4Samples;
-		track.sequenceNumber++;
-
-		let moofbox;
-
-		if (mpegRawTrack) {
-			// Generate empty buffer, because useless for raw mpeg
-			moofbox = new Uint8Array(0);
-		} else {
-			// Generate moof for fmp4 segment
-			moofbox = mp4.moof(track, firstDts);
-		}
-
-		track.samples = [];
-		track.length = 0;
-
-		let segment = {
-			type: 'audio',
-			data: this._mergeBoxes(moofbox, mdatbox).buffer,
-			sampleCount: mp4Samples.length,
-			info: info
-		};
-
-		if (mpegRawTrack && firstSegmentAfterSeek) {
-			// For MPEG audio stream in MSE, if seeking occurred, before appending new buffer
-			// We need explicitly set timestampOffset to the desired point in timeline for mpeg SourceBuffer.
-			segment.timestampOffset = firstDts;
-		}
-
-		Log.i(this.TAG, "send onMediaSegment audio");
-		this._onMediaSegment('audio', segment);
-	}
-
-	_remuxVideo(videoTrack, force) {
-		Log.i(this.TAG, "_remuxVideo");
-		if (this._videoMeta == null) {
-			return;
-		}
-
-		let track = videoTrack;
-		let samples = track.samples;
-		let dtsCorrection = undefined;
-		let firstDts = -1, lastDts = -1;
-		let firstPts = -1, lastPts = -1;
-
-		if (!samples || samples.length === 0) {
-			Log.w(this.TAG, "no samples");
-			return;
-		}
-		if (samples.length === 1 && !force) {
-			// If [sample count in current batch] === 1 && (force != true)
-			// Ignore and keep in demuxer's queue
-			Log.w(this.TAG, "no sampes = 1");
-			return;
-		}  // else if (force === true) do remux
-
-		let offset = 8;
-		let mdatbox = null;
-		let mdatBytes = 8 + videoTrack.length;
-
-
-		let lastSample = null;
-
-		// Pop the lastSample and waiting for stash
-		if (samples.length > 1) {
-			lastSample = samples.pop();
-			mdatBytes -= lastSample.length;
-		}
-
-		// Insert [stashed lastSample in the previous batch] to the front
-		if (this._videoStashedLastSample != null) {
-			let sample = this._videoStashedLastSample;
-			this._videoStashedLastSample = null;
-			samples.unshift(sample);
-			mdatBytes += sample.length;
-		}
-
-		// Stash the lastSample of current batch, waiting for next batch
-		if (lastSample != null) {
-			this._videoStashedLastSample = lastSample;
-		}
-
-
-		let firstSampleOriginalDts = samples[0].dts - this._dtsBase;
-
-		// calculate dtsCorrection
-		if (this._videoNextDts) {
-			dtsCorrection = firstSampleOriginalDts - this._videoNextDts;
-		} else {  // this._videoNextDts == undefined
-			if (this._videoSegmentInfoList.isEmpty()) {
-				dtsCorrection = 0;
-			} else {
-				let lastSample = this._videoSegmentInfoList.getLastSampleBefore(firstSampleOriginalDts);
-				if (lastSample != null) {
-					let distance = (firstSampleOriginalDts - (lastSample.originalDts + lastSample.duration));
-					if (distance <= 3) {
-						distance = 0;
-					}
-					let expectedDts = lastSample.dts + lastSample.duration + distance;
-					dtsCorrection = firstSampleOriginalDts - expectedDts;
-				} else { // lastSample == null, cannot found
-					dtsCorrection = 0;
-				}
-			}
-		}
-
-		let info = new MediaSegmentInfo();
-		let mp4Samples = [];
-
-		// Correct dts for each sample, and calculate sample duration. Then output to mp4Samples
-		for (let i = 0; i < samples.length; i++) {
-			let sample = samples[i];
-			let originalDts = sample.dts - this._dtsBase;
-			let isKeyframe = sample.isKeyframe;
-			let dts = originalDts - dtsCorrection;
-			let cts = sample.cts;
-			let pts = dts + cts;
-
-			if (firstDts === -1) {
-				firstDts = dts;
-				firstPts = pts;
-			}
-
-			let sampleDuration = 0;
-
-			if (i !== samples.length - 1) {
-				let nextDts = samples[i + 1].dts - this._dtsBase - dtsCorrection;
-				sampleDuration = nextDts - dts;
-			} else {  // the last sample
-				if (lastSample != null) {  // use stashed sample's dts to calculate sample duration
-					let nextDts = lastSample.dts - this._dtsBase - dtsCorrection;
-					sampleDuration = nextDts - dts;
-				} else if (mp4Samples.length >= 1) {  // use second last sample duration
-					sampleDuration = mp4Samples[mp4Samples.length - 1].duration;
-				} else {  // the only one sample, use reference sample duration
-					sampleDuration = Math.floor(this._videoMeta.refSampleDuration);
-				}
-			}
-
-			if (isKeyframe) {
-				let syncPoint = new SampleInfo(dts, pts, sampleDuration, sample.dts, true);
-				syncPoint.fileposition = sample.fileposition;
-				info.appendSyncPoint(syncPoint);
-			}
-
-			mp4Samples.push({
-				dts: dts,
-				pts: pts,
-				cts: cts,
-				units: sample.units,
-				size: sample.length,
-				isKeyframe: isKeyframe,
-				duration: sampleDuration,
-				originalDts: originalDts,
-				flags: {
-					isLeading: 0,
-					dependsOn: isKeyframe ? 2 : 1,
-					isDependedOn: isKeyframe ? 1 : 0,
-					hasRedundancy: 0,
-					isNonSync: isKeyframe ? 0 : 1
-				}
-			});
-		}
-
-		// allocate mdatbox
-		mdatbox = new Uint8Array(mdatBytes);
-		mdatbox[0] = (mdatBytes >>> 24) & 0xFF;
-		mdatbox[1] = (mdatBytes >>> 16) & 0xFF;
-		mdatbox[2] = (mdatBytes >>> 8) & 0xFF;
-		mdatbox[3] = (mdatBytes) & 0xFF;
-		mdatbox.set(mp4.types.mdat, 4);
-
-		// Write samples into mdatbox
-		for (let i = 0; i < mp4Samples.length; i++) {
-			let units = mp4Samples[i].units;
-			while (units.length) {
-				let unit = units.shift();
-				let data = unit.data;
-				mdatbox.set(data, offset);
-				offset += data.byteLength;
-			}
-		}
-
-		let latest = mp4Samples[mp4Samples.length - 1];
-		lastDts = latest.dts + latest.duration;
-		lastPts = latest.pts + latest.duration;
-		this._videoNextDts = lastDts;
-
-		// fill media segment info & add to info list
-		info.beginDts = firstDts;
-		info.endDts = lastDts;
-		info.beginPts = firstPts;
-		info.endPts = lastPts;
-		info.originalBeginDts = mp4Samples[0].originalDts;
-		info.originalEndDts = latest.originalDts + latest.duration;
-		info.firstSample = new SampleInfo(mp4Samples[0].dts,
-			mp4Samples[0].pts,
-			mp4Samples[0].duration,
-			mp4Samples[0].originalDts,
-			mp4Samples[0].isKeyframe);
-		info.lastSample = new SampleInfo(latest.dts,
-			latest.pts,
-			latest.duration,
-			latest.originalDts,
-			latest.isKeyframe);
-		if (!this._isLive) {
-			this._videoSegmentInfoList.append(info);
-		}
-
-		track.samples = mp4Samples;
-		track.sequenceNumber++;
-
-		// workaround for chrome < 50: force first sample as a random access point
-		// see https://bugs.chromium.org/p/chromium/issues/detail?id=229412
-		if (this._forceFirstIDR) {
-			let flags = mp4Samples[0].flags;
-			flags.dependsOn = 2;
-			flags.isNonSync = 0;
-		}
-
-		let moofbox = mp4.moof(track, firstDts);
-		track.samples = [];
-		track.length = 0;
-
-		Log.i(this.TAG, "send onMediaSegment video");
-		this._onMediaSegment('video', {
-			type: 'video',
-			data: this._mergeBoxes(moofbox, mdatbox).buffer,
-			sampleCount: mp4Samples.length,
-			info: info
-		});
-	}
-
-	_mergeBoxes(moof, mdat) {
-		let result = new Uint8Array(moof.byteLength + mdat.byteLength);
-		result.set(moof, 0);
-		result.set(mdat, moof.byteLength);
-		return result;
-	}
-
-}
-
-/* harmony default export */ const mp4_remuxer = (MP4Remuxer);
-
-;// CONCATENATED MODULE: ./formats/media-info.js
-/*
- * Copyright (C) 2016 Bilibili. All Rights Reserved.
- *
- * @author zheng qian <xqq@xqq.im>
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-class MediaInfo {
-
-	constructor() {
-		this.mimeType = null;
-		this.duration = null;
-
-		this.hasAudio = null;
-		this.hasVideo = null;
-		this.audioCodec = null;
-		this.videoCodec = null;
-		this.audioDataRate = null;
-		this.videoDataRate = null;
-
-		this.audioSampleRate = null;
-		this.audioChannelCount = null;
-
-		this.width = null;
-		this.height = null;
-		this.fps = null;
-		this.profile = null;
-		this.level = null;
-		this.refFrames = null;
-		this.chromaFormat = null;
-		this.sarNum = null;
-		this.sarDen = null;
-
-		this.metadata = null;
-		this.segments = null;  // MediaInfo[]
-		this.segmentCount = null;
-		this.hasKeyframesIndex = null;
-		this.keyframesIndex = null;
-	}
-
-	isComplete() {
-		let audioInfoComplete = (this.hasAudio === false) ||
-			(this.hasAudio === true &&
-				this.audioCodec != null &&
-				this.audioSampleRate != null &&
-				this.audioChannelCount != null);
-
-		let videoInfoComplete = (this.hasVideo === false) ||
-			(this.hasVideo === true &&
-				this.videoCodec != null &&
-				this.width != null &&
-				this.height != null &&
-				this.fps != null &&
-				this.profile != null &&
-				this.level != null &&
-				this.refFrames != null &&
-				this.chromaFormat != null &&
-				this.sarNum != null &&
-				this.sarDen != null);
-
-		// keyframesIndex may not be present
-		return this.mimeType != null &&
-			this.duration != null &&
-			this.metadata != null &&
-			this.hasKeyframesIndex != null &&
-			audioInfoComplete &&
-			videoInfoComplete;
-	}
-
-	isSeekable() {
-		return this.hasKeyframesIndex === true;
-	}
-
-	getNearestKeyframe(milliseconds) {
-		if (this.keyframesIndex == null) {
-			return null;
-		}
-
-		let table = this.keyframesIndex;
-		let keyframeIdx = this._search(table.times, milliseconds);
-
-		return {
-			index: keyframeIdx,
-			milliseconds: table.times[keyframeIdx],
-			fileposition: table.filepositions[keyframeIdx]
-		};
-	}
-
-	_search(list, value) {
-		let idx = 0;
-
-		let last = list.length - 1;
-		let mid = 0;
-		let lbound = 0;
-		let ubound = last;
-
-		if (value < list[0]) {
-			idx = 0;
-			lbound = ubound + 1;  // skip search
-		}
-
-		while (lbound <= ubound) {
-			mid = lbound + Math.floor((ubound - lbound) / 2);
-			if (mid === last || (value >= list[mid] && value < list[mid + 1])) {
-				idx = mid;
-				break;
-			} else if (list[mid] < value) {
-				lbound = mid + 1;
-			} else {
-				ubound = mid - 1;
-			}
-		}
-
-		return idx;
-	}
-
-}
-
-/* harmony default export */ const media_info = (MediaInfo);
-
-;// CONCATENATED MODULE: ./flv/transmuxer.js
-/*
- * Copyright (C) 2016 Bilibili. All Rights Reserved.
- *
- * @author zheng qian <xqq@xqq.im>
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-
-// Transmuxing (IO, Demuxing, Remuxing) controller, with multipart support
-
-
-
-
-
-class Transmuxer {
-    TAG = 'Transmuxer';
-
-    constructor(config) {
-        this._emitter = new event_emitter();
-
-        this._config = config;
-
-        this._currentSegmentIndex = 0;
-
-        this._mediaInfo = null;
-        this._ioctl = null;
-
-        this._pendingSeekTime = null;
-        this._pendingResolveSeekPoint = null;
-
-        this._statisticsReporter = null;
-
-        this._remuxer = new mp4_remuxer(this._config);
-        this._remuxer.onInitSegment = this._onRemuxerInitSegmentArrival.bind(this);
-        this._remuxer.onMediaSegment = this._onRemuxerMediaSegmentArrival.bind(this);
-
-       // this._enableStatisticsReporter();
-    }
-
-    destroy() {
-        this._mediaInfo = null;
-        this._mediaDataSource = null;
-
-        if (this._statisticsReporter) {
-            this._disableStatisticsReporter();
-        }
-        if (this._ioctl) {
-            this._ioctl.destroy();
-            this._ioctl = null;
-        }
-
-        if (this._remuxer) {
-            this._remuxer.destroy();
-            this._remuxer = null;
-        }
-
-        this._emitter.removeAllListeners();
-        this._emitter = null;
-    }
-
-    on(event, listener) {
-        this._emitter.addListener(event, listener);
-    }
-
-    off(event, listener) {
-        this._emitter.removeListener(event, listener);
-    }
-
-    remux(audioTrack, videoTrack){
-        this._remuxer.remux(audioTrack, videoTrack);
-    }
-
-    stop() {
-        this._internalAbort();
-        this._disableStatisticsReporter();
-    }
-
-    _internalAbort() {
-        if (this._ioctl) {
-            this._ioctl.destroy();
-            this._ioctl = null;
-        }
-    }
-
-    _searchSegmentIndexContains(milliseconds) {
-        let segments = this._mediaDataSource.segments;
-        let idx = segments.length - 1;
-
-        for (let i = 0; i < segments.length; i++) {
-            if (milliseconds < segments[i].timestampBase) {
-                idx = i - 1;
-                break;
-            }
-        }
-        return idx;
-    }
-
-    _onMediaInfo(mediaInfo) {
-        if (this._mediaInfo == null) {
-            // Store first segment's mediainfo as global mediaInfo
-            this._mediaInfo = Object.assign({}, mediaInfo);
-            this._mediaInfo.keyframesIndex = null;
-            this._mediaInfo.segments = [];
-            //this._mediaInfo.segmentCount = this._mediaDataSource.segments.length;
-            Object.setPrototypeOf(this._mediaInfo, media_info.prototype);
-        }
-
-        let segmentInfo = Object.assign({}, mediaInfo);
-        Object.setPrototypeOf(segmentInfo, media_info.prototype);
-        this._mediaInfo.segments[this._currentSegmentIndex] = segmentInfo;
-
-        // notify mediaInfo update
-        this._reportSegmentMediaInfo(this._currentSegmentIndex);
-
-        /*
-        if (this._pendingSeekTime != null) {
-            Promise.resolve().then(() => {
-                let target = this._pendingSeekTime;
-                this._pendingSeekTime = null;
-                this.seek(target);
-            });
-        }*/
-    }
-
-    _onMetaDataArrived(metadata) {
-        this._emitter.emit(TransmuxingEvents.METADATA_ARRIVED, metadata);
-    }
-
-    _onScriptDataArrived(data) {
-        this._emitter.emit(TransmuxingEvents.SCRIPTDATA_ARRIVED, data);
-    }
-
-    _onRemuxerInitSegmentArrival(type, initSegment) {
-        this._emitter.emit(TransmuxingEvents.INIT_SEGMENT, type, initSegment);
-    }
-
-    _onRemuxerMediaSegmentArrival(type, mediaSegment) {
-        Log.i(this.TAG, "_onRemuxerMediaSegmentArrival");
-        if (this._pendingSeekTime != null) {
-            // Media segments after new-segment cross-seeking should be dropped.
-            return;
-        }
-        this._emitter.emit(TransmuxingEvents.MEDIA_SEGMENT, type, mediaSegment);
-
-        // Resolve pending seekPoint
-        if (this._pendingResolveSeekPoint != null && type === 'video') {
-            let syncPoints = mediaSegment.info.syncPoints;
-            let seekpoint = this._pendingResolveSeekPoint;
-            this._pendingResolveSeekPoint = null;
-
-            // Safari: Pass PTS for recommend_seekpoint
-            if (Browser.safari && syncPoints.length > 0 && syncPoints[0].originalDts === seekpoint) {
-                seekpoint = syncPoints[0].pts;
-            }
-            // else: use original DTS (keyframe.milliseconds)
-
-            this._emitter.emit(TransmuxingEvents.RECOMMEND_SEEKPOINT, seekpoint);
-        }
-    }
-
-    _enableStatisticsReporter() {
-        if (this._statisticsReporter == null) {
-            this._statisticsReporter = self.setInterval(
-                this._reportStatisticsInfo.bind(this),
-                this._config.statisticsInfoReportInterval);
-        }
-    }
-
-    _disableStatisticsReporter() {
-        if (this._statisticsReporter) {
-            self.clearInterval(this._statisticsReporter);
-            this._statisticsReporter = null;
-        }
-    }
-
-    _reportSegmentMediaInfo(segmentIndex) {
-        let segmentInfo = this._mediaInfo.segments[segmentIndex];
-        let exportInfo = Object.assign({}, segmentInfo);
-
-        exportInfo.duration = this._mediaInfo.duration;
-        exportInfo.segmentCount = this._mediaInfo.segmentCount;
-        delete exportInfo.segments;
-        delete exportInfo.keyframesIndex;
-
-        this._emitter.emit(TransmuxingEvents.MEDIA_INFO, exportInfo);
-    }
-
-    _reportStatisticsInfo() {
-        let info = {};
-
-        info.url = this._ioctl.currentURL;
-        info.hasRedirect = this._ioctl.hasRedirect;
-        if (info.hasRedirect) {
-            info.redirectedURL = this._ioctl.currentRedirectedURL;
-        }
-
-        info.speed = this._ioctl.currentSpeed;
-        info.loaderType = this._ioctl.loaderType;
-        info.currentSegmentIndex = this._currentSegmentIndex;
-        info.totalSegmentCount = this._mediaDataSource.segments.length;
-
-        this._emitter.emit(TransmuxingEvents.STATISTICS_INFO, info);
-    }
-
-    _onTrackMetadataReceived(type, metadata) {
-        this._remuxer._onTrackMetadataReceived(type, metadata);
-    }
-}
-
-/* harmony default export */ const transmuxer = (Transmuxer);
-
 ;// CONCATENATED MODULE: ./wss/webrtmp.controller.js
 
 
@@ -3178,16 +1436,17 @@ class WebRTMP_Controller {
 	isConnected = false;
 
 	loglevels = {
-		"RTMPMessage": logger.ERROR,
+		"RTMPMessage": logger.WARN,
 		"RTMPMessageHandler": logger.WARN,
+		"RTMPMediaMessageHandler": logger.WARN,
 		"ChunkParser": logger.ERROR,
 		"RTMPHandshake": logger.INFO,
 		"Chunk": logger.OFF,
-		"MP4Remuxer": logger.WARN,
+		"MP4Remuxer": logger.ERROR,
 		"Transmuxer": logger.WARN,
-		"EventEmitter": logger.INFO,
-		"MSEController": logger.TRACE,
-		"WebRTMP": logger.ERROR,
+		"EventEmitter": logger.DEBUG,
+		"MSEController": logger.INFO,
+		"WebRTMP": logger.WARN,
 		"WebRTMP_Controller": logger.WARN
 	}
 
@@ -3311,12 +1570,13 @@ class WebRTMP_Controller {
 
 
 
-
 class WebRTMP{
 	TAG = 'WebRTMP';
 
 	constructor() {
 		this.wss = new webrtmp_controller();
+
+		this._config = defaultConfig
 
 		this.wss.addEventListener("Connected", ()=>{
 			logger.d(this.TAG, "Connected");
@@ -3354,27 +1614,30 @@ class WebRTMP{
 			onvProgress: this._onvProgress.bind(this)
 		};
 
+
+		/*
+
 		this._config = defaultConfig;
-		this._transmuxer = new transmuxer(this._config);
+		this._transmuxer = new Transmuxer(this._config);
 
 		// transmuxdr Events
 		this.wss.addEventListener("onMediaInfo", (mediaInfo)=>{
-			logger.i(this.TAG, "onMediaInfo");
+			Log.i(this.TAG, "onMediaInfo");
 			this._transmuxer._onMediaInfo(mediaInfo);
 		});
 
 		this.wss.addEventListener("onMediaSegment", (data)=>{
-			logger.i(this.TAG, "onMediaSegment");
+			Log.i(this.TAG, "onMediaSegment");
 			this._transmuxer._onMediaInfo(mediaInfo);
 		});
 
 		this.wss.addEventListener("onDataAvailable", (data)=>{
-			logger.i(this.TAG, "onDataAvailable");
+			Log.i(this.TAG, "onDataAvailable");
 			this._transmuxer.remux(data[0], data[1]);
 		});
 
 		this.wss.addEventListener("onTrackMetadata", (data)=>{
-			logger.i(this.TAG, "onTrackMetaData");
+			Log.i(this.TAG, "onTrackMetaData");
 			this._transmuxer._onTrackMetadataReceived(data[0], data[1]);
 		});
 
@@ -3422,15 +1685,15 @@ class WebRTMP{
 			this._emitter.emit(PlayerEvents.STATISTICS_INFO, Object.assign({}, this._statisticsInfo));
 		});
 
-		let chromeNeedIDRFix = (browser.chrome &&
-			(browser.version.major < 50 ||
-				(browser.version.major === 50 && browser.version.build < 2661)));
-		this._alwaysSeekKeyframe = (chromeNeedIDRFix || browser.msedge || browser.msie) ? true : false;
+		let chromeNeedIDRFix = (Browser.chrome &&
+			(Browser.version.major < 50 ||
+				(Browser.version.major === 50 && Browser.version.build < 2661)));
+		this._alwaysSeekKeyframe = (chromeNeedIDRFix || Browser.msedge || Browser.msie) ? true : false;
 
 		if (this._alwaysSeekKeyframe) {
 			this._config.accurateSeek = false;
 		}
-
+*/
 	}
 
 	_checkAndResumeStuckPlayback(stalled) {
@@ -3700,7 +1963,7 @@ class WebRTMP{
 		mediaElement.addEventListener('stalled', this.e.onvStalled);
 		mediaElement.addEventListener('progress', this.e.onvProgress);
 
-		this._msectl = new mse_controller(this._config);
+		this._msectl = new mse_controller(defaultConfig);
 
 		this._msectl.on(MSEEvents.UPDATE_END, this._onmseUpdateEnd.bind(this));
 		this._msectl.on(MSEEvents.BUFFER_FULL, this._onmseBufferFull.bind(this));
@@ -3711,6 +1974,16 @@ class WebRTMP{
 				ErrorDetails.MEDIA_MSE_ERROR,
 				info
 			);
+		});
+
+		this.wss.addEventListener(TransmuxingEvents.INIT_SEGMENT, (data)=>{
+			logger.i(this.TAG, TransmuxingEvents.INIT_SEGMENT, data[0], data[1]);
+			this._msectl.appendInitSegment(data[1]);
+		});
+
+		this.wss.addEventListener(TransmuxingEvents.MEDIA_SEGMENT, (data)=>{
+			logger.i(this.TAG, TransmuxingEvents.MEDIA_SEGMENT, data[0], data[1]);
+			this._msectl.appendMediaSegment(data[1]);
 		});
 
 		this._msectl.attachMediaElement(mediaElement);

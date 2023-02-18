@@ -23,6 +23,7 @@ import {MediaSegmentInfo, MediaSegmentInfoList, SampleInfo} from "./media-segmen
 import AAC from "./aac-silent";
 import {IllegalStateException} from "../utils/exception";
 import Browser from "../utils/browser";
+import Log from "../utils/logger";
 
 class MP4Remuxer {
 	TAG = 'MP4Remuxer'
@@ -76,12 +77,6 @@ class MP4Remuxer {
 		this._videoSegmentInfoList = null;
 		this._onInitSegment = null;
 		this._onMediaSegment = null;
-	}
-
-	bindDataSource(producer) {
-		producer.onDataAvailable = this.remux.bind(this);
-		producer.onTrackMetadata = this._onTrackMetadataReceived.bind(this);
-		return this;
 	}
 
 	get onInitSegment() {

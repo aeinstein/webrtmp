@@ -1,7 +1,6 @@
 import Log from "./utils/logger";
 import MSEController from "./utils/mse-controller";
 import {defaultConfig, ErrorDetails, ErrorTypes, MSEEvents, PlayerEvents, TransmuxingEvents} from "./utils/utils";
-import Transmuxer from "./flv/transmuxer";
 import EventEmitter from "./utils/event_emitter";
 import WebRTMP_Controller from "./wss/webrtmp.controller";
 import Browser from "./utils/browser";
@@ -11,6 +10,8 @@ class WebRTMP{
 
 	constructor() {
 		this.wss = new WebRTMP_Controller();
+
+		this._config = defaultConfig
 
 		this.wss.addEventListener("Connected", ()=>{
 			Log.d(this.TAG, "Connected");
@@ -47,6 +48,9 @@ class WebRTMP{
 			onvStalled: this._onvStalled.bind(this),
 			onvProgress: this._onvProgress.bind(this)
 		};
+
+
+		/*
 
 		this._config = defaultConfig;
 		this._transmuxer = new Transmuxer(this._config);
@@ -124,7 +128,7 @@ class WebRTMP{
 		if (this._alwaysSeekKeyframe) {
 			this._config.accurateSeek = false;
 		}
-
+*/
 	}
 
 	_checkAndResumeStuckPlayback(stalled) {
@@ -394,7 +398,7 @@ class WebRTMP{
 		mediaElement.addEventListener('stalled', this.e.onvStalled);
 		mediaElement.addEventListener('progress', this.e.onvProgress);
 
-		this._msectl = new MSEController(this._config);
+		this._msectl = new MSEController(defaultConfig);
 
 		this._msectl.on(MSEEvents.UPDATE_END, this._onmseUpdateEnd.bind(this));
 		this._msectl.on(MSEEvents.BUFFER_FULL, this._onmseBufferFull.bind(this));
@@ -405,6 +409,16 @@ class WebRTMP{
 				ErrorDetails.MEDIA_MSE_ERROR,
 				info
 			);
+		});
+
+		this.wss.addEventListener(TransmuxingEvents.INIT_SEGMENT, (data)=>{
+			Log.i(this.TAG, TransmuxingEvents.INIT_SEGMENT, data[0], data[1]);
+			this._msectl.appendInitSegment(data[1]);
+		});
+
+		this.wss.addEventListener(TransmuxingEvents.MEDIA_SEGMENT, (data)=>{
+			Log.i(this.TAG, TransmuxingEvents.MEDIA_SEGMENT, data[0], data[1]);
+			this._msectl.appendMediaSegment(data[1]);
 		});
 
 		this._msectl.attachMediaElement(mediaElement);

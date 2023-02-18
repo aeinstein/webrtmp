@@ -2,8 +2,9 @@ import {IllegalStateException} from "../utils/exception";
 import MediaInfo from "../formats/media-info";
 import AMF from "../flv/amf-parser";
 import Log from "../utils/logger";
-import {DemuxErrors} from "../utils/utils";
+import {defaultConfig, DemuxErrors, TransmuxingEvents} from "../utils/utils";
 import SPSParser from "../flv/sps-parser";
+import Transmuxer from "../flv/transmuxer";
 
 class RTMPMediaMessageHandler{
     TAG = "RTMPMediaMessageHandler";
@@ -15,8 +16,8 @@ class RTMPMediaMessageHandler{
         this._onMediaInfo = null;
         this._onMetaDataArrived = null;
         this._onScriptDataArrived = null;
-        this._onTrackMetadata = null;
         this._onDataAvailable = null;
+        this._onTrackMetadata = null;
 
         this._dispatch = false;
 
@@ -71,6 +72,40 @@ class RTMPMediaMessageHandler{
             (new DataView(buf)).setInt16(0, 256, true);  // little-endian write
             return (new Int16Array(buf))[0] === 256;  // platform-spec read, if equal then LE
         })();
+
+        this._config = defaultConfig;
+        this._transmuxer = new Transmuxer(this._config);
+
+        this._transmuxer.on(TransmuxingEvents.INIT_SEGMENT, (type, is) => {
+            postMessage([TransmuxingEvents.INIT_SEGMENT, type, is]);
+        });
+
+        this._transmuxer.on(TransmuxingEvents.MEDIA_SEGMENT, (type, ms) => {
+            postMessage([TransmuxingEvents.MEDIA_SEGMENT, type, ms]);
+        });
+
+        this._transmuxer.on(TransmuxingEvents.MEDIA_INFO, (mediaInfo) => {
+            this._mediaInfo = mediaInfo;
+            postMessage([TransmuxingEvents.MEDIA_INFO, mediaInfo]);
+        });
+
+        this._transmuxer.on(TransmuxingEvents.METADATA_ARRIVED, (metadata) => {
+            postMessage([TransmuxingEvents.METADATA_ARRIVED, metadata]);
+        });
+
+        this._transmuxer.on(TransmuxingEvents.SCRIPTDATA_ARRIVED, (data) => {
+            postMessage([TransmuxingEvents.SCRIPTDATA_ARRIVED, data]);
+        });
+
+        this._onDataAvailable = (audioTrack, videoTrack) =>{
+            Log.d(this.TAG, "_onDataAvailable");
+            this._transmuxer.remux(audioTrack, videoTrack);
+        }
+
+        this._onTrackMetadata = (type, metadata)=>{
+            Log.d(this.TAG, "_onTrackMetadata");
+            this._transmuxer._onTrackMetadataReceived(type, metadata);
+        }
     }
 
     destroy() {
@@ -197,6 +232,7 @@ class RTMPMediaMessageHandler{
      * @param {RTMPMessage} msg
      */
     handleMediaMessage(msg) {
+        Log.d(this.TAG, "handleMediaMessage", msg.getMessageType());
         if (!this._onError || !this._onMediaInfo || !this._onTrackMetadata || !this._onDataAvailable) {
             throw new IllegalStateException('Flv: onError & onMediaInfo & onTrackMetadata & onDataAvailable callback must be specified');
         }
@@ -225,6 +261,7 @@ class RTMPMediaMessageHandler{
         // dispatch parsed frames to consumer (typically, the remuxer)
         if (this._isInitialMetadataDispatched()) {
             if (this._dispatch && (this._audioTrack.length || this._videoTrack.length)) {
+                Log.i(this.TAG, "sedn2");
                 this._onDataAvailable(this._audioTrack, this._videoTrack);
             }
         }
@@ -346,6 +383,7 @@ class RTMPMediaMessageHandler{
      * @private
      */
     _parseAudioData(payload, tagTimestamp) {
+        Log.d(this.TAG, "_parseAudioData", tagTimestamp);
         if (payload.length <= 1) {
             Log.w(this.TAG, 'Flv: Invalid audio packet, missing SoundData payload!');
             return;
@@ -430,6 +468,7 @@ class RTMPMediaMessageHandler{
                 }
                 // then notify new metadata
                 this._dispatch = false;
+                Log.i(this.TAG, "ON!");
                 this._onTrackMetadata('audio', meta);
 
                 let mi = this._mediaInfo;

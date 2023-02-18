@@ -22,6 +22,8 @@ import {TransmuxingEvents} from "../utils/utils";
 import EventEmitter from "../utils/event_emitter";
 import MP4Remuxer from "../formats/mp4-remuxer";
 import MediaInfo from "../formats/media-info";
+import Browser from "../utils/browser";
+import Log from "../utils/logger";
 
 class Transmuxer {
     TAG = 'Transmuxer';
@@ -79,6 +81,10 @@ class Transmuxer {
 
     remux(audioTrack, videoTrack){
         this._remuxer.remux(audioTrack, videoTrack);
+    }
+
+    _onTrackMetadataReceived(type, metadata) {
+        this._remuxer._onTrackMetadataReceived(type, metadata);
     }
 
     stop() {
@@ -146,7 +152,7 @@ class Transmuxer {
     }
 
     _onRemuxerMediaSegmentArrival(type, mediaSegment) {
-        Log.i(this.TAG, "_onRemuxerMediaSegmentArrival");
+        Log.d(this.TAG, "_onRemuxerMediaSegmentArrival");
         if (this._pendingSeekTime != null) {
             // Media segments after new-segment cross-seeking should be dropped.
             return;
@@ -213,9 +219,7 @@ class Transmuxer {
         this._emitter.emit(TransmuxingEvents.STATISTICS_INFO, info);
     }
 
-    _onTrackMetadataReceived(type, metadata) {
-        this._remuxer._onTrackMetadataReceived(type, metadata);
-    }
+
 }
 
 export default Transmuxer;

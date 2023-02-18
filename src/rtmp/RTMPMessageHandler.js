@@ -34,16 +34,6 @@ class RTMPMessageHandler {
             postMessage(["onMediaInfo", mediainfo]);
         }
 
-        this.media_handler.onTrackMetadata = (type, metadata)=>{
-            Log.d(this.TAG, type, metadata);
-            postMessage(["onTrackMetadata", type, metadata]);
-        }
-
-        this.media_handler.onDataAvailable = (audioTrack, videoTrack)=>{
-            Log.d(this.TAG, audioTrack, videoTrack);
-            postMessage(["onDataAvailable", audioTrack, videoTrack]);
-        }
-
         this.media_handler.onMetaDataArrived = (metadata)=>{
             postMessage(["onMetaDataArrived", metadata]);
         }
@@ -60,9 +50,25 @@ class RTMPMessageHandler {
             postMessage(["onMetaDataArrived", data]);
         }
 
+
+        /*
+
+          this.media_handler.onTrackMetadata = (type, metadata)=>{
+            Log.d(this.TAG, type, metadata);
+            postMessage(["onTrackMetadata", type, metadata]);
+        }
+
+        this.media_handler.onDataAvailable = (audioTrack, videoTrack)=>{
+            Log.d(this.TAG, audioTrack, videoTrack);
+            postMessage(["onDataAvailable", audioTrack, videoTrack]);
+            //audioTrack.samples = [];
+            //videoTrack.samples = [];
+        }
+
+
         this.media_handler.onScriptDataArrived= (data)=>{
             postMessage(["onMetaDataArrived", data]);
-        }
+        }*/
     }
 
     /**

@@ -348,7 +348,7 @@ class IDRSampleList {
 	}
 
 	getLastSyncPointBeforeDts(dts) {
-		if (this._list.length == 0) {
+		if (this._list.length === 0) {
 			return null;
 		}
 
@@ -1043,6 +1043,7 @@ class MSEController {
 	}
 
 	appendInitSegment(initSegment, deferred) {
+		logger.i(this.TAG, "appendInitSegment");
 		if (!this._mediaSource || this._mediaSource.readyState !== 'open') {
 			// sourcebuffer creation requires mediaSource.readyState === 'open'
 			// so we defer the sourcebuffer creation, until sourceopen event triggered
@@ -1100,6 +1101,7 @@ class MSEController {
 	}
 
 	appendMediaSegment(mediaSegment) {
+		logger.i(this.TAG, "appendMediaSegment");
 		let ms = mediaSegment;
 		this._pendingSegments[ms.type].push(ms);
 
@@ -1414,122 +1416,6 @@ class MSEController {
 }
 
 /* harmony default export */ const mse_controller = (MSEController);
-
-;// CONCATENATED MODULE: ./wss/connection.controller.js
-
-
-
-class WebRTMP_Controller {
-	TAG = "WebRTMP_Controller";
-	host = document.location.host;
-	WSSReconnect = false;
-	isConnected = false;
-
-	WebRTMPWorker = new Worker(new URL(/* worker import */ __webpack_require__.p + __webpack_require__.u(306), __webpack_require__.b), {
-		name: "webrtmp.worker",
-		type: undefined
-		/* webpackEntryOptions: { filename: "[name].js" } */
-	});
-
-	constructor() {
-		this.e = new event_emitter();
-
-		this.WebRTMPWorker.addEventListener("message", (e)=>{
-			this.WorkerListener(e);
-		})
-	}
-
-	/**
-	 * WSS Verbindung aufbauen
-	 */
-	createConnection(){
-		if(this.isConnected) return false;
-		this.WebRTMPWorker.postMessage({cmd: "createConnection", host: this.host});
-	}
-
-	/**
-	 * MQTT Verbindung trennen
-	 */
-	disconnect() {
-		this.WSSReconnect = true;
-		this.WebRTMPWorker.postMessage({cmd: "disconnect"});
-	}
-
-	connect(appName){
-		this.WebRTMPWorker.postMessage({cmd: "connect", appName: appName});
-	}
-
-	play(streamName){
-		this.WebRTMPWorker.postMessage({cmd: "play", streamName: streamName});
-	}
-
-    pause(enable){
-        this.WebRTMPWorker.postMessage({cmd: "pause", enable: enable});
-    }
-
-
-	/**
-	 * Eventlistenre hinzufügenm
-	 * @param type
-	 * @param listener
-	 */
-	addEventListener(type, listener){
-		this.e.addEventListener(type, listener);
-	}
-
-
-
-	/**
-	 * Verarbeitet MQTT Events
-	 * @param e Event
-	 */
-	WorkerListener(e){
-		// Message.data wieder zum Event machen
-		const data = e.data;
-
-		switch(data[0]){
-			case "ConnectionLost":
-				this.e.emit("ConnectionLost");
-				logger.d(this.TAG, "Event ConnectionLost");
-
-				this.isConnected = false;
-
-				if(this.WSSReconnect) {
-					logger.w(this.TAG,"[ WorkerListener ] Reconnect timed");
-
-					window.setTimeout(()=>{
-						logger.w(this.TAG, "timed Reconnect");
-						this.createConnection();
-					}, 1000)
-				}
-
-				break;
-
-			case "Connected":
-				logger.d(this.TAG, "Event Connected");
-				this.e.emit("Connected");
-				this.isConnected = true;
-				break;
-
-			case "Started":
-				logger.d(this.TAG, "Event Started");
-
-				this.createConnection();
-				/*
-				window.setTimeout(()=>{
-					this.connect();
-				}, 2000);*/
-				break;
-
-			default:
-				logger.d(this.TAG, data[0], data[1]);
-				this.e.emit(data[0], data[1]);
-				break;
-		}
-	}
-}
-
-/* harmony default export */ const connection_controller = (WebRTMP_Controller);
 
 ;// CONCATENATED MODULE: ./formats/mp4.js
 /*
@@ -2188,7 +2074,7 @@ class MP4Remuxer {
 
 	constructor(config) {
 		this._config = config;
-		this._isLive = (config.isLive === true) ? true : false;
+		this._isLive = (config.isLive === true);
 
 		this._dtsBase = -1;
 		this._dtsBaseInited = false;
@@ -2282,6 +2168,7 @@ class MP4Remuxer {
 	}
 
 	_onTrackMetadataReceived(type, metadata) {
+		Log.i(this.TAG, "_onTrackMetadataReceived");
 		let metabox = null;
 
 		let container = 'mp4';
@@ -2293,7 +2180,7 @@ class MP4Remuxer {
 				// 'audio/mpeg' for MP3 audio track
 				container = 'mpeg';
 				codec = '';
-				metabox = new Uint8Array();
+				metabox = new Uint8Array(0);
 			} else {
 				// 'audio/mp4, codecs="codec"'
 				metabox = mp4.generateInitSegment(metadata);
@@ -2372,7 +2259,9 @@ class MP4Remuxer {
 	}
 
 	_remuxAudio(audioTrack, force) {
+		Log.i(this.TAG, "_remuxAudio");
 		if (this._audioMeta == null) {
+			Log.w(this.TAG, "no audioMeta");
 			return;
 		}
 
@@ -2388,11 +2277,13 @@ class MP4Remuxer {
 		let insertPrefixSilentFrame = false;
 
 		if (!samples || samples.length === 0) {
+			Log.w(this.TAG, "no samples");
 			return;
 		}
 		if (samples.length === 1 && !force) {
 			// If [sample count in current batch] === 1 && (force != true)
 			// Ignore and keep in demuxer's queue
+			Log.w(this.TAG, "1 sample");
 			return;
 		}  // else if (force === true) do remux
 
@@ -2553,7 +2444,7 @@ class MP4Remuxer {
 							}
 						};
 						silentFrames.push(frame);
-						mdatBytes += frame.size;;
+						mdatBytes += frame.size;
 
 					}
 
@@ -2616,6 +2507,7 @@ class MP4Remuxer {
 			//no samples need to remux
 			track.samples = [];
 			track.length = 0;
+			Log.w(this.TAG, "no mp4Samples = 0");
 			return;
 		}
 
@@ -2671,11 +2563,11 @@ class MP4Remuxer {
 		track.samples = mp4Samples;
 		track.sequenceNumber++;
 
-		let moofbox = null;
+		let moofbox;
 
 		if (mpegRawTrack) {
 			// Generate empty buffer, because useless for raw mpeg
-			moofbox = new Uint8Array();
+			moofbox = new Uint8Array(0);
 		} else {
 			// Generate moof for fmp4 segment
 			moofbox = mp4.moof(track, firstDts);
@@ -2697,10 +2589,12 @@ class MP4Remuxer {
 			segment.timestampOffset = firstDts;
 		}
 
+		Log.i(this.TAG, "send onMediaSegment audio");
 		this._onMediaSegment('audio', segment);
 	}
 
 	_remuxVideo(videoTrack, force) {
+		Log.i(this.TAG, "_remuxVideo");
 		if (this._videoMeta == null) {
 			return;
 		}
@@ -2712,11 +2606,13 @@ class MP4Remuxer {
 		let firstPts = -1, lastPts = -1;
 
 		if (!samples || samples.length === 0) {
+			Log.w(this.TAG, "no samples");
 			return;
 		}
 		if (samples.length === 1 && !force) {
 			// If [sample count in current batch] === 1 && (force != true)
 			// Ignore and keep in demuxer's queue
+			Log.w(this.TAG, "no sampes = 1");
 			return;
 		}  // else if (force === true) do remux
 
@@ -2888,6 +2784,7 @@ class MP4Remuxer {
 		track.samples = [];
 		track.length = 0;
 
+		Log.i(this.TAG, "send onMediaSegment video");
 		this._onMediaSegment('video', {
 			type: 'video',
 			data: this._mergeBoxes(moofbox, mdatbox).buffer,
@@ -3066,9 +2963,9 @@ class MediaInfo {
 
 
 class Transmuxer {
+    TAG = 'Transmuxer';
 
     constructor(config) {
-        this.TAG = 'Transmuxer';
         this._emitter = new event_emitter();
 
         this._config = config;
@@ -3076,7 +2973,6 @@ class Transmuxer {
         this._currentSegmentIndex = 0;
 
         this._mediaInfo = null;
-        this._remuxer = null;
         this._ioctl = null;
 
         this._pendingSeekTime = null;
@@ -3085,6 +2981,10 @@ class Transmuxer {
         this._statisticsReporter = null;
 
         this._remuxer = new mp4_remuxer(this._config);
+        this._remuxer.onInitSegment = this._onRemuxerInitSegmentArrival.bind(this);
+        this._remuxer.onMediaSegment = this._onRemuxerMediaSegmentArrival.bind(this);
+
+        Log.d(this.TAG, this._remuxer.onMediaSegment);
     }
 
     destroy() {
@@ -3120,27 +3020,6 @@ class Transmuxer {
         this._remuxer.remux(audioTrack, videoTrack);
     }
 
-    /*
-    _loadSegment(segmentIndex, optionalFrom) {
-        this._currentSegmentIndex = segmentIndex;
-        let dataSource = this._mediaDataSource.segments[segmentIndex];
-
-        let ioctl = this._ioctl = new IOController(dataSource, this._config, segmentIndex);
-        ioctl.onError = this._onIOException.bind(this);
-        ioctl.onSeeked = this._onIOSeeked.bind(this);
-        ioctl.onComplete = this._onIOComplete.bind(this);
-        ioctl.onRedirect = this._onIORedirect.bind(this);
-        ioctl.onRecoveredEarlyEof = this._onIORecoveredEarlyEof.bind(this);
-
-        if (optionalFrom) {
-            this._demuxer.bindDataSource(this._ioctl);
-        } else {
-            ioctl.onDataArrival = this._onInitChunkArrival.bind(this);
-        }
-
-        ioctl.open(optionalFrom);
-    }*/
-
     stop() {
         this._internalAbort();
         this._disableStatisticsReporter();
@@ -3151,58 +3030,6 @@ class Transmuxer {
             this._ioctl.destroy();
             this._ioctl = null;
         }
-    }
-
-
-    seek(milliseconds) {
-        if (this._mediaInfo == null || !this._mediaInfo.isSeekable()) {
-            return;
-        }
-
-        let targetSegmentIndex = this._searchSegmentIndexContains(milliseconds);
-
-        if (targetSegmentIndex === this._currentSegmentIndex) {
-            // intra-segment seeking
-            let segmentInfo = this._mediaInfo.segments[targetSegmentIndex];
-
-            if (segmentInfo == undefined) {
-                // current segment loading started, but mediainfo hasn't received yet
-                // wait for the metadata loaded, then seek to expected position
-                this._pendingSeekTime = milliseconds;
-            } else {
-                let keyframe = segmentInfo.getNearestKeyframe(milliseconds);
-                this._remuxer.seek(keyframe.milliseconds);
-                this._ioctl.seek(keyframe.fileposition);
-                // Will be resolved in _onRemuxerMediaSegmentArrival()
-                this._pendingResolveSeekPoint = keyframe.milliseconds;
-            }
-        } else {
-            // cross-segment seeking
-            let targetSegmentInfo = this._mediaInfo.segments[targetSegmentIndex];
-
-            if (targetSegmentInfo == undefined) {
-                // target segment hasn't been loaded. We need metadata then seek to expected time
-                this._pendingSeekTime = milliseconds;
-                this._internalAbort();
-                this._remuxer.seek();
-                this._remuxer.insertDiscontinuity();
-                this._loadSegment(targetSegmentIndex);
-                // Here we wait for the metadata loaded, then seek to expected position
-            } else {
-                // We have target segment's metadata, direct seek to target position
-                let keyframe = targetSegmentInfo.getNearestKeyframe(milliseconds);
-                this._internalAbort();
-                this._remuxer.seek(milliseconds);
-                this._remuxer.insertDiscontinuity();
-                this._demuxer.resetMediaInfo();
-                this._demuxer.timestampBase = this._mediaDataSource.segments[targetSegmentIndex].timestampBase;
-                this._loadSegment(targetSegmentIndex, keyframe.fileposition);
-                this._pendingResolveSeekPoint = keyframe.milliseconds;
-                this._reportSegmentMediaInfo(targetSegmentIndex);
-            }
-        }
-
-        this._enableStatisticsReporter();
     }
 
     _searchSegmentIndexContains(milliseconds) {
@@ -3218,39 +3045,13 @@ class Transmuxer {
         return idx;
     }
 
-    _onInitChunkArrival() {
-
-
-        let mds = this._mediaDataSource;
-        if (mds.duration != undefined && !isNaN(mds.duration)) {
-            this._demuxer.overridedDuration = mds.duration;
-        }
-        if (typeof mds.hasAudio === 'boolean') {
-            this._demuxer.overridedHasAudio = mds.hasAudio;
-        }
-        if (typeof mds.hasVideo === 'boolean') {
-            this._demuxer.overridedHasVideo = mds.hasVideo;
-        }
-
-        this._demuxer.timestampBase = mds.segments[this._currentSegmentIndex].timestampBase;
-
-        this._demuxer.onError = this._onDemuxException.bind(this);
-        this._demuxer.onMediaInfo = this._onMediaInfo.bind(this);
-        this._demuxer.onMetaDataArrived = this._onMetaDataArrived.bind(this);
-        this._demuxer.onScriptDataArrived = this._onScriptDataArrived.bind(this);
-
-        this._remuxer.onInitSegment = this._onRemuxerInitSegmentArrival.bind(this);
-        this._remuxer.onMediaSegment = this._onRemuxerMediaSegmentArrival.bind(this);
-
-    }
-
     _onMediaInfo(mediaInfo) {
         if (this._mediaInfo == null) {
             // Store first segment's mediainfo as global mediaInfo
             this._mediaInfo = Object.assign({}, mediaInfo);
             this._mediaInfo.keyframesIndex = null;
             this._mediaInfo.segments = [];
-            this._mediaInfo.segmentCount = this._mediaDataSource.segments.length;
+            //this._mediaInfo.segmentCount = this._mediaDataSource.segments.length;
             Object.setPrototypeOf(this._mediaInfo, media_info.prototype);
         }
 
@@ -3278,50 +3079,12 @@ class Transmuxer {
         this._emitter.emit(TransmuxingEvents.SCRIPTDATA_ARRIVED, data);
     }
 
-    _onIOSeeked() {
-        this._remuxer.insertDiscontinuity();
-    }
-
-    _onIOComplete(extraData) {
-        let segmentIndex = extraData;
-        let nextSegmentIndex = segmentIndex + 1;
-
-        if (nextSegmentIndex < this._mediaDataSource.segments.length) {
-            this._internalAbort();
-            this._remuxer.flushStashedSamples();
-            this._loadSegment(nextSegmentIndex);
-        } else {
-            this._remuxer.flushStashedSamples();
-            this._emitter.emit(TransmuxingEvents.LOADING_COMPLETE);
-            this._disableStatisticsReporter();
-        }
-    }
-
-    _onIORedirect(redirectedURL) {
-        let segmentIndex = this._ioctl.extraData;
-        this._mediaDataSource.segments[segmentIndex].redirectedURL = redirectedURL;
-    }
-
-    _onIORecoveredEarlyEof() {
-        this._emitter.emit(TransmuxingEvents.RECOVERED_EARLY_EOF);
-    }
-
-    _onIOException(type, info) {
-        Log.e(this.TAG, `IOException: type = ${type}, code = ${info.code}, msg = ${info.msg}`);
-        this._emitter.emit(TransmuxingEvents.IO_ERROR, type, info);
-        this._disableStatisticsReporter();
-    }
-
-    _onDemuxException(type, info) {
-        Log.e(this.TAG, `DemuxException: type = ${type}, info = ${info}`);
-        this._emitter.emit(TransmuxingEvents.DEMUX_ERROR, type, info);
-    }
-
     _onRemuxerInitSegmentArrival(type, initSegment) {
         this._emitter.emit(TransmuxingEvents.INIT_SEGMENT, type, initSegment);
     }
 
     _onRemuxerMediaSegmentArrival(type, mediaSegment) {
+        Log.i(this.TAG, "_onRemuxerMediaSegmentArrival");
         if (this._pendingSeekTime != null) {
             // Media segments after new-segment cross-seeking should be dropped.
             return;
@@ -3388,9 +3151,128 @@ class Transmuxer {
         this._emitter.emit(TransmuxingEvents.STATISTICS_INFO, info);
     }
 
+    _onTrackMetadataReceived(type, metadata) {
+        this._remuxer._onTrackMetadataReceived(type, metadata);
+    }
 }
 
 /* harmony default export */ const transmuxer = (Transmuxer);
+
+;// CONCATENATED MODULE: ./wss/webrtmp.controller.js
+
+
+
+class WebRTMP_Controller {
+	TAG = "WebRTMP_Controller";
+	host = document.location.host;
+	WSSReconnect = false;
+	isConnected = false;
+
+	WebRTMPWorker = new Worker(new URL(/* worker import */ __webpack_require__.p + __webpack_require__.u(306), __webpack_require__.b), {
+		name: "webrtmp.worker",
+		type: undefined
+		/* webpackEntryOptions: { filename: "[name].js" } */
+	});
+
+	constructor() {
+		this.e = new event_emitter();
+
+		this.WebRTMPWorker.addEventListener("message", (e)=>{
+			this.WorkerListener(e);
+		})
+	}
+
+	/**
+	 * WSS Verbindung aufbauen
+	 */
+	createConnection(){
+		if(this.isConnected) return false;
+		this.WebRTMPWorker.postMessage({cmd: "createConnection", host: this.host});
+	}
+
+	/**
+	 * MQTT Verbindung trennen
+	 */
+	disconnect() {
+		this.WSSReconnect = true;
+		this.WebRTMPWorker.postMessage({cmd: "disconnect"});
+	}
+
+	connect(appName){
+		this.WebRTMPWorker.postMessage({cmd: "connect", appName: appName});
+	}
+
+	play(streamName){
+		this.WebRTMPWorker.postMessage({cmd: "play", streamName: streamName});
+	}
+
+    pause(enable){
+        this.WebRTMPWorker.postMessage({cmd: "pause", enable: enable});
+    }
+
+
+	/**
+	 * Eventlistenre hinzufügenm
+	 * @param type
+	 * @param listener
+	 */
+	addEventListener(type, listener){
+		this.e.addEventListener(type, listener);
+	}
+
+
+
+	/**
+	 * Verarbeitet MQTT Events
+	 * @param e Event
+	 */
+	WorkerListener(e){
+		// Message.data wieder zum Event machen
+		const data = e.data;
+
+		switch(data[0]){
+			case "ConnectionLost":
+				this.e.emit("ConnectionLost");
+				logger.d(this.TAG, "Event ConnectionLost");
+
+				this.isConnected = false;
+
+				if(this.WSSReconnect) {
+					logger.w(this.TAG,"[ WorkerListener ] Reconnect timed");
+
+					window.setTimeout(()=>{
+						logger.w(this.TAG, "timed Reconnect");
+						this.createConnection();
+					}, 1000)
+				}
+
+				break;
+
+			case "Connected":
+				logger.d(this.TAG, "Event Connected");
+				this.e.emit("Connected");
+				this.isConnected = true;
+				break;
+
+			case "Started":
+				logger.d(this.TAG, "Event Started");
+
+				this.createConnection();
+				/*
+				window.setTimeout(()=>{
+					this.connect();
+				}, 2000);*/
+				break;
+
+			default:
+				logger.i(this.TAG, data[0], data.slice(1));
+				this.e.emit(data[0], data.slice(1));
+				break;
+		}
+	}
+}
+
+/* harmony default export */ const webrtmp_controller = (WebRTMP_Controller);
 
 ;// CONCATENATED MODULE: ./webrtmp.js
 
@@ -3404,7 +3286,7 @@ class WebRTMP{
 	TAG = 'WebRTMP';
 
 	constructor() {
-		this.wss = new connection_controller();
+		this.wss = new webrtmp_controller();
 
 		this.wss.addEventListener("Connected", ()=>{
 			logger.d(this.TAG, "Connected");
@@ -3418,7 +3300,6 @@ class WebRTMP{
 			logger.d(this.TAG,"RTMPMessageArrived", data);
 		});
 
-
 		this.wss.addEventListener("ProtocolControlMessage", (data)=>{
 			logger.d(this.TAG,"ProtocolControlMessage", data);
 		});
@@ -3428,18 +3309,6 @@ class WebRTMP{
 		});
 
 		this.wss.addEventListener("Started", ()=>{});
-
-		this.wss.addEventListener("onDataAvailable", (audioTrack, videoTrack)=>{
-			this._transmuxer.remux(audioTrack, videoTrack);
-		});
-
-		this.wss.addEventListener("onTrackMetaData", (type, metadata)=>{
-			this._transmuxer._onMetaDataArrived(metadata);
-		});
-
-		this.wss.addEventListener("onMediaInfo", (mediaInfo)=>{
-			this._transmuxer._onMediaInfo(mediaInfo);
-		});
 
 		this.wss.addEventListener("ConnectionLost", ()=>{});
 
@@ -3456,11 +3325,29 @@ class WebRTMP{
 		};
 
 		this._config = defaultConfig;
-		if (typeof config === 'object') {
-			Object.assign(this._config, config);
-		}
-
 		this._transmuxer = new transmuxer(this._config);
+
+		// transmuxdr Events
+		this.wss.addEventListener("onMediaInfo", (mediaInfo)=>{
+			logger.i(this.TAG, "onMediaInfo");
+			this._transmuxer._onMediaInfo(mediaInfo);
+		});
+
+		this.wss.addEventListener("onMediaSegment", (data)=>{
+			logger.i(this.TAG, "onMediaSegment");
+			this._transmuxer._onMediaInfo(mediaInfo);
+		});
+
+		this.wss.addEventListener("onDataAvailable", (data)=>{
+			logger.i(this.TAG, "onDataAvailable");
+			this._transmuxer.remux(data[0], data[1]);
+		});
+
+		this.wss.addEventListener("onTrackMetadata", (data)=>{
+			logger.i(this.TAG, "onTrackMetaData");
+			this._transmuxer._onTrackMetadataReceived(data[0], data[1]);
+		});
+
 	}
 
 	_onvLoadedMetadata(e) {
@@ -3552,7 +3439,7 @@ class WebRTMP{
 	}
 
 	pause(enable){
-		this.wss.connect(enable);
+		this.wss.pause(enable);
 	}
 
 	detachMediaElement() {
@@ -3582,15 +3469,16 @@ class WebRTMP{
 
 		this._msectl = new mse_controller(this._config);
 
+		this._transmuxer.on(TransmuxingEvents.INIT_SEGMENT, (type, is) => {
+			this._msectl.appendInitSegment(is);
+		});
+
+		this._transmuxer.on(TransmuxingEvents.MEDIA_SEGMENT, (type, ms) => {
+			this._msectl.appendMediaSegment(ms);
+		});
+
 		this._msectl.on(MSEEvents.UPDATE_END, this._onmseUpdateEnd.bind(this));
 		this._msectl.on(MSEEvents.BUFFER_FULL, this._onmseBufferFull.bind(this));
-		this._msectl.on(MSEEvents.SOURCE_OPEN, () => {
-			this._mseSourceOpened = true;
-			if (this._hasPendingLoad) {
-				this._hasPendingLoad = false;
-				this.load();
-			}
-		});
 		this._msectl.on(MSEEvents.ERROR, (info) => {
 			this._emitter.emit(PlayerEvents.ERROR,
 				ErrorTypes.MEDIA_ERROR,
@@ -3611,23 +3499,15 @@ class WebRTMP{
 			}
 		}
 
-
-		this._transmuxer.on(TransmuxingEvents.INIT_SEGMENT, (type, is) => {
-			this._msectl.appendInitSegment(is);
+		this._transmuxer.on(TransmuxingEvents.MEDIA_INFO, (mediaInfo) => {
+			this._mediaInfo = mediaInfo;
+			this._emitter.emit(PlayerEvents.MEDIA_INFO, Object.assign({}, mediaInfo));
 		});
-		this._transmuxer.on(TransmuxingEvents.MEDIA_SEGMENT, (type, ms) => {
-			this._msectl.appendMediaSegment(ms);
-
-			// lazyLoad check
-			if (this._config.lazyLoad && !this._config.isLive) {
-				let currentTime = this._mediaElement.currentTime;
-				if (ms.info.endDts >= (currentTime + this._config.lazyLoadMaxDuration) * 1000) {
-					if (this._progressChecker == null) {
-						logger.v(this.TAG, 'Maximum buffering duration exceeded, suspend transmuxing task');
-						this._suspendTransmuxer();
-					}
-				}
-			}
+		this._transmuxer.on(TransmuxingEvents.METADATA_ARRIVED, (metadata) => {
+			this._emitter.emit(PlayerEvents.METADATA_ARRIVED, metadata);
+		});
+		this._transmuxer.on(TransmuxingEvents.SCRIPTDATA_ARRIVED, (data) => {
+			this._emitter.emit(PlayerEvents.SCRIPTDATA_ARRIVED, data);
 		});
 	}
 }

@@ -39,9 +39,9 @@ class RTMPMessageHandler {
             postMessage(["onTrackMetadata", type, metadata]);
         }
 
-        this.media_handler.onDataAvailable = (videoTrack, audioTrack)=>{
-            Log.d(this.TAG, videoTrack, audioTrack);
-            postMessage(["onDataAvailable", videoTrack, audioTrack]);
+        this.media_handler.onDataAvailable = (audioTrack, videoTrack)=>{
+            Log.d(this.TAG, audioTrack, videoTrack);
+            postMessage(["onDataAvailable", audioTrack, videoTrack]);
         }
 
         this.media_handler.onMetaDataArrived = (metadata)=>{
@@ -253,7 +253,49 @@ class RTMPMessageHandler {
         this.trackedCommand = "pause";
 
         const command = new AMF0Object([
-            "pause", 0, null, enable
+            "pause", 0, null, enable,0
+        ]);
+
+        let msg = new RTMPMessage(command.getBytes());
+        msg.setMessageType(0x14);		// AMF0 Command
+        msg.setMessageStreamID(0);
+
+        const chunk = new Chunk(msg);
+        chunk.setChunkStreamID(3);
+
+        let buf = chunk.getBytes();
+
+        this.netconnections[0] = new NetConnection(0, this);
+
+        this.socket.send(buf);
+    }
+
+    receiveVideo(enable){
+        this.trackedCommand = "receiveVideo";
+
+        const command = new AMF0Object([
+            "receiveVideo", 0, null, enable
+        ]);
+
+        let msg = new RTMPMessage(command.getBytes());
+        msg.setMessageType(0x14);		// AMF0 Command
+        msg.setMessageStreamID(0);
+
+        const chunk = new Chunk(msg);
+        chunk.setChunkStreamID(3);
+
+        let buf = chunk.getBytes();
+
+        this.netconnections[0] = new NetConnection(0, this);
+
+        this.socket.send(buf);
+    }
+
+    receiveAudio(enable){
+        this.trackedCommand = "receiveAudio";
+
+        const command = new AMF0Object([
+            "receiveAudio", 0, null, enable
         ]);
 
         let msg = new RTMPMessage(command.getBytes());

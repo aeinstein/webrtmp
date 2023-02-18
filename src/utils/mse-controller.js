@@ -164,6 +164,7 @@ class MSEController {
 	}
 
 	appendInitSegment(initSegment, deferred) {
+		Log.i(this.TAG, "appendInitSegment");
 		if (!this._mediaSource || this._mediaSource.readyState !== 'open') {
 			// sourcebuffer creation requires mediaSource.readyState === 'open'
 			// so we defer the sourcebuffer creation, until sourceopen event triggered
@@ -221,6 +222,7 @@ class MSEController {
 	}
 
 	appendMediaSegment(mediaSegment) {
+		Log.i(this.TAG, "appendMediaSegment");
 		let ms = mediaSegment;
 		this._pendingSegments[ms.type].push(ms);
 

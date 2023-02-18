@@ -24,9 +24,9 @@ import MP4Remuxer from "../formats/mp4-remuxer";
 import MediaInfo from "../formats/media-info";
 
 class Transmuxer {
+    TAG = 'Transmuxer';
 
     constructor(config) {
-        this.TAG = 'Transmuxer';
         this._emitter = new EventEmitter();
 
         this._config = config;
@@ -34,7 +34,6 @@ class Transmuxer {
         this._currentSegmentIndex = 0;
 
         this._mediaInfo = null;
-        this._remuxer = null;
         this._ioctl = null;
 
         this._pendingSeekTime = null;
@@ -43,6 +42,10 @@ class Transmuxer {
         this._statisticsReporter = null;
 
         this._remuxer = new MP4Remuxer(this._config);
+        this._remuxer.onInitSegment = this._onRemuxerInitSegmentArrival.bind(this);
+        this._remuxer.onMediaSegment = this._onRemuxerMediaSegmentArrival.bind(this);
+
+        Log.d(this.TAG, this._remuxer.onMediaSegment);
     }
 
     destroy() {
@@ -78,27 +81,6 @@ class Transmuxer {
         this._remuxer.remux(audioTrack, videoTrack);
     }
 
-    /*
-    _loadSegment(segmentIndex, optionalFrom) {
-        this._currentSegmentIndex = segmentIndex;
-        let dataSource = this._mediaDataSource.segments[segmentIndex];
-
-        let ioctl = this._ioctl = new IOController(dataSource, this._config, segmentIndex);
-        ioctl.onError = this._onIOException.bind(this);
-        ioctl.onSeeked = this._onIOSeeked.bind(this);
-        ioctl.onComplete = this._onIOComplete.bind(this);
-        ioctl.onRedirect = this._onIORedirect.bind(this);
-        ioctl.onRecoveredEarlyEof = this._onIORecoveredEarlyEof.bind(this);
-
-        if (optionalFrom) {
-            this._demuxer.bindDataSource(this._ioctl);
-        } else {
-            ioctl.onDataArrival = this._onInitChunkArrival.bind(this);
-        }
-
-        ioctl.open(optionalFrom);
-    }*/
-
     stop() {
         this._internalAbort();
         this._disableStatisticsReporter();
@@ -109,58 +91,6 @@ class Transmuxer {
             this._ioctl.destroy();
             this._ioctl = null;
         }
-    }
-
-
-    seek(milliseconds) {
-        if (this._mediaInfo == null || !this._mediaInfo.isSeekable()) {
-            return;
-        }
-
-        let targetSegmentIndex = this._searchSegmentIndexContains(milliseconds);
-
-        if (targetSegmentIndex === this._currentSegmentIndex) {
-            // intra-segment seeking
-            let segmentInfo = this._mediaInfo.segments[targetSegmentIndex];
-
-            if (segmentInfo == undefined) {
-                // current segment loading started, but mediainfo hasn't received yet
-                // wait for the metadata loaded, then seek to expected position
-                this._pendingSeekTime = milliseconds;
-            } else {
-                let keyframe = segmentInfo.getNearestKeyframe(milliseconds);
-                this._remuxer.seek(keyframe.milliseconds);
-                this._ioctl.seek(keyframe.fileposition);
-                // Will be resolved in _onRemuxerMediaSegmentArrival()
-                this._pendingResolveSeekPoint = keyframe.milliseconds;
-            }
-        } else {
-            // cross-segment seeking
-            let targetSegmentInfo = this._mediaInfo.segments[targetSegmentIndex];
-
-            if (targetSegmentInfo == undefined) {
-                // target segment hasn't been loaded. We need metadata then seek to expected time
-                this._pendingSeekTime = milliseconds;
-                this._internalAbort();
-                this._remuxer.seek();
-                this._remuxer.insertDiscontinuity();
-                this._loadSegment(targetSegmentIndex);
-                // Here we wait for the metadata loaded, then seek to expected position
-            } else {
-                // We have target segment's metadata, direct seek to target position
-                let keyframe = targetSegmentInfo.getNearestKeyframe(milliseconds);
-                this._internalAbort();
-                this._remuxer.seek(milliseconds);
-                this._remuxer.insertDiscontinuity();
-                this._demuxer.resetMediaInfo();
-                this._demuxer.timestampBase = this._mediaDataSource.segments[targetSegmentIndex].timestampBase;
-                this._loadSegment(targetSegmentIndex, keyframe.fileposition);
-                this._pendingResolveSeekPoint = keyframe.milliseconds;
-                this._reportSegmentMediaInfo(targetSegmentIndex);
-            }
-        }
-
-        this._enableStatisticsReporter();
     }
 
     _searchSegmentIndexContains(milliseconds) {
@@ -176,39 +106,13 @@ class Transmuxer {
         return idx;
     }
 
-    _onInitChunkArrival() {
-
-
-        let mds = this._mediaDataSource;
-        if (mds.duration != undefined && !isNaN(mds.duration)) {
-            this._demuxer.overridedDuration = mds.duration;
-        }
-        if (typeof mds.hasAudio === 'boolean') {
-            this._demuxer.overridedHasAudio = mds.hasAudio;
-        }
-        if (typeof mds.hasVideo === 'boolean') {
-            this._demuxer.overridedHasVideo = mds.hasVideo;
-        }
-
-        this._demuxer.timestampBase = mds.segments[this._currentSegmentIndex].timestampBase;
-
-        this._demuxer.onError = this._onDemuxException.bind(this);
-        this._demuxer.onMediaInfo = this._onMediaInfo.bind(this);
-        this._demuxer.onMetaDataArrived = this._onMetaDataArrived.bind(this);
-        this._demuxer.onScriptDataArrived = this._onScriptDataArrived.bind(this);
-
-        this._remuxer.onInitSegment = this._onRemuxerInitSegmentArrival.bind(this);
-        this._remuxer.onMediaSegment = this._onRemuxerMediaSegmentArrival.bind(this);
-
-    }
-
     _onMediaInfo(mediaInfo) {
         if (this._mediaInfo == null) {
             // Store first segment's mediainfo as global mediaInfo
             this._mediaInfo = Object.assign({}, mediaInfo);
             this._mediaInfo.keyframesIndex = null;
             this._mediaInfo.segments = [];
-            this._mediaInfo.segmentCount = this._mediaDataSource.segments.length;
+            //this._mediaInfo.segmentCount = this._mediaDataSource.segments.length;
             Object.setPrototypeOf(this._mediaInfo, MediaInfo.prototype);
         }
 
@@ -236,50 +140,12 @@ class Transmuxer {
         this._emitter.emit(TransmuxingEvents.SCRIPTDATA_ARRIVED, data);
     }
 
-    _onIOSeeked() {
-        this._remuxer.insertDiscontinuity();
-    }
-
-    _onIOComplete(extraData) {
-        let segmentIndex = extraData;
-        let nextSegmentIndex = segmentIndex + 1;
-
-        if (nextSegmentIndex < this._mediaDataSource.segments.length) {
-            this._internalAbort();
-            this._remuxer.flushStashedSamples();
-            this._loadSegment(nextSegmentIndex);
-        } else {
-            this._remuxer.flushStashedSamples();
-            this._emitter.emit(TransmuxingEvents.LOADING_COMPLETE);
-            this._disableStatisticsReporter();
-        }
-    }
-
-    _onIORedirect(redirectedURL) {
-        let segmentIndex = this._ioctl.extraData;
-        this._mediaDataSource.segments[segmentIndex].redirectedURL = redirectedURL;
-    }
-
-    _onIORecoveredEarlyEof() {
-        this._emitter.emit(TransmuxingEvents.RECOVERED_EARLY_EOF);
-    }
-
-    _onIOException(type, info) {
-        Log.e(this.TAG, `IOException: type = ${type}, code = ${info.code}, msg = ${info.msg}`);
-        this._emitter.emit(TransmuxingEvents.IO_ERROR, type, info);
-        this._disableStatisticsReporter();
-    }
-
-    _onDemuxException(type, info) {
-        Log.e(this.TAG, `DemuxException: type = ${type}, info = ${info}`);
-        this._emitter.emit(TransmuxingEvents.DEMUX_ERROR, type, info);
-    }
-
     _onRemuxerInitSegmentArrival(type, initSegment) {
         this._emitter.emit(TransmuxingEvents.INIT_SEGMENT, type, initSegment);
     }
 
     _onRemuxerMediaSegmentArrival(type, mediaSegment) {
+        Log.i(this.TAG, "_onRemuxerMediaSegmentArrival");
         if (this._pendingSeekTime != null) {
             // Media segments after new-segment cross-seeking should be dropped.
             return;
@@ -346,6 +212,9 @@ class Transmuxer {
         this._emitter.emit(TransmuxingEvents.STATISTICS_INFO, info);
     }
 
+    _onTrackMetadataReceived(type, metadata) {
+        this._remuxer._onTrackMetadataReceived(type, metadata);
+    }
 }
 
 export default Transmuxer;

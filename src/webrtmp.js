@@ -1,9 +1,9 @@
 import Log from "./utils/logger";
 import MSEController from "./utils/mse-controller";
 import {defaultConfig, ErrorDetails, ErrorTypes, MSEEvents, PlayerEvents, TransmuxingEvents} from "./utils/utils";
-import WebRTMP_Controller from "./wss/connection.controller";
 import Transmuxer from "./flv/transmuxer";
 import EventEmitter from "./utils/event_emitter";
+import WebRTMP_Controller from "./wss/webrtmp.controller";
 
 class WebRTMP{
 	TAG = 'WebRTMP';
@@ -23,7 +23,6 @@ class WebRTMP{
 			Log.d(this.TAG,"RTMPMessageArrived", data);
 		});
 
-
 		this.wss.addEventListener("ProtocolControlMessage", (data)=>{
 			Log.d(this.TAG,"ProtocolControlMessage", data);
 		});
@@ -33,18 +32,6 @@ class WebRTMP{
 		});
 
 		this.wss.addEventListener("Started", ()=>{});
-
-		this.wss.addEventListener("onDataAvailable", (audioTrack, videoTrack)=>{
-			this._transmuxer.remux(audioTrack, videoTrack);
-		});
-
-		this.wss.addEventListener("onTrackMetaData", (type, metadata)=>{
-			this._transmuxer._onMetaDataArrived(metadata);
-		});
-
-		this.wss.addEventListener("onMediaInfo", (mediaInfo)=>{
-			this._transmuxer._onMediaInfo(mediaInfo);
-		});
 
 		this.wss.addEventListener("ConnectionLost", ()=>{});
 
@@ -62,6 +49,28 @@ class WebRTMP{
 
 		this._config = defaultConfig;
 		this._transmuxer = new Transmuxer(this._config);
+
+		// transmuxdr Events
+		this.wss.addEventListener("onMediaInfo", (mediaInfo)=>{
+			Log.i(this.TAG, "onMediaInfo");
+			this._transmuxer._onMediaInfo(mediaInfo);
+		});
+
+		this.wss.addEventListener("onMediaSegment", (data)=>{
+			Log.i(this.TAG, "onMediaSegment");
+			this._transmuxer._onMediaInfo(mediaInfo);
+		});
+
+		this.wss.addEventListener("onDataAvailable", (data)=>{
+			Log.i(this.TAG, "onDataAvailable");
+			this._transmuxer.remux(data[0], data[1]);
+		});
+
+		this.wss.addEventListener("onTrackMetadata", (data)=>{
+			Log.i(this.TAG, "onTrackMetaData");
+			this._transmuxer._onTrackMetadataReceived(data[0], data[1]);
+		});
+
 	}
 
 	_onvLoadedMetadata(e) {
@@ -153,7 +162,7 @@ class WebRTMP{
 	}
 
 	pause(enable){
-		this.wss.connect(enable);
+		this.wss.pause(enable);
 	}
 
 	detachMediaElement() {
@@ -183,15 +192,16 @@ class WebRTMP{
 
 		this._msectl = new MSEController(this._config);
 
+		this._transmuxer.on(TransmuxingEvents.INIT_SEGMENT, (type, is) => {
+			this._msectl.appendInitSegment(is);
+		});
+
+		this._transmuxer.on(TransmuxingEvents.MEDIA_SEGMENT, (type, ms) => {
+			this._msectl.appendMediaSegment(ms);
+		});
+
 		this._msectl.on(MSEEvents.UPDATE_END, this._onmseUpdateEnd.bind(this));
 		this._msectl.on(MSEEvents.BUFFER_FULL, this._onmseBufferFull.bind(this));
-		this._msectl.on(MSEEvents.SOURCE_OPEN, () => {
-			this._mseSourceOpened = true;
-			if (this._hasPendingLoad) {
-				this._hasPendingLoad = false;
-				this.load();
-			}
-		});
 		this._msectl.on(MSEEvents.ERROR, (info) => {
 			this._emitter.emit(PlayerEvents.ERROR,
 				ErrorTypes.MEDIA_ERROR,
@@ -212,23 +222,15 @@ class WebRTMP{
 			}
 		}
 
-
-		this._transmuxer.on(TransmuxingEvents.INIT_SEGMENT, (type, is) => {
-			this._msectl.appendInitSegment(is);
+		this._transmuxer.on(TransmuxingEvents.MEDIA_INFO, (mediaInfo) => {
+			this._mediaInfo = mediaInfo;
+			this._emitter.emit(PlayerEvents.MEDIA_INFO, Object.assign({}, mediaInfo));
 		});
-		this._transmuxer.on(TransmuxingEvents.MEDIA_SEGMENT, (type, ms) => {
-			this._msectl.appendMediaSegment(ms);
-
-			// lazyLoad check
-			if (this._config.lazyLoad && !this._config.isLive) {
-				let currentTime = this._mediaElement.currentTime;
-				if (ms.info.endDts >= (currentTime + this._config.lazyLoadMaxDuration) * 1000) {
-					if (this._progressChecker == null) {
-						Log.v(this.TAG, 'Maximum buffering duration exceeded, suspend transmuxing task');
-						this._suspendTransmuxer();
-					}
-				}
-			}
+		this._transmuxer.on(TransmuxingEvents.METADATA_ARRIVED, (metadata) => {
+			this._emitter.emit(PlayerEvents.METADATA_ARRIVED, metadata);
+		});
+		this._transmuxer.on(TransmuxingEvents.SCRIPTDATA_ARRIVED, (data) => {
+			this._emitter.emit(PlayerEvents.SCRIPTDATA_ARRIVED, data);
 		});
 	}
 }

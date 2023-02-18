@@ -104,8 +104,8 @@ class WebRTMP_Controller {
 				break;
 
 			default:
-				Log.d(this.TAG, data[0], data[1]);
-				this.e.emit(data[0], data[1]);
+				Log.i(this.TAG, data[0], data.slice(1));
+				this.e.emit(data[0], data.slice(1));
 				break;
 		}
 	}

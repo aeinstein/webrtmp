@@ -123,6 +123,7 @@ class MP4Remuxer {
 	}
 
 	_onTrackMetadataReceived(type, metadata) {
+		Log.i(this.TAG, "_onTrackMetadataReceived");
 		let metabox = null;
 
 		let container = 'mp4';
@@ -213,7 +214,9 @@ class MP4Remuxer {
 	}
 
 	_remuxAudio(audioTrack, force) {
+		Log.i(this.TAG, "_remuxAudio");
 		if (this._audioMeta == null) {
+			Log.w(this.TAG, "no audioMeta");
 			return;
 		}
 
@@ -229,11 +232,13 @@ class MP4Remuxer {
 		let insertPrefixSilentFrame = false;
 
 		if (!samples || samples.length === 0) {
+			Log.w(this.TAG, "no samples");
 			return;
 		}
 		if (samples.length === 1 && !force) {
 			// If [sample count in current batch] === 1 && (force != true)
 			// Ignore and keep in demuxer's queue
+			Log.w(this.TAG, "1 sample");
 			return;
 		}  // else if (force === true) do remux
 
@@ -457,6 +462,7 @@ class MP4Remuxer {
 			//no samples need to remux
 			track.samples = [];
 			track.length = 0;
+			Log.w(this.TAG, "no mp4Samples = 0");
 			return;
 		}
 
@@ -538,10 +544,12 @@ class MP4Remuxer {
 			segment.timestampOffset = firstDts;
 		}
 
+		Log.i(this.TAG, "send onMediaSegment audio");
 		this._onMediaSegment('audio', segment);
 	}
 
 	_remuxVideo(videoTrack, force) {
+		Log.i(this.TAG, "_remuxVideo");
 		if (this._videoMeta == null) {
 			return;
 		}
@@ -553,11 +561,13 @@ class MP4Remuxer {
 		let firstPts = -1, lastPts = -1;
 
 		if (!samples || samples.length === 0) {
+			Log.w(this.TAG, "no samples");
 			return;
 		}
 		if (samples.length === 1 && !force) {
 			// If [sample count in current batch] === 1 && (force != true)
 			// Ignore and keep in demuxer's queue
+			Log.w(this.TAG, "no sampes = 1");
 			return;
 		}  // else if (force === true) do remux
 
@@ -729,6 +739,7 @@ class MP4Remuxer {
 		track.samples = [];
 		track.length = 0;
 
+		Log.i(this.TAG, "send onMediaSegment video");
 		this._onMediaSegment('video', {
 			type: 'video',
 			data: this._mergeBoxes(moofbox, mdatbox).buffer,

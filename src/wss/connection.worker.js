@@ -86,9 +86,9 @@ function makeDefaultConnectionParams(application){
 		"tcUrl": "rtmp://" + host + ":1935/" + application,
 		"fpad": false,
 		"capabilities": 15,
-		"audioCodecs": 4071,
-		"videoCodecs": 252,
-		"videoFunction": 1
+		"audioCodecs": 0x0400,
+		"videoCodecs": 0x0080,
+		"videoFunction": 0
 	};
 }
 

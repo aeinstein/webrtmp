@@ -1277,7 +1277,7 @@ class RuntimeException {
     }
 }
 
-class exception_IllegalStateException extends RuntimeException {
+class IllegalStateException extends RuntimeException {
     constructor(message) {
         super(message);
     }
@@ -1287,7 +1287,7 @@ class exception_IllegalStateException extends RuntimeException {
     }
 }
 
-class exception_InvalidArgumentException extends RuntimeException {
+class InvalidArgumentException extends RuntimeException {
     constructor(message) {
         super(message);
     }
@@ -1589,7 +1589,7 @@ class AMF {
      */
     static parseObject(array) {
         if (array.length < 3) {
-            throw new exception_IllegalStateException('Data not enough when parse ScriptDataObject');
+            throw new IllegalStateException('Data not enough when parse ScriptDataObject');
         }
         let name = AMF.parseString(array);
         let value = AMF.parseValue(array.slice(name.size, array.length - name.size));
@@ -1621,7 +1621,7 @@ class AMF {
      */
     static parseString(array) {
         if (array.length < 2) {
-            throw new exception_IllegalStateException('Data not enough when parse String');
+            throw new IllegalStateException('Data not enough when parse String');
         }
         let v = new DataView(array.buffer);
         let length = v.getUint16(0, !le);
@@ -1641,7 +1641,7 @@ class AMF {
 
     static parseLongString(array) {
         if (array.length() < 4) {
-            throw new exception_IllegalStateException('Data not enough when parse LongString');
+            throw new IllegalStateException('Data not enough when parse LongString');
         }
         let v = new DataView(array.buffer);
         let length = v.getUint32(0, !le);
@@ -1661,7 +1661,7 @@ class AMF {
 
     static parseDate(array) {
         if (array.length() < 10) {
-            throw new exception_IllegalStateException('Data size invalid when parse Date');
+            throw new IllegalStateException('Data size invalid when parse Date');
         }
         let v = new DataView(array.buffer);
         let timestamp = v.getFloat64(0, !le);
@@ -1681,7 +1681,7 @@ class AMF {
      */
     static parseValue(array) {
         if (array.length < 1) {
-            throw new exception_IllegalStateException('Data not enough when parse Value');
+            throw new IllegalStateException('Data not enough when parse Value');
         }
 
         let v = new DataView(array.buffer);
@@ -1820,6 +1820,8 @@ class AMF {
  */
 
 // Exponential-Golomb buffer decoder
+
+
 class ExpGolomb {
 
     constructor(uint8array) {
@@ -2401,7 +2403,7 @@ class RTMPMediaMessageHandler{
      */
     handleMediaMessage(msg) {
         if (!this._onError || !this._onMediaInfo || !this._onTrackMetadata || !this._onDataAvailable) {
-            throw new exception_IllegalStateException('Flv: onError & onMediaInfo & onTrackMetadata & onDataAvailable callback must be specified');
+            throw new IllegalStateException('Flv: onError & onMediaInfo & onTrackMetadata & onDataAvailable callback must be specified');
         }
 
         this._dispatch = true;
@@ -3526,9 +3528,9 @@ class RTMPMessageHandler {
             postMessage(["onTrackMetadata", type, metadata]);
         }
 
-        this.media_handler.onDataAvailable = (videoTrack, audioTrack)=>{
-            logger.d(this.TAG, videoTrack, audioTrack);
-            postMessage(["onDataAvailable", videoTrack, audioTrack]);
+        this.media_handler.onDataAvailable = (audioTrack, videoTrack)=>{
+            logger.d(this.TAG, audioTrack, videoTrack);
+            postMessage(["onDataAvailable", audioTrack, videoTrack]);
         }
 
         this.media_handler.onMetaDataArrived = (metadata)=>{
@@ -3740,7 +3742,49 @@ class RTMPMessageHandler {
         this.trackedCommand = "pause";
 
         const command = new rtmp_AMF0Object([
-            "pause", 0, null, enable
+            "pause", 0, null, enable,0
+        ]);
+
+        let msg = new rtmp_RTMPMessage(command.getBytes());
+        msg.setMessageType(0x14);		// AMF0 Command
+        msg.setMessageStreamID(0);
+
+        const chunk = new rtmp_Chunk(msg);
+        chunk.setChunkStreamID(3);
+
+        let buf = chunk.getBytes();
+
+        this.netconnections[0] = new rtmp_NetConnection(0, this);
+
+        this.socket.send(buf);
+    }
+
+    receiveVideo(enable){
+        this.trackedCommand = "receiveVideo";
+
+        const command = new rtmp_AMF0Object([
+            "receiveVideo", 0, null, enable
+        ]);
+
+        let msg = new rtmp_RTMPMessage(command.getBytes());
+        msg.setMessageType(0x14);		// AMF0 Command
+        msg.setMessageStreamID(0);
+
+        const chunk = new rtmp_Chunk(msg);
+        chunk.setChunkStreamID(3);
+
+        let buf = chunk.getBytes();
+
+        this.netconnections[0] = new rtmp_NetConnection(0, this);
+
+        this.socket.send(buf);
+    }
+
+    receiveAudio(enable){
+        this.trackedCommand = "receiveAudio";
+
+        const command = new rtmp_AMF0Object([
+            "receiveAudio", 0, null, enable
         ]);
 
         let msg = new rtmp_RTMPMessage(command.getBytes());
@@ -3917,9 +3961,9 @@ function makeDefaultConnectionParams(application){
 		"tcUrl": "rtmp://" + host + ":1935/" + application,
 		"fpad": false,
 		"capabilities": 15,
-		"audioCodecs": 4071,
-		"videoCodecs": 252,
-		"videoFunction": 1
+		"audioCodecs": 0x0400,
+		"videoCodecs": 0x0080,
+		"videoFunction": 0
 	};
 }
 

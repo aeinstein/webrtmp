@@ -45,7 +45,7 @@ class Transmuxer {
         this._remuxer.onInitSegment = this._onRemuxerInitSegmentArrival.bind(this);
         this._remuxer.onMediaSegment = this._onRemuxerMediaSegmentArrival.bind(this);
 
-        Log.d(this.TAG, this._remuxer.onMediaSegment);
+        this._enableStatisticsReporter();
     }
 
     destroy() {
@@ -123,13 +123,14 @@ class Transmuxer {
         // notify mediaInfo update
         this._reportSegmentMediaInfo(this._currentSegmentIndex);
 
+        /*
         if (this._pendingSeekTime != null) {
             Promise.resolve().then(() => {
                 let target = this._pendingSeekTime;
                 this._pendingSeekTime = null;
                 this.seek(target);
             });
-        }
+        }*/
     }
 
     _onMetaDataArrived(metadata) {

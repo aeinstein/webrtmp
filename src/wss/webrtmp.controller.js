@@ -7,6 +7,20 @@ class WebRTMP_Controller {
 	WSSReconnect = false;
 	isConnected = false;
 
+	loglevels = {
+		"RTMPMessage": Log.ERROR,
+		"RTMPMessageHandler": Log.WARN,
+		"ChunkParser": Log.ERROR,
+		"RTMPHandshake": Log.INFO,
+		"Chunk": Log.OFF,
+		"MP4Remuxer": Log.WARN,
+		"Transmuxer": Log.WARN,
+		"EventEmitter": Log.INFO,
+		"MSEController": Log.TRACE,
+		"WebRTMP": Log.ERROR,
+		"WebRTMP_Controller": Log.WARN
+	}
+
 	WebRTMPWorker = new Worker(new URL('connection.worker.js', import.meta.url), {
 		name: "webrtmp.worker",
 		type: "module"
@@ -19,6 +33,8 @@ class WebRTMP_Controller {
 		this.WebRTMPWorker.addEventListener("message", (e)=>{
 			this.WorkerListener(e);
 		})
+
+		Log.loglevels = this.loglevels;
 	}
 
 	/**
@@ -95,6 +111,10 @@ class WebRTMP_Controller {
 
 			case "Started":
 				Log.d(this.TAG, "Event Started");
+				this.WebRTMPWorker.postMessage({
+					cmd: "loglevels",
+					loglevels: this.loglevels
+				});
 
 				this.createConnection();
 				/*

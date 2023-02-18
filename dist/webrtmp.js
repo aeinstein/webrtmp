@@ -75,6 +75,8 @@ class logger_Log {
 
     static LEVEL = logger_Log.INFO;
 
+    static loglevels = [];
+
     /**
      *
      * @param {Number} level
@@ -83,10 +85,16 @@ class logger_Log {
      * @private
      */
     static _output = function output(level, tag, ...txt){
-        if(logger_Log.LEVEL === logger_Log.OFF) return;
-        if(level < logger_Log.LEVEL) return;
+        let tmpLevel = logger_Log.LEVEL;
+
+        if(logger_Log.loglevels[tag]) tmpLevel = logger_Log.loglevels[tag];
+
+        if(tmpLevel === logger_Log.OFF) return;
+        if(tmpLevel > level) return;
 
         const callstack = logger_Log.getStackTrace();
+
+
 
         // debug aufruf entfernen
         callstack.shift();
@@ -658,7 +666,7 @@ const defaultConfig = {
     lazyLoadRecoverDuration: 30,
     deferLoadAfterSourceOpen: true,
 
-    // autoCleanupSourceBuffer: default as false, leave unspecified
+    autoCleanupSourceBuffer: true,
     autoCleanupMaxBackwardDuration: 3 * 60,
     autoCleanupMinBackwardDuration: 2 * 60,
 
@@ -2984,7 +2992,7 @@ class Transmuxer {
         this._remuxer.onInitSegment = this._onRemuxerInitSegmentArrival.bind(this);
         this._remuxer.onMediaSegment = this._onRemuxerMediaSegmentArrival.bind(this);
 
-        Log.d(this.TAG, this._remuxer.onMediaSegment);
+        this._enableStatisticsReporter();
     }
 
     destroy() {
@@ -3062,13 +3070,14 @@ class Transmuxer {
         // notify mediaInfo update
         this._reportSegmentMediaInfo(this._currentSegmentIndex);
 
+        /*
         if (this._pendingSeekTime != null) {
             Promise.resolve().then(() => {
                 let target = this._pendingSeekTime;
                 this._pendingSeekTime = null;
                 this.seek(target);
             });
-        }
+        }*/
     }
 
     _onMetaDataArrived(metadata) {
@@ -3168,6 +3177,20 @@ class WebRTMP_Controller {
 	WSSReconnect = false;
 	isConnected = false;
 
+	loglevels = {
+		"RTMPMessage": logger.ERROR,
+		"RTMPMessageHandler": logger.WARN,
+		"ChunkParser": logger.ERROR,
+		"RTMPHandshake": logger.INFO,
+		"Chunk": logger.OFF,
+		"MP4Remuxer": logger.WARN,
+		"Transmuxer": logger.WARN,
+		"EventEmitter": logger.INFO,
+		"MSEController": logger.TRACE,
+		"WebRTMP": logger.ERROR,
+		"WebRTMP_Controller": logger.WARN
+	}
+
 	WebRTMPWorker = new Worker(new URL(/* worker import */ __webpack_require__.p + __webpack_require__.u(306), __webpack_require__.b), {
 		name: "webrtmp.worker",
 		type: undefined
@@ -3180,6 +3203,8 @@ class WebRTMP_Controller {
 		this.WebRTMPWorker.addEventListener("message", (e)=>{
 			this.WorkerListener(e);
 		})
+
+		logger.loglevels = this.loglevels;
 	}
 
 	/**
@@ -3256,6 +3281,10 @@ class WebRTMP_Controller {
 
 			case "Started":
 				logger.d(this.TAG, "Event Started");
+				this.WebRTMPWorker.postMessage({
+					cmd: "loglevels",
+					loglevels: this.loglevels
+				});
 
 				this.createConnection();
 				/*
@@ -3348,6 +3377,66 @@ class WebRTMP{
 			this._transmuxer._onTrackMetadataReceived(data[0], data[1]);
 		});
 
+		this._transmuxer.on(TransmuxingEvents.INIT_SEGMENT, (type, is) => {
+			this._msectl.appendInitSegment(is);
+		});
+
+		this._transmuxer.on(TransmuxingEvents.MEDIA_SEGMENT, (type, ms) => {
+			this._msectl.appendMediaSegment(ms);
+		});
+
+
+		this._transmuxer.on(TransmuxingEvents.LOADING_COMPLETE, () => {
+			this._msectl.endOfStream();
+			this._emitter.emit(PlayerEvents.LOADING_COMPLETE);
+		});
+
+		this._transmuxer.on(TransmuxingEvents.RECOVERED_EARLY_EOF, () => {
+			this._emitter.emit(PlayerEvents.RECOVERED_EARLY_EOF);
+		});
+
+		this._transmuxer.on(TransmuxingEvents.IO_ERROR, (detail, info) => {
+			this._emitter.emit(PlayerEvents.ERROR, ErrorTypes.NETWORK_ERROR, detail, info);
+		});
+
+		this._transmuxer.on(TransmuxingEvents.DEMUX_ERROR, (detail, info) => {
+			this._emitter.emit(PlayerEvents.ERROR, ErrorTypes.MEDIA_ERROR, detail, {code: -1, msg: info});
+		});
+
+		this._transmuxer.on(TransmuxingEvents.MEDIA_INFO, (mediaInfo) => {
+			this._mediaInfo = mediaInfo;
+			this._emitter.emit(PlayerEvents.MEDIA_INFO, Object.assign({}, mediaInfo));
+		});
+
+		this._transmuxer.on(TransmuxingEvents.METADATA_ARRIVED, (metadata) => {
+			this._emitter.emit(PlayerEvents.METADATA_ARRIVED, metadata);
+		});
+
+		this._transmuxer.on(TransmuxingEvents.SCRIPTDATA_ARRIVED, (data) => {
+			this._emitter.emit(PlayerEvents.SCRIPTDATA_ARRIVED, data);
+		});
+
+		this._transmuxer.on(TransmuxingEvents.STATISTICS_INFO, (statInfo) => {
+			this._statisticsInfo = this._fillStatisticsInfo(statInfo);
+			this._emitter.emit(PlayerEvents.STATISTICS_INFO, Object.assign({}, this._statisticsInfo));
+		});
+
+	}
+
+	_checkAndResumeStuckPlayback(stalled) {
+		let media = this._mediaElement;
+		if (stalled || !this._receivedCanPlay || media.readyState < 2) {  // HAVE_CURRENT_DATA
+			let buffered = media.buffered;
+			if (buffered.length > 0 && media.currentTime < buffered.start(0)) {
+				logger.w(this.TAG, `Playback seems stuck at ${media.currentTime}, seek to ${buffered.start(0)}`);
+				this._requestSetTime = true;
+				this._mediaElement.currentTime = buffered.start(0);
+				this._mediaElement.removeEventListener('progress', this.e.onvProgress);
+			}
+		} else {
+			// Playback didn't stuck, remove progress event listener
+			this._mediaElement.removeEventListener('progress', this.e.onvProgress);
+		}
 	}
 
 	_onvLoadedMetadata(e) {
@@ -3363,21 +3452,51 @@ class WebRTMP{
 	}
 
 	_onvStalled(e) {
-		//this._checkAndResumeStuckPlayback(true);
+		this._checkAndResumeStuckPlayback(true);
 	}
 
 	_onvProgress(e) {
-		//this._checkAndResumeStuckPlayback();
+		this._checkAndResumeStuckPlayback();
 	}
 
 	_onvSeeking(){
 
 	}
 
+	_fillStatisticsInfo(statInfo) {
+		statInfo.playerType = this._type;
+
+		if (!(this._mediaElement instanceof HTMLVideoElement)) {
+			return statInfo;
+		}
+
+		let hasQualityInfo = true;
+		let decoded = 0;
+		let dropped = 0;
+
+		if (this._mediaElement.getVideoPlaybackQuality) {
+			let quality = this._mediaElement.getVideoPlaybackQuality();
+			decoded = quality.totalVideoFrames;
+			dropped = quality.droppedVideoFrames;
+		} else if (this._mediaElement.webkitDecodedFrameCount != undefined) {
+			decoded = this._mediaElement.webkitDecodedFrameCount;
+			dropped = this._mediaElement.webkitDroppedFrameCount;
+		} else {
+			hasQualityInfo = false;
+		}
+
+		if (hasQualityInfo) {
+			statInfo.decodedFrames = decoded;
+			statInfo.droppedFrames = dropped;
+		}
+
+		return statInfo;
+	}
+
 	_onmseBufferFull() {
-		logger.v(this.TAG, 'MSE SourceBuffer is full, suspend transmuxing task');
+		logger.w(this.TAG, 'MSE SourceBuffer is full, suspend transmuxing task');
 		if (this._progressChecker == null) {
-			this._suspendTransmuxer();
+			//this._suspendTransmuxer();
 		}
 	}
 
@@ -3469,13 +3588,7 @@ class WebRTMP{
 
 		this._msectl = new mse_controller(this._config);
 
-		this._transmuxer.on(TransmuxingEvents.INIT_SEGMENT, (type, is) => {
-			this._msectl.appendInitSegment(is);
-		});
 
-		this._transmuxer.on(TransmuxingEvents.MEDIA_SEGMENT, (type, ms) => {
-			this._msectl.appendMediaSegment(ms);
-		});
 
 		this._msectl.on(MSEEvents.UPDATE_END, this._onmseUpdateEnd.bind(this));
 		this._msectl.on(MSEEvents.BUFFER_FULL, this._onmseBufferFull.bind(this));
@@ -3499,16 +3612,7 @@ class WebRTMP{
 			}
 		}
 
-		this._transmuxer.on(TransmuxingEvents.MEDIA_INFO, (mediaInfo) => {
-			this._mediaInfo = mediaInfo;
-			this._emitter.emit(PlayerEvents.MEDIA_INFO, Object.assign({}, mediaInfo));
-		});
-		this._transmuxer.on(TransmuxingEvents.METADATA_ARRIVED, (metadata) => {
-			this._emitter.emit(PlayerEvents.METADATA_ARRIVED, metadata);
-		});
-		this._transmuxer.on(TransmuxingEvents.SCRIPTDATA_ARRIVED, (data) => {
-			this._emitter.emit(PlayerEvents.SCRIPTDATA_ARRIVED, data);
-		});
+
 	}
 }
 logger.LEVEL = logger.DEBUG;

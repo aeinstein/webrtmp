@@ -15,19 +15,103 @@
       background-color: #FF000020;
     }
 
+    #output {
+      background-color: black;
+    }
+
+    body {
+      background-color: dimgray;
+    }
+
   </style>
 </head>
 <body>
-uehfiuh
-<video id="output"></video>
-<input type="button" value="connect bunkertv" onclick="webrtmp.connect('bunkertv')">
-<input type="button" value="play test" onclick="webrtmp.play('fab5bc692e71e17fba34e92d47e64fd0')">
-<input type="button" value="pause" onclick="webrtmp.pause(true)">
-<input type="button" value="disconnect" onclick="webrtmp.disconnect()">
+<h1>WebRTMP-Demo</h1><br>
+<video controls id="output" width="640" height="400"></video><br>
+Server: <input type="text" value="bunkertv.de"> Port:<input type="text" value="9001"><br>
+<input type="text" id="appName" value="bunkertv">
+<input type="button" value="connect" onclick="webrtmp.connect(document.getElementById('appName').value)"><br>
+<input type="text" id="streamName" value="fab5bc692e71e17fba34e92d47e64fd0">
+<input type="button" value="play" onclick="webrtmp.play(document.getElementById('streamName').value)"><input type="button" value="pause" onclick="webrtmp.pause(true)"><br>
 
+<input type="button" value="disconnect" onclick="webrtmp.disconnect()">
+<br><br><br>
+<input id="duration">
 <script>
   Log.LEVEL = Log.TRACE;
-  webrtmp.attachMediaElement(document.getElementById("output"));
+
+  const output = document.getElementById("output");
+
+
+  output.addEventListener("abort", ()=>{
+    Log.i("VIDEOPLAYER", "abort");
+  })
+
+  output.addEventListener("canplay", ()=>{
+    Log.i("VIDEOPLAYER", "canplay");
+    Log.d("VIDEOPLAYER", output.buffered);
+  })
+
+  output.addEventListener("durationchange", ()=>{
+    Log.i("VIDEOPLAYER", "durationchange");
+    document.getElementById("duration").value = output.duration;
+  })
+
+  output.addEventListener("emptied", ()=>{
+    Log.i("VIDEOPLAYER", "emptied");
+  })
+
+  output.addEventListener("ended", ()=>{
+    Log.i("VIDEOPLAYER", "ended");
+  })
+
+  output.addEventListener("error", ()=>{
+    Log.i("VIDEOPLAYER", "error");
+  })
+
+  output.addEventListener("loadeddata", ()=>{
+    Log.i("VIDEOPLAYER", "loadeddata");
+  })
+
+  output.addEventListener("loadedmetadata", ()=>{
+    Log.i("VIDEOPLAYER", "loadedmetadata");
+  })
+
+  output.addEventListener("loadstart", ()=>{
+    Log.i("VIDEOPLAYER", "loadstart");
+  })
+
+  output.addEventListener("pause", ()=>{
+    Log.i("VIDEOPLAYER", "pause");
+  })
+
+  output.addEventListener("play", ()=>{
+    Log.i("VIDEOPLAYER", "play");
+  })
+
+  output.addEventListener("playing", ()=>{
+    Log.i("VIDEOPLAYER", "playing");
+  })
+
+  output.addEventListener("progress", ()=>{
+    Log.i("VIDEOPLAYER", "progress");
+    document.getElementById("duration").value = output.duration;
+  })
+
+  output.addEventListener("stalled", ()=>{
+    Log.i("VIDEOPLAYER", "stalled");
+  })
+
+  output.addEventListener("timeupdate", ()=>{
+    Log.i("VIDEOPLAYER", "timeupdate");
+    document.getElementById("duration").value = output.duration;
+  })
+
+  output.addEventListener("waiting", ()=>{
+    Log.i("VIDEOPLAYER", "waiting");
+  })
+
+  webrtmp.attachMediaElement(output);
 
 </script>
 </body>

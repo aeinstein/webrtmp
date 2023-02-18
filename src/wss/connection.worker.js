@@ -70,6 +70,10 @@ self.addEventListener('message', function(e) {
 
         case "disconnect":
 			wss_manager.close();
+			break;
+
+		case "loglevels":
+			Log.loglevels = data.loglevels;
             break;
 
 		default:

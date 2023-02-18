@@ -18,6 +18,8 @@ class Log {
 
     static LEVEL = Log.INFO;
 
+    static loglevels = [];
+
     /**
      *
      * @param {Number} level
@@ -26,10 +28,16 @@ class Log {
      * @private
      */
     static _output = function output(level, tag, ...txt){
-        if(Log.LEVEL === Log.OFF) return;
-        if(level < Log.LEVEL) return;
+        let tmpLevel = Log.LEVEL;
+
+        if(Log.loglevels[tag]) tmpLevel = Log.loglevels[tag];
+
+        if(tmpLevel === Log.OFF) return;
+        if(tmpLevel > level) return;
 
         const callstack = Log.getStackTrace();
+
+
 
         // debug aufruf entfernen
         callstack.shift();
@@ -303,8 +311,8 @@ class RTMPHandshake{
 
         this.state = 5;
 
-        if(data.length > 0) {
-            logger.v(this.TAG, "S2 included");
+        if(data.length > 1536) {
+            logger.v(this.TAG, "S2 included: " + data.length);
             this._parseS2(data.slice(1536));
         }
     }
@@ -456,7 +464,7 @@ const defaultConfig = {
     lazyLoadRecoverDuration: 30,
     deferLoadAfterSourceOpen: true,
 
-    // autoCleanupSourceBuffer: default as false, leave unspecified
+    autoCleanupSourceBuffer: true,
     autoCleanupMaxBackwardDuration: 3 * 60,
     autoCleanupMinBackwardDuration: 2 * 60,
 
@@ -653,6 +661,10 @@ class RTMPMessage{
         return this.extendedTimestamp;
     }
 
+	setTimestampDelta(timestamp_delta){
+		this.timestamp += timestamp_delta;
+	}
+
 	/**
 	 *
 	 * @param {Uint8Array} data
@@ -730,7 +742,7 @@ class Chunk{
         let fmt = 0;
 
         do {
-            logger.d("create chunk: " + p.length);
+            logger.d(this.TAG, "create chunk: " + p.length);
             ret = _concatArrayBuffers(ret, this._getHeaderBytes(fmt), p.slice(0,this.CHUNK_SIZE));
             p = p.slice(this.CHUNK_SIZE);
             fmt = 0x3;	// next chunk without header
@@ -1162,7 +1174,7 @@ class ChunkParser {
                     timestamp += data[header_length++];
                     msg.setExtendedTimestamp(true);
                 }
-                msg.setMessageTimestamp(timestamp);
+                msg.setTimestampDelta(timestamp);
 
 
                 logger.d(this.TAG, "message_length: " + message_length);
@@ -1180,7 +1192,7 @@ class ChunkParser {
                     msg.setExtendedTimestamp(true);
                 }
 
-                msg.setMessageTimestamp(timestamp);
+                msg.setTimestampDelta(timestamp);
 
                 break;
 
@@ -3945,6 +3957,10 @@ self.addEventListener('message', function(e) {
 
         case "disconnect":
 			wss_manager.close();
+			break;
+
+		case "loglevels":
+			logger.loglevels = data.loglevels;
             break;
 
 		default:

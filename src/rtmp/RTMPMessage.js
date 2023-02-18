@@ -106,6 +106,10 @@ class RTMPMessage{
         return this.extendedTimestamp;
     }
 
+	setTimestampDelta(timestamp_delta){
+		this.timestamp += timestamp_delta;
+	}
+
 	/**
 	 *
 	 * @param {Uint8Array} data

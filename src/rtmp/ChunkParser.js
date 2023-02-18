@@ -101,7 +101,7 @@ class ChunkParser {
                     timestamp += data[header_length++];
                     msg.setExtendedTimestamp(true);
                 }
-                msg.setMessageTimestamp(timestamp);
+                msg.setTimestampDelta(timestamp);
 
 
                 Log.d(this.TAG, "message_length: " + message_length);
@@ -119,7 +119,7 @@ class ChunkParser {
                     msg.setExtendedTimestamp(true);
                 }
 
-                msg.setMessageTimestamp(timestamp);
+                msg.setTimestampDelta(timestamp);
 
                 break;
 

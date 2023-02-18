@@ -10,6 +10,8 @@ class Log {
 
     static LEVEL = Log.INFO;
 
+    static loglevels = [];
+
     /**
      *
      * @param {Number} level
@@ -18,10 +20,16 @@ class Log {
      * @private
      */
     static _output = function output(level, tag, ...txt){
-        if(Log.LEVEL === Log.OFF) return;
-        if(level < Log.LEVEL) return;
+        let tmpLevel = Log.LEVEL;
+
+        if(Log.loglevels[tag]) tmpLevel = Log.loglevels[tag];
+
+        if(tmpLevel === Log.OFF) return;
+        if(tmpLevel > level) return;
 
         const callstack = Log.getStackTrace();
+
+
 
         // debug aufruf entfernen
         callstack.shift();

@@ -105,8 +105,8 @@ class RTMPHandshake{
 
         this.state = 5;
 
-        if(data.length > 0) {
-            Log.v(this.TAG, "S2 included");
+        if(data.length > 1536) {
+            Log.v(this.TAG, "S2 included: " + data.length);
             this._parseS2(data.slice(1536));
         }
     }

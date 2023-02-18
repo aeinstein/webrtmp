@@ -71,6 +71,66 @@ class WebRTMP{
 			this._transmuxer._onTrackMetadataReceived(data[0], data[1]);
 		});
 
+		this._transmuxer.on(TransmuxingEvents.INIT_SEGMENT, (type, is) => {
+			this._msectl.appendInitSegment(is);
+		});
+
+		this._transmuxer.on(TransmuxingEvents.MEDIA_SEGMENT, (type, ms) => {
+			this._msectl.appendMediaSegment(ms);
+		});
+
+
+		this._transmuxer.on(TransmuxingEvents.LOADING_COMPLETE, () => {
+			this._msectl.endOfStream();
+			this._emitter.emit(PlayerEvents.LOADING_COMPLETE);
+		});
+
+		this._transmuxer.on(TransmuxingEvents.RECOVERED_EARLY_EOF, () => {
+			this._emitter.emit(PlayerEvents.RECOVERED_EARLY_EOF);
+		});
+
+		this._transmuxer.on(TransmuxingEvents.IO_ERROR, (detail, info) => {
+			this._emitter.emit(PlayerEvents.ERROR, ErrorTypes.NETWORK_ERROR, detail, info);
+		});
+
+		this._transmuxer.on(TransmuxingEvents.DEMUX_ERROR, (detail, info) => {
+			this._emitter.emit(PlayerEvents.ERROR, ErrorTypes.MEDIA_ERROR, detail, {code: -1, msg: info});
+		});
+
+		this._transmuxer.on(TransmuxingEvents.MEDIA_INFO, (mediaInfo) => {
+			this._mediaInfo = mediaInfo;
+			this._emitter.emit(PlayerEvents.MEDIA_INFO, Object.assign({}, mediaInfo));
+		});
+
+		this._transmuxer.on(TransmuxingEvents.METADATA_ARRIVED, (metadata) => {
+			this._emitter.emit(PlayerEvents.METADATA_ARRIVED, metadata);
+		});
+
+		this._transmuxer.on(TransmuxingEvents.SCRIPTDATA_ARRIVED, (data) => {
+			this._emitter.emit(PlayerEvents.SCRIPTDATA_ARRIVED, data);
+		});
+
+		this._transmuxer.on(TransmuxingEvents.STATISTICS_INFO, (statInfo) => {
+			this._statisticsInfo = this._fillStatisticsInfo(statInfo);
+			this._emitter.emit(PlayerEvents.STATISTICS_INFO, Object.assign({}, this._statisticsInfo));
+		});
+
+	}
+
+	_checkAndResumeStuckPlayback(stalled) {
+		let media = this._mediaElement;
+		if (stalled || !this._receivedCanPlay || media.readyState < 2) {  // HAVE_CURRENT_DATA
+			let buffered = media.buffered;
+			if (buffered.length > 0 && media.currentTime < buffered.start(0)) {
+				Log.w(this.TAG, `Playback seems stuck at ${media.currentTime}, seek to ${buffered.start(0)}`);
+				this._requestSetTime = true;
+				this._mediaElement.currentTime = buffered.start(0);
+				this._mediaElement.removeEventListener('progress', this.e.onvProgress);
+			}
+		} else {
+			// Playback didn't stuck, remove progress event listener
+			this._mediaElement.removeEventListener('progress', this.e.onvProgress);
+		}
 	}
 
 	_onvLoadedMetadata(e) {
@@ -86,21 +146,51 @@ class WebRTMP{
 	}
 
 	_onvStalled(e) {
-		//this._checkAndResumeStuckPlayback(true);
+		this._checkAndResumeStuckPlayback(true);
 	}
 
 	_onvProgress(e) {
-		//this._checkAndResumeStuckPlayback();
+		this._checkAndResumeStuckPlayback();
 	}
 
 	_onvSeeking(){
 
 	}
 
+	_fillStatisticsInfo(statInfo) {
+		statInfo.playerType = this._type;
+
+		if (!(this._mediaElement instanceof HTMLVideoElement)) {
+			return statInfo;
+		}
+
+		let hasQualityInfo = true;
+		let decoded = 0;
+		let dropped = 0;
+
+		if (this._mediaElement.getVideoPlaybackQuality) {
+			let quality = this._mediaElement.getVideoPlaybackQuality();
+			decoded = quality.totalVideoFrames;
+			dropped = quality.droppedVideoFrames;
+		} else if (this._mediaElement.webkitDecodedFrameCount != undefined) {
+			decoded = this._mediaElement.webkitDecodedFrameCount;
+			dropped = this._mediaElement.webkitDroppedFrameCount;
+		} else {
+			hasQualityInfo = false;
+		}
+
+		if (hasQualityInfo) {
+			statInfo.decodedFrames = decoded;
+			statInfo.droppedFrames = dropped;
+		}
+
+		return statInfo;
+	}
+
 	_onmseBufferFull() {
-		Log.v(this.TAG, 'MSE SourceBuffer is full, suspend transmuxing task');
+		Log.w(this.TAG, 'MSE SourceBuffer is full, suspend transmuxing task');
 		if (this._progressChecker == null) {
-			this._suspendTransmuxer();
+			//this._suspendTransmuxer();
 		}
 	}
 
@@ -192,13 +282,7 @@ class WebRTMP{
 
 		this._msectl = new MSEController(this._config);
 
-		this._transmuxer.on(TransmuxingEvents.INIT_SEGMENT, (type, is) => {
-			this._msectl.appendInitSegment(is);
-		});
 
-		this._transmuxer.on(TransmuxingEvents.MEDIA_SEGMENT, (type, ms) => {
-			this._msectl.appendMediaSegment(ms);
-		});
 
 		this._msectl.on(MSEEvents.UPDATE_END, this._onmseUpdateEnd.bind(this));
 		this._msectl.on(MSEEvents.BUFFER_FULL, this._onmseBufferFull.bind(this));
@@ -222,16 +306,7 @@ class WebRTMP{
 			}
 		}
 
-		this._transmuxer.on(TransmuxingEvents.MEDIA_INFO, (mediaInfo) => {
-			this._mediaInfo = mediaInfo;
-			this._emitter.emit(PlayerEvents.MEDIA_INFO, Object.assign({}, mediaInfo));
-		});
-		this._transmuxer.on(TransmuxingEvents.METADATA_ARRIVED, (metadata) => {
-			this._emitter.emit(PlayerEvents.METADATA_ARRIVED, metadata);
-		});
-		this._transmuxer.on(TransmuxingEvents.SCRIPTDATA_ARRIVED, (data) => {
-			this._emitter.emit(PlayerEvents.SCRIPTDATA_ARRIVED, data);
-		});
+
 	}
 }
 Log.LEVEL = Log.DEBUG;

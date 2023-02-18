@@ -35,7 +35,7 @@ class Chunk{
         let fmt = 0;
 
         do {
-            Log.d("create chunk: " + p.length);
+            Log.d(this.TAG, "create chunk: " + p.length);
             ret = _concatArrayBuffers(ret, this._getHeaderBytes(fmt), p.slice(0,this.CHUNK_SIZE));
             p = p.slice(this.CHUNK_SIZE);
             fmt = 0x3;	// next chunk without header

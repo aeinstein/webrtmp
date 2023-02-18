@@ -45,7 +45,7 @@ class Transmuxer {
         this._remuxer.onInitSegment = this._onRemuxerInitSegmentArrival.bind(this);
         this._remuxer.onMediaSegment = this._onRemuxerMediaSegmentArrival.bind(this);
 
-        this._enableStatisticsReporter();
+       // this._enableStatisticsReporter();
     }
 
     destroy() {

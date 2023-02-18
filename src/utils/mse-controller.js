@@ -222,7 +222,7 @@ class MSEController {
 	}
 
 	appendMediaSegment(mediaSegment) {
-		Log.i(this.TAG, "appendMediaSegment");
+		Log.d(this.TAG, "appendMediaSegment", mediaSegment);
 		let ms = mediaSegment;
 		this._pendingSegments[ms.type].push(ms);
 

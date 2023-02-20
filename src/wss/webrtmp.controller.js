@@ -41,7 +41,8 @@ class WebRTMP_Controller {
 		"MSEController": Log.INFO,
 		"WebRTMP": Log.WARN,
 		"WebRTMP_Controller": Log.WARN,
-		"WebRTMP Worker": Log.WARN
+		"WebRTMP Worker": Log.WARN,
+		"AMF": Log.WARN
 	}
 
 	WebRTMPWorker = new Worker(new URL('connection.worker.js', import.meta.url), {

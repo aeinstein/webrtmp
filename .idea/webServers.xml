@@ -3,7 +3,7 @@
   <component name="WebServers">
     <option name="servers">
       <webServer id="a92c7eb3-ee10-4765-830a-208e86893b57" name="BunkerTV" url="https://bunkertv.org/webrtmp">
-        <fileTransfer rootFolder="/home/bunkertv/htdocs/webrtmp" accessType="SFTP" host="bunkertv.org" port="22" sshConfigId="55b2d163-3f59-4b8a-9b29-24360fa56541" sshConfig="root@bunkertv.org:22 key" keyPair="true">
+        <fileTransfer rootFolder="/home/bunkertv/htdocs/webrtmp" accessType="SFTP" host="bunkertv.org" port="22" sshConfigId="55b2d163-3f59-4b8a-9b29-24360fa56541" sshConfig="root@bunkertv.org:22" keyPair="true">
           <advancedOptions>
             <advancedOptions dataProtectionLevel="Private" keepAliveTimeout="0" passiveMode="true" shareSSLContext="true" />
           </advancedOptions>

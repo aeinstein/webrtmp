@@ -63,6 +63,25 @@ var __webpack_exports__ = {};
 // UNUSED EXPORTS: default
 
 ;// CONCATENATED MODULE: ./utils/logger.js
+/*
+ * Copyright (C) 2016 itNOX. All Rights Reserved.
+ *
+ * @author Michael Balen <mb@itnox.de>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 class Log {
     static OFF = -1;
     static TRACE = 0;
@@ -205,6 +224,26 @@ class Log {
 /* harmony default export */ const logger = (Log);
 
 ;// CONCATENATED MODULE: ./utils/event_emitter.js
+/*
+ *
+ * Copyright (C) 2023 itNOX. All Rights Reserved.
+ *
+ * @author Michael Balen <mb@itnox.de>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 
 
 class EventEmitter{
@@ -573,6 +612,27 @@ class NotImplementedException extends RuntimeException {
 }
 
 ;// CONCATENATED MODULE: ./utils/utils.js
+
+/*
+ *
+ * Copyright (C) 2023 itNOX. All Rights Reserved.
+ *
+ * @author Michael Balen <mb@itnox.de>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 /**
  *
  * @param {Uint8Array} bufs
@@ -1426,12 +1486,33 @@ class MSEController {
 /* harmony default export */ const mse_controller = (MSEController);
 
 ;// CONCATENATED MODULE: ./wss/webrtmp.controller.js
+/*
+ *
+ * Copyright (C) 2023 itNOX. All Rights Reserved.
+ *
+ * @author Michael Balen <mb@itnox.de>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 
 
 
 class WebRTMP_Controller {
 	TAG = "WebRTMP_Controller";
 	host = document.location.host;
+	port = 9001;
 	WSSReconnect = false;
 	isConnected = false;
 
@@ -1447,7 +1528,8 @@ class WebRTMP_Controller {
 		"EventEmitter": logger.DEBUG,
 		"MSEController": logger.INFO,
 		"WebRTMP": logger.WARN,
-		"WebRTMP_Controller": logger.WARN
+		"WebRTMP_Controller": logger.WARN,
+		"WebRTMP Worker": logger.WARN
 	}
 
 	WebRTMPWorker = new Worker(new URL(/* worker import */ __webpack_require__.p + __webpack_require__.u(306), __webpack_require__.b), {
@@ -1467,25 +1549,40 @@ class WebRTMP_Controller {
 	}
 
 	/**
-	 * WSS Verbindung aufbauen
+	 *
+	 * @param {String|null} host
+	 * @param {Number|null} port
+	 * @returns {boolean}
 	 */
-	createConnection(){
+	open(host, port){
 		if(this.isConnected) return false;
-		this.WebRTMPWorker.postMessage({cmd: "createConnection", host: this.host});
+
+		if(host) this.host = host;
+		if(port) this.port = port;
+
+		this.WebRTMPWorker.postMessage({cmd: "open", host: this.host, port: this.port});
 	}
 
 	/**
-	 * MQTT Verbindung trennen
+	 * Websocket disconnect
 	 */
 	disconnect() {
 		this.WSSReconnect = true;
 		this.WebRTMPWorker.postMessage({cmd: "disconnect"});
 	}
 
+	/**
+	 * RTMP connect application
+	 * @param {String} appName
+	 */
 	connect(appName){
 		this.WebRTMPWorker.postMessage({cmd: "connect", appName: appName});
 	}
 
+	/**
+	 * RTMP play streamname
+	 * @param {String} streamName
+	 */
 	play(streamName){
 		this.WebRTMPWorker.postMessage({cmd: "play", streamName: streamName});
 	}
@@ -1526,7 +1623,7 @@ class WebRTMP_Controller {
 
 					window.setTimeout(()=>{
 						logger.w(this.TAG, "timed Reconnect");
-						this.createConnection();
+						this.open();
 					}, 1000)
 				}
 
@@ -1544,12 +1641,6 @@ class WebRTMP_Controller {
 					cmd: "loglevels",
 					loglevels: this.loglevels
 				});
-
-				this.createConnection();
-				/*
-				window.setTimeout(()=>{
-					this.connect();
-				}, 2000);*/
 				break;
 
 			default:
@@ -1563,6 +1654,26 @@ class WebRTMP_Controller {
 /* harmony default export */ const webrtmp_controller = (WebRTMP_Controller);
 
 ;// CONCATENATED MODULE: ./webrtmp.js
+/*
+ *
+ * Copyright (C) 2023 itNOX. All Rights Reserved.
+ *
+ * @author Michael Balen <mb@itnox.de>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 
 
 
@@ -1572,19 +1683,12 @@ class WebRTMP_Controller {
 
 class WebRTMP{
 	TAG = 'WebRTMP';
+	_mediaElement = null;
 
 	constructor() {
 		this.wss = new webrtmp_controller();
 
 		this._config = defaultConfig
-
-		this.wss.addEventListener("Connected", ()=>{
-			logger.d(this.TAG, "Connected");
-		});
-
-		this.wss.addEventListener("RTMPConnected", ()=>{
-			logger.d(this.TAG,"RTMPConnected");
-		});
 
 		this.wss.addEventListener("RTMPMessageArrived", (data)=>{
 			logger.d(this.TAG,"RTMPMessageArrived", data);
@@ -1602,8 +1706,6 @@ class WebRTMP{
 
 		this.wss.addEventListener("ConnectionLost", ()=>{});
 
-		this.wss.addEventListener("ConnectionLost", ()=>{});
-
 		this._emitter = new event_emitter();
 
 		this.e = {
@@ -1613,87 +1715,6 @@ class WebRTMP{
 			onvStalled: this._onvStalled.bind(this),
 			onvProgress: this._onvProgress.bind(this)
 		};
-
-
-		/*
-
-		this._config = defaultConfig;
-		this._transmuxer = new Transmuxer(this._config);
-
-		// transmuxdr Events
-		this.wss.addEventListener("onMediaInfo", (mediaInfo)=>{
-			Log.i(this.TAG, "onMediaInfo");
-			this._transmuxer._onMediaInfo(mediaInfo);
-		});
-
-		this.wss.addEventListener("onMediaSegment", (data)=>{
-			Log.i(this.TAG, "onMediaSegment");
-			this._transmuxer._onMediaInfo(mediaInfo);
-		});
-
-		this.wss.addEventListener("onDataAvailable", (data)=>{
-			Log.i(this.TAG, "onDataAvailable");
-			this._transmuxer.remux(data[0], data[1]);
-		});
-
-		this.wss.addEventListener("onTrackMetadata", (data)=>{
-			Log.i(this.TAG, "onTrackMetaData");
-			this._transmuxer._onTrackMetadataReceived(data[0], data[1]);
-		});
-
-		this._transmuxer.on(TransmuxingEvents.INIT_SEGMENT, (type, is) => {
-			this._msectl.appendInitSegment(is);
-		});
-
-		this._transmuxer.on(TransmuxingEvents.MEDIA_SEGMENT, (type, ms) => {
-			this._msectl.appendMediaSegment(ms);
-		});
-
-
-		this._transmuxer.on(TransmuxingEvents.LOADING_COMPLETE, () => {
-			this._msectl.endOfStream();
-			this._emitter.emit(PlayerEvents.LOADING_COMPLETE);
-		});
-
-		this._transmuxer.on(TransmuxingEvents.RECOVERED_EARLY_EOF, () => {
-			this._emitter.emit(PlayerEvents.RECOVERED_EARLY_EOF);
-		});
-
-		this._transmuxer.on(TransmuxingEvents.IO_ERROR, (detail, info) => {
-			this._emitter.emit(PlayerEvents.ERROR, ErrorTypes.NETWORK_ERROR, detail, info);
-		});
-
-		this._transmuxer.on(TransmuxingEvents.DEMUX_ERROR, (detail, info) => {
-			this._emitter.emit(PlayerEvents.ERROR, ErrorTypes.MEDIA_ERROR, detail, {code: -1, msg: info});
-		});
-
-		this._transmuxer.on(TransmuxingEvents.MEDIA_INFO, (mediaInfo) => {
-			this._mediaInfo = mediaInfo;
-			this._emitter.emit(PlayerEvents.MEDIA_INFO, Object.assign({}, mediaInfo));
-		});
-
-		this._transmuxer.on(TransmuxingEvents.METADATA_ARRIVED, (metadata) => {
-			this._emitter.emit(PlayerEvents.METADATA_ARRIVED, metadata);
-		});
-
-		this._transmuxer.on(TransmuxingEvents.SCRIPTDATA_ARRIVED, (data) => {
-			this._emitter.emit(PlayerEvents.SCRIPTDATA_ARRIVED, data);
-		});
-
-		this._transmuxer.on(TransmuxingEvents.STATISTICS_INFO, (statInfo) => {
-			this._statisticsInfo = this._fillStatisticsInfo(statInfo);
-			this._emitter.emit(PlayerEvents.STATISTICS_INFO, Object.assign({}, this._statisticsInfo));
-		});
-
-		let chromeNeedIDRFix = (Browser.chrome &&
-			(Browser.version.major < 50 ||
-				(Browser.version.major === 50 && Browser.version.build < 2661)));
-		this._alwaysSeekKeyframe = (chromeNeedIDRFix || Browser.msedge || Browser.msie) ? true : false;
-
-		if (this._alwaysSeekKeyframe) {
-			this._config.accurateSeek = false;
-		}
-*/
 	}
 
 	_checkAndResumeStuckPlayback(stalled) {
@@ -1927,11 +1948,58 @@ class WebRTMP{
 	}
 
 	play(streamName){
-		this.wss.play(streamName);
+		return new Promise((resolve, reject)=>{
+			/*
+			this.wss.addEventListener("RTMPHandshakeDone", (success)=>{
+				Log.d(this.TAG,"RTMPHandshakeDone");
+				if(success) resolve();
+				else reject();
+			});*/
+
+			this.wss.play(streamName);
+			this._mediaElement.play();
+			resolve();
+		});
 	}
 
+	/**
+	 *
+	 * @param {String|null} host
+	 * @param {Number|null} port
+	 * @returns {Promise<unknown>}
+	 */
+	open(host, port){
+		return new Promise((resolve, reject)=>{
+			this.wss.addEventListener("RTMPHandshakeDone", (success)=>{
+				logger.d(this.TAG,"RTMPHandshakeDone");
+				if(success) resolve();
+				else reject();
+			});
+
+			this.wss.addEventListener("WSSConnectFailed", ()=>{
+				logger.d(this.TAG,"WSSConnectFailed");
+				reject();
+			});
+
+			this.wss.open(host, port);
+		})
+	}
+
+	/**
+	 *
+	 * @param {String} appName
+	 * @returns {Promise<unknown>}
+	 */
 	connect(appName){
-		this.wss.connect(appName);
+		return new Promise((resolve, reject)=>{
+			this.wss.addEventListener("RTMPStreamCreated", ()=>{
+				logger.d(this.TAG,"RTMPStreamCreated");
+				resolve();
+			});
+
+			this.wss.connect(appName);
+		})
+
 	}
 
 	pause(enable){

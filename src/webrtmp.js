@@ -1,3 +1,23 @@
+/*
+ *
+ * Copyright (C) 2023 itNOX. All Rights Reserved.
+ *
+ * @author Michael Balen <mb@itnox.de>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 import Log from "./utils/logger";
 import MSEController from "./utils/mse-controller";
 import {defaultConfig, ErrorDetails, ErrorTypes, MSEEvents, PlayerEvents, TransmuxingEvents} from "./utils/utils";
@@ -7,19 +27,12 @@ import Browser from "./utils/browser";
 
 class WebRTMP{
 	TAG = 'WebRTMP';
+	_mediaElement = null;
 
 	constructor() {
 		this.wss = new WebRTMP_Controller();
 
 		this._config = defaultConfig
-
-		this.wss.addEventListener("Connected", ()=>{
-			Log.d(this.TAG, "Connected");
-		});
-
-		this.wss.addEventListener("RTMPConnected", ()=>{
-			Log.d(this.TAG,"RTMPConnected");
-		});
 
 		this.wss.addEventListener("RTMPMessageArrived", (data)=>{
 			Log.d(this.TAG,"RTMPMessageArrived", data);
@@ -37,8 +50,6 @@ class WebRTMP{
 
 		this.wss.addEventListener("ConnectionLost", ()=>{});
 
-		this.wss.addEventListener("ConnectionLost", ()=>{});
-
 		this._emitter = new EventEmitter();
 
 		this.e = {
@@ -48,87 +59,6 @@ class WebRTMP{
 			onvStalled: this._onvStalled.bind(this),
 			onvProgress: this._onvProgress.bind(this)
 		};
-
-
-		/*
-
-		this._config = defaultConfig;
-		this._transmuxer = new Transmuxer(this._config);
-
-		// transmuxdr Events
-		this.wss.addEventListener("onMediaInfo", (mediaInfo)=>{
-			Log.i(this.TAG, "onMediaInfo");
-			this._transmuxer._onMediaInfo(mediaInfo);
-		});
-
-		this.wss.addEventListener("onMediaSegment", (data)=>{
-			Log.i(this.TAG, "onMediaSegment");
-			this._transmuxer._onMediaInfo(mediaInfo);
-		});
-
-		this.wss.addEventListener("onDataAvailable", (data)=>{
-			Log.i(this.TAG, "onDataAvailable");
-			this._transmuxer.remux(data[0], data[1]);
-		});
-
-		this.wss.addEventListener("onTrackMetadata", (data)=>{
-			Log.i(this.TAG, "onTrackMetaData");
-			this._transmuxer._onTrackMetadataReceived(data[0], data[1]);
-		});
-
-		this._transmuxer.on(TransmuxingEvents.INIT_SEGMENT, (type, is) => {
-			this._msectl.appendInitSegment(is);
-		});
-
-		this._transmuxer.on(TransmuxingEvents.MEDIA_SEGMENT, (type, ms) => {
-			this._msectl.appendMediaSegment(ms);
-		});
-
-
-		this._transmuxer.on(TransmuxingEvents.LOADING_COMPLETE, () => {
-			this._msectl.endOfStream();
-			this._emitter.emit(PlayerEvents.LOADING_COMPLETE);
-		});
-
-		this._transmuxer.on(TransmuxingEvents.RECOVERED_EARLY_EOF, () => {
-			this._emitter.emit(PlayerEvents.RECOVERED_EARLY_EOF);
-		});
-
-		this._transmuxer.on(TransmuxingEvents.IO_ERROR, (detail, info) => {
-			this._emitter.emit(PlayerEvents.ERROR, ErrorTypes.NETWORK_ERROR, detail, info);
-		});
-
-		this._transmuxer.on(TransmuxingEvents.DEMUX_ERROR, (detail, info) => {
-			this._emitter.emit(PlayerEvents.ERROR, ErrorTypes.MEDIA_ERROR, detail, {code: -1, msg: info});
-		});
-
-		this._transmuxer.on(TransmuxingEvents.MEDIA_INFO, (mediaInfo) => {
-			this._mediaInfo = mediaInfo;
-			this._emitter.emit(PlayerEvents.MEDIA_INFO, Object.assign({}, mediaInfo));
-		});
-
-		this._transmuxer.on(TransmuxingEvents.METADATA_ARRIVED, (metadata) => {
-			this._emitter.emit(PlayerEvents.METADATA_ARRIVED, metadata);
-		});
-
-		this._transmuxer.on(TransmuxingEvents.SCRIPTDATA_ARRIVED, (data) => {
-			this._emitter.emit(PlayerEvents.SCRIPTDATA_ARRIVED, data);
-		});
-
-		this._transmuxer.on(TransmuxingEvents.STATISTICS_INFO, (statInfo) => {
-			this._statisticsInfo = this._fillStatisticsInfo(statInfo);
-			this._emitter.emit(PlayerEvents.STATISTICS_INFO, Object.assign({}, this._statisticsInfo));
-		});
-
-		let chromeNeedIDRFix = (Browser.chrome &&
-			(Browser.version.major < 50 ||
-				(Browser.version.major === 50 && Browser.version.build < 2661)));
-		this._alwaysSeekKeyframe = (chromeNeedIDRFix || Browser.msedge || Browser.msie) ? true : false;
-
-		if (this._alwaysSeekKeyframe) {
-			this._config.accurateSeek = false;
-		}
-*/
 	}
 
 	_checkAndResumeStuckPlayback(stalled) {
@@ -362,11 +292,58 @@ class WebRTMP{
 	}
 
 	play(streamName){
-		this.wss.play(streamName);
+		return new Promise((resolve, reject)=>{
+			/*
+			this.wss.addEventListener("RTMPHandshakeDone", (success)=>{
+				Log.d(this.TAG,"RTMPHandshakeDone");
+				if(success) resolve();
+				else reject();
+			});*/
+
+			this.wss.play(streamName);
+			this._mediaElement.play();
+			resolve();
+		});
 	}
 
+	/**
+	 *
+	 * @param {String|null} host
+	 * @param {Number|null} port
+	 * @returns {Promise<unknown>}
+	 */
+	open(host, port){
+		return new Promise((resolve, reject)=>{
+			this.wss.addEventListener("RTMPHandshakeDone", (success)=>{
+				Log.d(this.TAG,"RTMPHandshakeDone");
+				if(success) resolve();
+				else reject();
+			});
+
+			this.wss.addEventListener("WSSConnectFailed", ()=>{
+				Log.d(this.TAG,"WSSConnectFailed");
+				reject();
+			});
+
+			this.wss.open(host, port);
+		})
+	}
+
+	/**
+	 *
+	 * @param {String} appName
+	 * @returns {Promise<unknown>}
+	 */
 	connect(appName){
-		this.wss.connect(appName);
+		return new Promise((resolve, reject)=>{
+			this.wss.addEventListener("RTMPStreamCreated", ()=>{
+				Log.d(this.TAG,"RTMPStreamCreated");
+				resolve();
+			});
+
+			this.wss.connect(appName);
+		})
+
 	}
 
 	pause(enable){

@@ -6,6 +6,25 @@ var __webpack_exports__ = {};
   \***********************************************/
 
 ;// CONCATENATED MODULE: ./utils/logger.js
+/*
+ * Copyright (C) 2016 itNOX. All Rights Reserved.
+ *
+ * @author Michael Balen <mb@itnox.de>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 class Log {
     static OFF = -1;
     static TRACE = 0;
@@ -148,11 +167,32 @@ class Log {
 /* harmony default export */ const logger = (Log);
 
 ;// CONCATENATED MODULE: ./wss/WSSConnectionManager.js
+/*
+ *
+ * Copyright (C) 2023 itNOX. All Rights Reserved.
+ *
+ * @author Michael Balen <mb@itnox.de>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 
 
 class WSSConnectionManager{
     TAG = "WSSConnectionManager";
     host;
+    port;
     wss;
 
     /**
@@ -161,9 +201,9 @@ class WSSConnectionManager{
      * @param {Number} port
      * @param callback
      */
-    connect(host, port, callback){
+    open(host, port, callback){
         this.host = host;
-        logger.v(this.TAG, "connecting to : " + host + ":" + port);
+        logger.v(this.TAG, "connecting to: " + host + ":" + port);
         this.wss = new WebSocket("wss://" + host + ":" + port + "/");
 
         this.wss.binaryType = "arraybuffer";
@@ -180,7 +220,7 @@ class WSSConnectionManager{
 
         this.wss.onerror = (e)=>{
             logger.e(this.TAG, e);
-            postMessage(["Failure"]);
+            callback(false);
         }
     }
 
@@ -204,6 +244,26 @@ class WSSConnectionManager{
 /* harmony default export */ const wss_WSSConnectionManager = (WSSConnectionManager);
 
 ;// CONCATENATED MODULE: ./rtmp/RTMPHandshake.js
+/*
+ *
+ * Copyright (C) 2023 itNOX. All Rights Reserved.
+ *
+ * @author Michael Balen <mb@itnox.de>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 
 
 class RTMPHandshake{
@@ -371,6 +431,27 @@ class RTMPHandshake{
 /* harmony default export */ const rtmp_RTMPHandshake = (RTMPHandshake);
 
 ;// CONCATENATED MODULE: ./utils/utils.js
+
+/*
+ *
+ * Copyright (C) 2023 itNOX. All Rights Reserved.
+ *
+ * @author Michael Balen <mb@itnox.de>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 /**
  *
  * @param {Uint8Array} bufs
@@ -553,6 +634,26 @@ const ErrorDetails = {
 };
 
 ;// CONCATENATED MODULE: ./rtmp/RTMPMessage.js
+/*
+ *
+ * Copyright (C) 2023 itNOX. All Rights Reserved.
+ *
+ * @author Michael Balen <mb@itnox.de>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 
 
 
@@ -666,9 +767,7 @@ class RTMPMessage{
     }
 
 	setTimestampDelta(timestamp_delta){
-
 		this.timestamp += timestamp_delta;
-
 		logger.v(this.TAG, "TS: " + this.timestamp + " Delta: " + timestamp_delta);
 	}
 
@@ -712,6 +811,27 @@ class RTMPMessage{
 /* harmony default export */ const rtmp_RTMPMessage = (RTMPMessage);
 
 ;// CONCATENATED MODULE: ./rtmp/Chunk.js
+
+/*
+ *
+ * Copyright (C) 2023 itNOX. All Rights Reserved.
+ *
+ * @author Michael Balen <mb@itnox.de>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 
 
 
@@ -878,6 +998,26 @@ class Chunk{
 /* harmony default export */ const rtmp_Chunk = (Chunk);
 
 ;// CONCATENATED MODULE: ./rtmp/UserControlMessage.js
+/*
+ *
+ * Copyright (C) 2023 itNOX. All Rights Reserved.
+ *
+ * @author Michael Balen <mb@itnox.de>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 class UserControlMessage{
     event_type;
     event_data1;
@@ -945,6 +1085,26 @@ class UserControlMessage{
 /* harmony default export */ const rtmp_UserControlMessage = (UserControlMessage);
 
 ;// CONCATENATED MODULE: ./rtmp/ProtocolControlMessage.js
+/*
+ *
+ * Copyright (C) 2023 itNOX. All Rights Reserved.
+ *
+ * @author Michael Balen <mb@itnox.de>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 
 
 class ProtocolControlMessage{
@@ -998,6 +1158,26 @@ class ProtocolControlMessage{
 /* harmony default export */ const rtmp_ProtocolControlMessage = (ProtocolControlMessage);
 
 ;// CONCATENATED MODULE: ./rtmp/NetConnection.js
+/*
+ *
+ * Copyright (C) 2023 itNOX. All Rights Reserved.
+ *
+ * @author Michael Balen <mb@itnox.de>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 
 
 
@@ -1078,6 +1258,26 @@ class NetConnection{
 /* harmony default export */ const rtmp_NetConnection = (NetConnection);
 
 ;// CONCATENATED MODULE: ./rtmp/ChunkParser.js
+/*
+ *
+ * Copyright (C) 2023 itNOX. All Rights Reserved.
+ *
+ * @author Michael Balen <mb@itnox.de>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 
 
 
@@ -2225,6 +2425,26 @@ class SPSParser {
 /* harmony default export */ const sps_parser = (SPSParser);
 
 ;// CONCATENATED MODULE: ./utils/event_emitter.js
+/*
+ *
+ * Copyright (C) 2023 itNOX. All Rights Reserved.
+ *
+ * @author Michael Balen <mb@itnox.de>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 
 
 class EventEmitter{
@@ -4265,6 +4485,27 @@ class Transmuxer {
 /* harmony default export */ const transmuxer = (Transmuxer);
 
 ;// CONCATENATED MODULE: ./rtmp/RTMPMediaMessageHandler.js
+/*
+ *
+ * Copyright (C) 2023 itNOX. All Rights Reserved.
+ *
+ * This was heavily inspired by bilibi FLVPlayer (flv.js/src/demux/flv-demuxer.js)
+ * @author Michael Balen <mb@itnox.de>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 
 
 
@@ -5597,6 +5838,26 @@ const test = [
 	0x00, 0x3f, 0xf0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0x09];
 ;// CONCATENATED MODULE: ./rtmp/RTMPMessageHandler.js
+/*
+ *
+ * Copyright (C) 2023 itNOX. All Rights Reserved.
+ *
+ * @author Michael Balen <mb@itnox.de>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 
 
 
@@ -5648,26 +5909,6 @@ class RTMPMessageHandler {
         this.media_handler.onScriptDataArrived= (data)=>{
             postMessage(["onMetaDataArrived", data]);
         }
-
-
-        /*
-
-          this.media_handler.onTrackMetadata = (type, metadata)=>{
-            Log.d(this.TAG, type, metadata);
-            postMessage(["onTrackMetadata", type, metadata]);
-        }
-
-        this.media_handler.onDataAvailable = (audioTrack, videoTrack)=>{
-            Log.d(this.TAG, audioTrack, videoTrack);
-            postMessage(["onDataAvailable", audioTrack, videoTrack]);
-            //audioTrack.samples = [];
-            //videoTrack.samples = [];
-        }
-
-
-        this.media_handler.onScriptDataArrived= (data)=>{
-            postMessage(["onMetaDataArrived", data]);
-        }*/
     }
 
     /**
@@ -5736,6 +5977,10 @@ class RTMPMessageHandler {
                     break;
 
                 case "createStream":
+                    logger.d(this.TAG,"got _result: " + cmd[3]);
+                    if(cmd[3]) {
+                        postMessage(["RTMPStreamCreated"]);
+                    }
                     break;
 
                 case "play":
@@ -5989,6 +6234,26 @@ class RTMPMessageHandler {
 
 
 ;// CONCATENATED MODULE: ./wss/connection.worker.js
+/*
+ *
+ * Copyright (C) 2023 itNOX. All Rights Reserved.
+ *
+ * @author Michael Balen <mb@itnox.de>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 
 
 
@@ -5996,7 +6261,7 @@ class RTMPMessageHandler {
 
 const TAG = "WebRTMP Worker";
 
-let port = 9001;
+let port;
 let host;
 let message_handler;
 logger.LEVEL = logger.DEBUG;
@@ -6009,11 +6274,14 @@ self.addEventListener('message', function(e) {
 	logger.d(TAG, "CMD: " + data.cmd);
 
 	switch(data.cmd) {
-		case "createConnection":    // connect WebSocket
+		case "open":    // connect WebSocket
 			host = data.host;
+			port = data.port;
 
-			wss_manager.connect(data.host, port, (success)=>{
+			wss_manager.open(host, port, (success)=>{
+				logger.v(this.TAG, "open: " + host + ":" +port);
 				if(success){
+					logger.v(this.TAG, "WSSConnected");
 					postMessage(["WSSConnected"]);
 
 					const handshake = new rtmp_RTMPHandshake(wss_manager.getSocket());
@@ -6032,16 +6300,17 @@ self.addEventListener('message', function(e) {
 
 						} else {
 							logger.e(TAG, "Handshake failed");
+							postMessage(["RTMPHandshakeFailed"]);
 						}
 					};
 
 					handshake.do();
+
+				} else {
+					logger.v(this.TAG, "WSSConnectFailed");
+					postMessage(["WSSConnectFailed"]);
 				}
 			});
-			break;
-
-		case "closeConnection":
-			wss_manager.close();
 			break;
 
 		case "connect":             // RTMP Connect Application
@@ -6074,6 +6343,10 @@ self.addEventListener('message', function(e) {
 
 }, false);
 
+function sendEvent(data){
+	postMessage(data);
+}
+
 function makeDefaultConnectionParams(application){
 	return {
 		"app": application,
@@ -6081,9 +6354,9 @@ function makeDefaultConnectionParams(application){
 		"tcUrl": "rtmp://" + host + ":1935/" + application,
 		"fpad": false,
 		"capabilities": 15,
-		"audioCodecs": 0x0400,
-		"videoCodecs": 0x0080,
-		"videoFunction": 0
+		"audioCodecs": 0x0400,	// AAC
+		"videoCodecs": 0x0080,	// H264
+		"videoFunction": 0		// Seek false
 	};
 }
 

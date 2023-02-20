@@ -27,92 +27,48 @@
 </head>
 <body>
 <h1>WebRTMP-Demo</h1><br>
-<video controls id="output" width="640" height="400"></video><br>
-Server: <input type="text" value="bunkertv.de"> Port:<input type="text" value="9001"><br>
-<input type="text" id="appName" value="bunkertv">
-<input type="button" value="connect" onclick="webrtmp.connect(document.getElementById('appName').value)"><br>
-<input type="text" id="streamName" value="fab5bc692e71e17fba34e92d47e64fd0">
-<input type="button" value="play" onclick="webrtmp.play(document.getElementById('streamName').value)"><input type="button" value="pause" onclick="webrtmp.pause(true)"><br>
+<table>
+  <tr>
+    <td colspan="2">
+      Server: <input type="text" id="host" value="bunkertv.org"> Port:<input id="port" type="text" value="9001"><br>
+      Application: <input type="text" id="appName" value="bunkertv">Streamname: <input type="text" id="streamName" value="fab5bc692e71e17fba34e92d47e64fd0"><br>
+      <input style="float:right;" id="StartButton" type="button" value="Play Video" onclick="playVideo()"><br>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <video controls id="output" width="640" height="380"></video>
+    </td>
+    <td>
+      <iframe src="https://uhr.ptb.de/" style="width: 380px; height: 380px;"></iframe>
+    </td>
+  </tr>
+</table>
+<br>
+<input type="button" value="pause" onclick="webrtmp.pause(true)"><br>
 
-<input type="button" value="disconnect" onclick="webrtmp.disconnect()">
-<br><br><br>
-<input id="duration">
 <script>
   Log.LEVEL = Log.TRACE;
 
   const output = document.getElementById("output");
 
-
-  output.addEventListener("abort", ()=>{
-    Log.i("VIDEOPLAYER", "abort");
-  })
-
-  output.addEventListener("canplay", ()=>{
-    Log.i("VIDEOPLAYER", "canplay");
-    Log.d("VIDEOPLAYER", output.buffered);
-  })
-
-  output.addEventListener("durationchange", ()=>{
-    Log.i("VIDEOPLAYER", "durationchange");
-    document.getElementById("duration").value = output.duration;
-  })
-
-  output.addEventListener("emptied", ()=>{
-    Log.i("VIDEOPLAYER", "emptied");
-  })
-
-  output.addEventListener("ended", ()=>{
-    Log.i("VIDEOPLAYER", "ended");
-  })
-
-  output.addEventListener("error", ()=>{
-    Log.i("VIDEOPLAYER", "error");
-  })
-
-  output.addEventListener("loadeddata", ()=>{
-    Log.i("VIDEOPLAYER", "loadeddata");
-  })
-
-  output.addEventListener("loadedmetadata", ()=>{
-    Log.i("VIDEOPLAYER", "loadedmetadata");
-  })
-
-  output.addEventListener("loadstart", ()=>{
-    Log.i("VIDEOPLAYER", "loadstart");
-  })
-
-  output.addEventListener("pause", ()=>{
-    Log.i("VIDEOPLAYER", "pause");
-  })
-
-  output.addEventListener("play", ()=>{
-    Log.i("VIDEOPLAYER", "play");
-  })
-
-  output.addEventListener("playing", ()=>{
-    Log.i("VIDEOPLAYER", "playing");
-  })
-
-  output.addEventListener("progress", ()=>{
-    Log.i("VIDEOPLAYER", "progress");
-    document.getElementById("duration").value = output.duration;
-  })
-
-  output.addEventListener("stalled", ()=>{
-    Log.i("VIDEOPLAYER", "stalled");
-  })
-
-  output.addEventListener("timeupdate", ()=>{
-    Log.i("VIDEOPLAYER", "timeupdate");
-    document.getElementById("duration").value = output.duration;
-  })
-
-  output.addEventListener("waiting", ()=>{
-    Log.i("VIDEOPLAYER", "waiting");
-  })
-
   webrtmp.attachMediaElement(output);
 
+  function playVideo(){
+    webrtmp.open(document.getElementById("host").value, document.getElementById("port").value).then(()=>{
+      webrtmp.connect("bunkertv").then(()=>{
+        webrtmp.play("fab5bc692e71e17fba34e92d47e64fd0").then(()=>{
+          console.log("playing");
+        }).catch((error)=>{
+          console.error(error);
+        })
+      }).catch((error)=>{
+        console.error(error);
+      })
+    }).catch((error)=>{
+      console.error(error);
+    })
+  }
 </script>
 </body>
 </html>

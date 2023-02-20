@@ -1,3 +1,23 @@
+/*
+ *
+ * Copyright (C) 2023 itNOX. All Rights Reserved.
+ *
+ * @author Michael Balen <mb@itnox.de>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 import WSSConnectionManager from "./WSSConnectionManager";
 import RTMPHandshake from "../rtmp/RTMPHandshake";
 import RTMPMessageHandler from "../rtmp/RTMPMessageHandler";
@@ -5,7 +25,7 @@ import Log from "../utils/logger";
 
 const TAG = "WebRTMP Worker";
 
-let port = 9001;
+let port;
 let host;
 let message_handler;
 Log.LEVEL = Log.DEBUG;
@@ -18,11 +38,14 @@ self.addEventListener('message', function(e) {
 	Log.d(TAG, "CMD: " + data.cmd);
 
 	switch(data.cmd) {
-		case "createConnection":    // connect WebSocket
+		case "open":    // connect WebSocket
 			host = data.host;
+			port = data.port;
 
-			wss_manager.connect(data.host, port, (success)=>{
+			wss_manager.open(host, port, (success)=>{
+				Log.v(this.TAG, "open: " + host + ":" +port);
 				if(success){
+					Log.v(this.TAG, "WSSConnected");
 					postMessage(["WSSConnected"]);
 
 					const handshake = new RTMPHandshake(wss_manager.getSocket());
@@ -41,16 +64,17 @@ self.addEventListener('message', function(e) {
 
 						} else {
 							Log.e(TAG, "Handshake failed");
+							postMessage(["RTMPHandshakeFailed"]);
 						}
 					};
 
 					handshake.do();
+
+				} else {
+					Log.v(this.TAG, "WSSConnectFailed");
+					postMessage(["WSSConnectFailed"]);
 				}
 			});
-			break;
-
-		case "closeConnection":
-			wss_manager.close();
 			break;
 
 		case "connect":             // RTMP Connect Application
@@ -83,6 +107,10 @@ self.addEventListener('message', function(e) {
 
 }, false);
 
+function sendEvent(data){
+	postMessage(data);
+}
+
 function makeDefaultConnectionParams(application){
 	return {
 		"app": application,
@@ -90,9 +118,9 @@ function makeDefaultConnectionParams(application){
 		"tcUrl": "rtmp://" + host + ":1935/" + application,
 		"fpad": false,
 		"capabilities": 15,
-		"audioCodecs": 0x0400,
-		"videoCodecs": 0x0080,
-		"videoFunction": 0
+		"audioCodecs": 0x0400,	// AAC
+		"videoCodecs": 0x0080,	// H264
+		"videoFunction": 0		// Seek false
 	};
 }
 

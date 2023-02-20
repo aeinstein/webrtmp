@@ -17,7 +17,6 @@
  */
 
 
-// Transmuxing (IO, Demuxing, Remuxing) controller, with multipart support
 import {TransmuxingEvents} from "../utils/utils";
 import EventEmitter from "../utils/event_emitter";
 import MP4Remuxer from "../formats/mp4-remuxer";
@@ -46,8 +45,6 @@ class Transmuxer {
         this._remuxer = new MP4Remuxer(this._config);
         this._remuxer.onInitSegment = this._onRemuxerInitSegmentArrival.bind(this);
         this._remuxer.onMediaSegment = this._onRemuxerMediaSegmentArrival.bind(this);
-
-       // this._enableStatisticsReporter();
     }
 
     destroy() {
@@ -89,7 +86,6 @@ class Transmuxer {
 
     stop() {
         this._internalAbort();
-        this._disableStatisticsReporter();
     }
 
     _internalAbort() {
@@ -174,52 +170,6 @@ class Transmuxer {
             this._emitter.emit(TransmuxingEvents.RECOMMEND_SEEKPOINT, seekpoint);
         }
     }
-
-    _enableStatisticsReporter() {
-        if (this._statisticsReporter == null) {
-            this._statisticsReporter = self.setInterval(
-                this._reportStatisticsInfo.bind(this),
-                this._config.statisticsInfoReportInterval);
-        }
-    }
-
-    _disableStatisticsReporter() {
-        if (this._statisticsReporter) {
-            self.clearInterval(this._statisticsReporter);
-            this._statisticsReporter = null;
-        }
-    }
-
-    _reportSegmentMediaInfo(segmentIndex) {
-        let segmentInfo = this._mediaInfo.segments[segmentIndex];
-        let exportInfo = Object.assign({}, segmentInfo);
-
-        exportInfo.duration = this._mediaInfo.duration;
-        exportInfo.segmentCount = this._mediaInfo.segmentCount;
-        delete exportInfo.segments;
-        delete exportInfo.keyframesIndex;
-
-        this._emitter.emit(TransmuxingEvents.MEDIA_INFO, exportInfo);
-    }
-
-    _reportStatisticsInfo() {
-        let info = {};
-
-        info.url = this._ioctl.currentURL;
-        info.hasRedirect = this._ioctl.hasRedirect;
-        if (info.hasRedirect) {
-            info.redirectedURL = this._ioctl.currentRedirectedURL;
-        }
-
-        info.speed = this._ioctl.currentSpeed;
-        info.loaderType = this._ioctl.loaderType;
-        info.currentSegmentIndex = this._currentSegmentIndex;
-        info.totalSegmentCount = this._mediaDataSource.segments.length;
-
-        this._emitter.emit(TransmuxingEvents.STATISTICS_INFO, info);
-    }
-
-
 }
 
 export default Transmuxer;

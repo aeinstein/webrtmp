@@ -43,9 +43,9 @@ self.addEventListener('message', function(e) {
 			port = data.port;
 
 			wss_manager.open(host, port, (success)=>{
-				Log.v(this.TAG, "open: " + host + ":" +port);
+				Log.v(TAG, "open: " + host + ":" +port);
 				if(success){
-					Log.v(this.TAG, "WSSConnected");
+					Log.v(TAG, "WSSConnected");
 					postMessage(["WSSConnected"]);
 
 					const handshake = new RTMPHandshake(wss_manager.getSocket());
@@ -106,10 +106,6 @@ self.addEventListener('message', function(e) {
 	}
 
 }, false);
-
-function sendEvent(data){
-	postMessage(data);
-}
 
 function makeDefaultConnectionParams(application){
 	return {

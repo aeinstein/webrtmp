@@ -37,6 +37,10 @@ class Log {
 
     static LEVEL = Log.INFO;
 
+    /**
+     * Array with [ClassName, Loglevel]
+     * @type {[]}
+     */
     static loglevels = [];
 
     /**
@@ -54,9 +58,7 @@ class Log {
         if(tmpLevel === Log.OFF) return;
         if(tmpLevel > level) return;
 
-        const callstack = Log.getStackTrace();
-
-
+        const callstack = Log._getStackTrace();
 
         // debug aufruf entfernen
         callstack.shift();
@@ -70,7 +72,6 @@ class Log {
                 break;
 
             case Log.DEBUG:	// DEBUG
-
                 break;
 
             case Log.INFO:	// INFO
@@ -93,6 +94,14 @@ class Log {
         Log._print(callstack, color, tag, ...txt);
     };
 
+    /**
+     * Internal for console dump
+     * @param {String[]} callstack
+     * @param {String} color
+     * @param {String} tag
+     * @param txt
+     * @private
+     */
     static _print(callstack, color, tag, ...txt){
         if(Log.WITH_STACKTRACE){
             if(Log.LEVEL === Log.ERROR){
@@ -112,7 +121,12 @@ class Log {
         }
     }
 
-    static getStackTrace = function() {
+    /**
+     * Get Callstack
+     * @returns {String[]}
+     * @private
+     */
+    static _getStackTrace = function() {
         let callstack = [];
 
         try {
@@ -135,30 +149,65 @@ class Log {
         return(callstack);
     };
 
+    /**
+     * Log Critical
+     * @param {String} tag
+     * @param msg
+     */
     static c(tag, ...msg) {
         Log._output(Log.CRITICAL, tag, ...msg);
     }
 
+    /**
+     * Log Error
+     * @param {String} tag
+     * @param msg
+     */
     static e(tag, ...msg) {
         Log._output(Log.ERROR, tag, ...msg);
     }
 
+    /**
+     * Log Info
+     * @param {String} tag
+     * @param msg
+     */
     static i(tag, ...msg) {
         Log._output(Log.INFO, tag, ...msg);
     }
 
+    /**
+     * Log Warning
+     * @param {String} tag
+     * @param msg
+     */
     static w(tag, ...msg) {
         Log._output(Log.WARN, tag, ...msg);
     }
 
+    /**
+     * Log Debug
+     * @param {String} tag
+     * @param msg
+     */
     static d(tag, ...msg) {
         Log._output(Log.DEBUG, tag, ...msg);
     }
 
+    /**
+     * Log Debug
+     * @param {String} tag
+     * @param msg
+     */
     static v(tag, ...msg) {
         Log._output(Log.DEBUG, tag, ...msg);
     }
 
+    /**
+     * Log Trace
+     * @param {String} tag
+     * @param msg
+     */
     static t(tag, ...msg) {
         Log._output(Log.TRACE, tag, ...msg);
     }
@@ -4277,7 +4326,6 @@ class MP4Remuxer {
  */
 
 
-// Transmuxing (IO, Demuxing, Remuxing) controller, with multipart support
 
 
 
@@ -4306,8 +4354,6 @@ class Transmuxer {
         this._remuxer = new mp4_remuxer(this._config);
         this._remuxer.onInitSegment = this._onRemuxerInitSegmentArrival.bind(this);
         this._remuxer.onMediaSegment = this._onRemuxerMediaSegmentArrival.bind(this);
-
-       // this._enableStatisticsReporter();
     }
 
     destroy() {
@@ -4349,7 +4395,6 @@ class Transmuxer {
 
     stop() {
         this._internalAbort();
-        this._disableStatisticsReporter();
     }
 
     _internalAbort() {
@@ -4434,52 +4479,6 @@ class Transmuxer {
             this._emitter.emit(TransmuxingEvents.RECOMMEND_SEEKPOINT, seekpoint);
         }
     }
-
-    _enableStatisticsReporter() {
-        if (this._statisticsReporter == null) {
-            this._statisticsReporter = self.setInterval(
-                this._reportStatisticsInfo.bind(this),
-                this._config.statisticsInfoReportInterval);
-        }
-    }
-
-    _disableStatisticsReporter() {
-        if (this._statisticsReporter) {
-            self.clearInterval(this._statisticsReporter);
-            this._statisticsReporter = null;
-        }
-    }
-
-    _reportSegmentMediaInfo(segmentIndex) {
-        let segmentInfo = this._mediaInfo.segments[segmentIndex];
-        let exportInfo = Object.assign({}, segmentInfo);
-
-        exportInfo.duration = this._mediaInfo.duration;
-        exportInfo.segmentCount = this._mediaInfo.segmentCount;
-        delete exportInfo.segments;
-        delete exportInfo.keyframesIndex;
-
-        this._emitter.emit(TransmuxingEvents.MEDIA_INFO, exportInfo);
-    }
-
-    _reportStatisticsInfo() {
-        let info = {};
-
-        info.url = this._ioctl.currentURL;
-        info.hasRedirect = this._ioctl.hasRedirect;
-        if (info.hasRedirect) {
-            info.redirectedURL = this._ioctl.currentRedirectedURL;
-        }
-
-        info.speed = this._ioctl.currentSpeed;
-        info.loaderType = this._ioctl.loaderType;
-        info.currentSegmentIndex = this._currentSegmentIndex;
-        info.totalSegmentCount = this._mediaDataSource.segments.length;
-
-        this._emitter.emit(TransmuxingEvents.STATISTICS_INFO, info);
-    }
-
-
 }
 
 /* harmony default export */ const transmuxer = (Transmuxer);

@@ -29,6 +29,10 @@ class Log {
 
     static LEVEL = Log.INFO;
 
+    /**
+     * Array with [ClassName, Loglevel]
+     * @type {[]}
+     */
     static loglevels = [];
 
     /**
@@ -46,9 +50,7 @@ class Log {
         if(tmpLevel === Log.OFF) return;
         if(tmpLevel > level) return;
 
-        const callstack = Log.getStackTrace();
-
-
+        const callstack = Log._getStackTrace();
 
         // debug aufruf entfernen
         callstack.shift();
@@ -62,7 +64,6 @@ class Log {
                 break;
 
             case Log.DEBUG:	// DEBUG
-
                 break;
 
             case Log.INFO:	// INFO
@@ -85,6 +86,14 @@ class Log {
         Log._print(callstack, color, tag, ...txt);
     };
 
+    /**
+     * Internal for console dump
+     * @param {String[]} callstack
+     * @param {String} color
+     * @param {String} tag
+     * @param txt
+     * @private
+     */
     static _print(callstack, color, tag, ...txt){
         if(Log.WITH_STACKTRACE){
             if(Log.LEVEL === Log.ERROR){
@@ -104,7 +113,12 @@ class Log {
         }
     }
 
-    static getStackTrace = function() {
+    /**
+     * Get Callstack
+     * @returns {String[]}
+     * @private
+     */
+    static _getStackTrace = function() {
         let callstack = [];
 
         try {
@@ -127,30 +141,65 @@ class Log {
         return(callstack);
     };
 
+    /**
+     * Log Critical
+     * @param {String} tag
+     * @param msg
+     */
     static c(tag, ...msg) {
         Log._output(Log.CRITICAL, tag, ...msg);
     }
 
+    /**
+     * Log Error
+     * @param {String} tag
+     * @param msg
+     */
     static e(tag, ...msg) {
         Log._output(Log.ERROR, tag, ...msg);
     }
 
+    /**
+     * Log Info
+     * @param {String} tag
+     * @param msg
+     */
     static i(tag, ...msg) {
         Log._output(Log.INFO, tag, ...msg);
     }
 
+    /**
+     * Log Warning
+     * @param {String} tag
+     * @param msg
+     */
     static w(tag, ...msg) {
         Log._output(Log.WARN, tag, ...msg);
     }
 
+    /**
+     * Log Debug
+     * @param {String} tag
+     * @param msg
+     */
     static d(tag, ...msg) {
         Log._output(Log.DEBUG, tag, ...msg);
     }
 
+    /**
+     * Log Debug
+     * @param {String} tag
+     * @param msg
+     */
     static v(tag, ...msg) {
         Log._output(Log.DEBUG, tag, ...msg);
     }
 
+    /**
+     * Log Trace
+     * @param {String} tag
+     * @param msg
+     */
     static t(tag, ...msg) {
         Log._output(Log.TRACE, tag, ...msg);
     }

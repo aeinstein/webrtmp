@@ -1570,7 +1570,7 @@ class WebRTMP_Controller {
 		"RTMPMessageHandler": logger.WARN,
 		"RTMPMediaMessageHandler": logger.ERROR,
 		"ChunkParser": logger.WARN,
-		"RTMPHandshake": logger.WARN,
+		"RTMPHandshake": logger.ERROR,
 		"Chunk": logger.OFF,
 		"MP4Remuxer": logger.ERROR,
 		"Transmuxer": logger.WARN,
@@ -1594,7 +1594,6 @@ class WebRTMP_Controller {
 		this._emitter = new event_emitter();
 
 		this.WebRTMPWorker.addEventListener("message", (evt)=>{
-			console.log("message: ", evt);
 			this.WorkerListener(evt);
 		});
 	}
@@ -1687,7 +1686,6 @@ class WebRTMP_Controller {
 				break;
 
 			case "Started":
-				console.log(this.TAG, "Event Started");
 				this.WebRTMPWorker.postMessage({
 					cmd: "loglevels",
 					loglevels: this.loglevels

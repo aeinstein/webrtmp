@@ -149,7 +149,6 @@ class WebRTMP_Controller {
 				break;
 
 			case "Started":
-				console.log(this.TAG, "Event Started");
 				this.WebRTMPWorker.postMessage({
 					cmd: "loglevels",
 					loglevels: this.loglevels

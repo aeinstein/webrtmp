@@ -73,6 +73,9 @@ class RTMPMediaMessageHandler{
             return (new Int16Array(buf))[0] === 256;  // platform-spec read, if equal then LE
         })();
 
+
+        this.bytePos = 0;
+
         this._config = defaultConfig;
         this._transmuxer = new Transmuxer(this._config);
 
@@ -246,17 +249,21 @@ class RTMPMediaMessageHandler{
             Log.w(this.TAG, 'Meet tag which has StreamID != 0!');
         }
 
+        Log.d(this.TAG, msg);
+
         switch (tagType) {
             case 8:  // Audio
                 this._parseAudioData(msg.getPayload(), timestamp);
                 break;
             case 9:  // Video
-                this._parseVideoData(msg.getPayload(), timestamp, 0);
+                this._parseVideoData(msg.getPayload(), timestamp, this.bytePos);
                 break;
             case 18:  // ScriptDataObject
                 this._parseScriptData(msg.getPayload());
                 break;
         }
+
+        this.bytePos += msg.getMessageLength() + 11 +1;
 
         // dispatch parsed frames to consumer (typically, the remuxer)
         if (this._isInitialMetadataDispatched()) {
@@ -992,6 +999,8 @@ class RTMPMediaMessageHandler{
     }
 
     _parseAVCVideoData(payload, tagTimestamp, tagPosition, frameType, cts) {
+        Log.v(this.TAG, tagTimestamp, tagPosition, this._timestampBase);
+
         let le = this._littleEndian;
         let v = new DataView(payload.buffer);
 

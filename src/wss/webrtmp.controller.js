@@ -8,11 +8,11 @@ class WebRTMP_Controller {
 	isConnected = false;
 
 	loglevels = {
-		"RTMPMessage": Log.DEBUG,
+		"RTMPMessage": Log.WARN,
 		"RTMPMessageHandler": Log.WARN,
-		"RTMPMediaMessageHandler": Log.WARN,
-		"ChunkParser": Log.DEBUG,
-		"RTMPHandshake": Log.INFO,
+		"RTMPMediaMessageHandler": Log.ERROR,
+		"ChunkParser": Log.WARN,
+		"RTMPHandshake": Log.WARN,
 		"Chunk": Log.OFF,
 		"MP4Remuxer": Log.ERROR,
 		"Transmuxer": Log.WARN,

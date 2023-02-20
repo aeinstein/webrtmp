@@ -93,7 +93,7 @@ class ChunkParser {
                 timestamp = (data[header_length++] << 16) | (data[header_length++] << 8) | (data[header_length++]);	// 3 byte timestamp
                 message_length = (data[header_length++] << 16) | (data[header_length++] << 8) | (data[header_length++]);	// 3 byte Message length
 
-                msg = new RTMPMessage();
+                msg = this.chunkstreams[csid];
                 msg.setMessageType(data[header_length++]);
                 msg.setMessageLength(message_length);
 
@@ -151,6 +151,7 @@ class ChunkParser {
             if(this.chunkstreams[csid].isComplete()) {     // Message complete
                 Log.d(this.TAG, "RTMP: ", msg.getMessageType(), RTMPMessage.MessageTypes[msg.getMessageType()], msg.getPayloadlength(), msg.getMessageStreamID());
                 this.conn_worker.onMessage(this.chunkstreams[csid]);
+                this.chunkstreams[csid].clearPayload();
             }
 
             let consumed = (header_length + payload_length);
@@ -166,6 +167,8 @@ class ChunkParser {
 
         Log.d(this.TAG, "parseChunk complete");
     }
+
+
 
     /**
      *

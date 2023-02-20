@@ -566,7 +566,7 @@ class RTMPMessage{
     messageType;
 	messageLength = 0;
     length = 0;
-	timestamp;
+	timestamp = 0;
     extendedTimestamp = false;
 	message_stream_id = 0;
 	payload = new Uint8Array(0);
@@ -582,6 +582,9 @@ class RTMPMessage{
         }
 	}
 
+	clearPayload(){
+		this.payload = new Uint8Array(0);
+	}
 
     /**
      *
@@ -646,6 +649,7 @@ class RTMPMessage{
     }
 
 	setMessageTimestamp(timestamp) {
+		logger.v(this.TAG, "TS: " + timestamp);
 		this.timestamp = timestamp;
 	}
 
@@ -662,7 +666,10 @@ class RTMPMessage{
     }
 
 	setTimestampDelta(timestamp_delta){
+
 		this.timestamp += timestamp_delta;
+
+		logger.v(this.TAG, "TS: " + this.timestamp + " Delta: " + timestamp_delta);
 	}
 
 	/**
@@ -1166,7 +1173,7 @@ class ChunkParser {
                 timestamp = (data[header_length++] << 16) | (data[header_length++] << 8) | (data[header_length++]);	// 3 byte timestamp
                 message_length = (data[header_length++] << 16) | (data[header_length++] << 8) | (data[header_length++]);	// 3 byte Message length
 
-                msg = new rtmp_RTMPMessage();
+                msg = this.chunkstreams[csid];
                 msg.setMessageType(data[header_length++]);
                 msg.setMessageLength(message_length);
 
@@ -1224,6 +1231,7 @@ class ChunkParser {
             if(this.chunkstreams[csid].isComplete()) {     // Message complete
                 logger.d(this.TAG, "RTMP: ", msg.getMessageType(), rtmp_RTMPMessage.MessageTypes[msg.getMessageType()], msg.getPayloadlength(), msg.getMessageStreamID());
                 this.conn_worker.onMessage(this.chunkstreams[csid]);
+                this.chunkstreams[csid].clearPayload();
             }
 
             let consumed = (header_length + payload_length);
@@ -1239,6 +1247,8 @@ class ChunkParser {
 
         logger.d(this.TAG, "parseChunk complete");
     }
+
+
 
     /**
      *
@@ -4330,6 +4340,9 @@ class RTMPMediaMessageHandler{
             return (new Int16Array(buf))[0] === 256;  // platform-spec read, if equal then LE
         })();
 
+
+        this.bytePos = 0;
+
         this._config = defaultConfig;
         this._transmuxer = new transmuxer(this._config);
 
@@ -4503,17 +4516,21 @@ class RTMPMediaMessageHandler{
             logger.w(this.TAG, 'Meet tag which has StreamID != 0!');
         }
 
+        logger.d(this.TAG, msg);
+
         switch (tagType) {
             case 8:  // Audio
                 this._parseAudioData(msg.getPayload(), timestamp);
                 break;
             case 9:  // Video
-                this._parseVideoData(msg.getPayload(), timestamp, 0);
+                this._parseVideoData(msg.getPayload(), timestamp, this.bytePos);
                 break;
             case 18:  // ScriptDataObject
                 this._parseScriptData(msg.getPayload());
                 break;
         }
+
+        this.bytePos += msg.getMessageLength() + 11 +1;
 
         // dispatch parsed frames to consumer (typically, the remuxer)
         if (this._isInitialMetadataDispatched()) {
@@ -5249,6 +5266,8 @@ class RTMPMediaMessageHandler{
     }
 
     _parseAVCVideoData(payload, tagTimestamp, tagPosition, frameType, cts) {
+        logger.v(this.TAG, tagTimestamp, tagPosition, this._timestampBase);
+
         let le = this._littleEndian;
         let v = new DataView(payload.buffer);
 

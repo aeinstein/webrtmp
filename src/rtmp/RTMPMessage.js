@@ -11,7 +11,7 @@ class RTMPMessage{
     messageType;
 	messageLength = 0;
     length = 0;
-	timestamp;
+	timestamp = 0;
     extendedTimestamp = false;
 	message_stream_id = 0;
 	payload = new Uint8Array(0);
@@ -27,6 +27,9 @@ class RTMPMessage{
         }
 	}
 
+	clearPayload(){
+		this.payload = new Uint8Array(0);
+	}
 
     /**
      *
@@ -91,6 +94,7 @@ class RTMPMessage{
     }
 
 	setMessageTimestamp(timestamp) {
+		Log.v(this.TAG, "TS: " + timestamp);
 		this.timestamp = timestamp;
 	}
 
@@ -107,7 +111,10 @@ class RTMPMessage{
     }
 
 	setTimestampDelta(timestamp_delta){
+
 		this.timestamp += timestamp_delta;
+
+		Log.v(this.TAG, "TS: " + this.timestamp + " Delta: " + timestamp_delta);
 	}
 
 	/**

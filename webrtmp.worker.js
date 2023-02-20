@@ -808,6 +808,7 @@ class RTMPMessage{
      * @param {boolean} yes
      */
     setExtendedTimestamp(yes){
+		logger.w(this.TAG, "setExtendedTimestamp");
         this.extendedTimestamp = yes;
     }
 
@@ -816,8 +817,8 @@ class RTMPMessage{
     }
 
 	setTimestampDelta(timestamp_delta){
-		this.timestamp += timestamp_delta;
 		logger.v(this.TAG, "TS: " + this.timestamp + " Delta: " + timestamp_delta);
+		this.timestamp += timestamp_delta;
 	}
 
 	/**
@@ -1367,7 +1368,8 @@ class ChunkParser {
         do {
             logger.d(this.TAG, "buffer length: " + this.buffer.length);
 
-            if(this.buffer.length < 100) logger.d(this.TAG, this.buffer);
+            //if(this.buffer.length < 100)
+                logger.d(this.TAG, this.buffer);
 
             /**
              *
@@ -1407,7 +1409,7 @@ class ChunkParser {
                 msg.setMessageLength(message_length);
 
                 if (timestamp === 0xFFFFFF) {	// extended Timestamp
-                    timestamp += data[header_length++];
+                    timestamp = (data[header_length++] << 24) | (data[header_length++] << 16) | (data[header_length++] << 8) | (data[header_length++]);
                     msg.setExtendedTimestamp(true);
                 }
 
@@ -1427,11 +1429,13 @@ class ChunkParser {
                 msg.setMessageLength(message_length);
 
                 if (timestamp === 0xFFFFFF) {	// extended Timestamp
-                    timestamp += data[header_length++];
+                    timestamp = (data[header_length++] << 24) | (data[header_length++] << 16) | (data[header_length++] << 8) | (data[header_length++]);
                     msg.setExtendedTimestamp(true);
+                } else {
+                    msg.setExtendedTimestamp(false);
                 }
-                msg.setTimestampDelta(timestamp);
 
+                msg.setTimestampDelta(timestamp);
 
                 logger.d(this.TAG, "message_length: " + message_length);
 
@@ -1444,8 +1448,11 @@ class ChunkParser {
                 msg = this.chunkstreams[csid];
 
                 if (timestamp === 0xFFFFFF) {	// extended Timestamp
-                    timestamp += data[header_length++];
+                    timestamp = (data[header_length++] << 24) | (data[header_length++] << 16) | (data[header_length++] << 8) | (data[header_length++]);
                     msg.setExtendedTimestamp(true);
+
+                } else {
+                    msg.setExtendedTimestamp(false);
                 }
 
                 msg.setTimestampDelta(timestamp);
@@ -1457,11 +1464,18 @@ class ChunkParser {
 
                 // extended timestamp is present when setted in the chunk stream
                 if(msg.getExtendedTimestamp()) {
-                    header_length++;
+                    timestamp = (data[header_length++] << 24) | (data[header_length++] << 16) | (data[header_length++] << 8) | (data[header_length++]);
+                    msg.setTimestampDelta(timestamp);
                 }
 
                 break;
             }
+
+            if(!msg) {
+                logger.e(this.TAG, "No suitable RTMPMessage found");
+            }
+
+
 
             payload_length = this.chunkstreams[csid].bytesMissing();
 
@@ -6278,9 +6292,9 @@ self.addEventListener('message', function(e) {
 			port = data.port;
 
 			wss_manager.open(host, port, (success)=>{
-				logger.v(this.TAG, "open: " + host + ":" +port);
+				logger.v(TAG, "open: " + host + ":" +port);
 				if(success){
-					logger.v(this.TAG, "WSSConnected");
+					logger.v(TAG, "WSSConnected");
 					postMessage(["WSSConnected"]);
 
 					const handshake = new rtmp_RTMPHandshake(wss_manager.getSocket());
@@ -6341,10 +6355,6 @@ self.addEventListener('message', function(e) {
 	}
 
 }, false);
-
-function sendEvent(data){
-	postMessage(data);
-}
 
 function makeDefaultConnectionParams(application){
 	return {

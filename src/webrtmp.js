@@ -46,8 +46,6 @@ class WebRTMP{
 			Log.d(this.TAG,"UserControlMessage", data);
 		});
 
-		this.wss.addEventListener("Started", ()=>{});
-
 		this.wss.addEventListener("ConnectionLost", ()=>{});
 
 		this._emitter = new EventEmitter();
@@ -202,37 +200,6 @@ class WebRTMP{
 				window.setTimeout(this._checkAndApplyUnbufferedSeekpoint.bind(this), 50);
 			}
 		}
-	}
-
-
-	_fillStatisticsInfo(statInfo) {
-		statInfo.playerType = this._type;
-
-		if (!(this._mediaElement instanceof HTMLVideoElement)) {
-			return statInfo;
-		}
-
-		let hasQualityInfo = true;
-		let decoded = 0;
-		let dropped = 0;
-
-		if (this._mediaElement.getVideoPlaybackQuality) {
-			let quality = this._mediaElement.getVideoPlaybackQuality();
-			decoded = quality.totalVideoFrames;
-			dropped = quality.droppedVideoFrames;
-		} else if (this._mediaElement.webkitDecodedFrameCount != undefined) {
-			decoded = this._mediaElement.webkitDecodedFrameCount;
-			dropped = this._mediaElement.webkitDroppedFrameCount;
-		} else {
-			hasQualityInfo = false;
-		}
-
-		if (hasQualityInfo) {
-			statInfo.decodedFrames = decoded;
-			statInfo.droppedFrames = dropped;
-		}
-
-		return statInfo;
 	}
 
 	_onmseBufferFull() {
@@ -413,7 +380,6 @@ class WebRTMP{
 
 	}
 }
-Log.LEVEL = Log.DEBUG;
 
 export default WebRTMP;
 

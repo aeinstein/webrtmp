@@ -123,6 +123,7 @@ class RTMPMessage{
      * @param {boolean} yes
      */
     setExtendedTimestamp(yes){
+		Log.w(this.TAG, "setExtendedTimestamp");
         this.extendedTimestamp = yes;
     }
 
@@ -131,8 +132,8 @@ class RTMPMessage{
     }
 
 	setTimestampDelta(timestamp_delta){
-		this.timestamp += timestamp_delta;
 		Log.v(this.TAG, "TS: " + this.timestamp + " Delta: " + timestamp_delta);
+		this.timestamp += timestamp_delta;
 	}
 
 	/**

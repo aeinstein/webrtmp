@@ -58,7 +58,8 @@ class ChunkParser {
         do {
             Log.d(this.TAG, "buffer length: " + this.buffer.length);
 
-            if(this.buffer.length < 100) Log.d(this.TAG, this.buffer);
+            //if(this.buffer.length < 100)
+                Log.d(this.TAG, this.buffer);
 
             /**
              *
@@ -98,7 +99,7 @@ class ChunkParser {
                 msg.setMessageLength(message_length);
 
                 if (timestamp === 0xFFFFFF) {	// extended Timestamp
-                    timestamp += data[header_length++];
+                    timestamp = (data[header_length++] << 24) | (data[header_length++] << 16) | (data[header_length++] << 8) | (data[header_length++]);
                     msg.setExtendedTimestamp(true);
                 }
 
@@ -118,11 +119,13 @@ class ChunkParser {
                 msg.setMessageLength(message_length);
 
                 if (timestamp === 0xFFFFFF) {	// extended Timestamp
-                    timestamp += data[header_length++];
+                    timestamp = (data[header_length++] << 24) | (data[header_length++] << 16) | (data[header_length++] << 8) | (data[header_length++]);
                     msg.setExtendedTimestamp(true);
+                } else {
+                    msg.setExtendedTimestamp(false);
                 }
-                msg.setTimestampDelta(timestamp);
 
+                msg.setTimestampDelta(timestamp);
 
                 Log.d(this.TAG, "message_length: " + message_length);
 
@@ -135,8 +138,11 @@ class ChunkParser {
                 msg = this.chunkstreams[csid];
 
                 if (timestamp === 0xFFFFFF) {	// extended Timestamp
-                    timestamp += data[header_length++];
+                    timestamp = (data[header_length++] << 24) | (data[header_length++] << 16) | (data[header_length++] << 8) | (data[header_length++]);
                     msg.setExtendedTimestamp(true);
+
+                } else {
+                    msg.setExtendedTimestamp(false);
                 }
 
                 msg.setTimestampDelta(timestamp);
@@ -148,11 +154,18 @@ class ChunkParser {
 
                 // extended timestamp is present when setted in the chunk stream
                 if(msg.getExtendedTimestamp()) {
-                    header_length++;
+                    timestamp = (data[header_length++] << 24) | (data[header_length++] << 16) | (data[header_length++] << 8) | (data[header_length++]);
+                    msg.setTimestampDelta(timestamp);
                 }
 
                 break;
             }
+
+            if(!msg) {
+                Log.e(this.TAG, "No suitable RTMPMessage found");
+            }
+
+
 
             payload_length = this.chunkstreams[csid].bytesMissing();
 

@@ -52,13 +52,13 @@ class WebRTMP_Controller {
 	});
 
 	constructor() {
-		this.e = new EventEmitter();
-
-		this.WebRTMPWorker.addEventListener("message", (e)=>{
-			this.WorkerListener(e);
-		})
-
 		Log.loglevels = this.loglevels;
+
+		this._emitter = new EventEmitter();
+
+		this.WebRTMPWorker.addEventListener("message", (evt)=>{
+			this.WorkerListener(evt);
+		});
 	}
 
 	/**
@@ -111,22 +111,22 @@ class WebRTMP_Controller {
 	 * @param listener
 	 */
 	addEventListener(type, listener){
-		this.e.addEventListener(type, listener);
+		this._emitter.addEventListener(type, listener);
 	}
 
 
 
 	/**
 	 * Verarbeitet MQTT Events
-	 * @param e Event
+	 * @param evt Event
 	 */
-	WorkerListener(e){
+	WorkerListener(evt){
 		// Message.data wieder zum Event machen
-		const data = e.data;
+		const data = evt.data;
 
 		switch(data[0]){
 			case "ConnectionLost":
-				this.e.emit("ConnectionLost");
+				this._emitter.emit("ConnectionLost");
 				Log.d(this.TAG, "Event ConnectionLost");
 
 				this.isConnected = false;
@@ -136,7 +136,7 @@ class WebRTMP_Controller {
 
 					window.setTimeout(()=>{
 						Log.w(this.TAG, "timed Reconnect");
-						this.open();
+						this.open(this.host, this.port);
 					}, 1000)
 				}
 
@@ -144,13 +144,13 @@ class WebRTMP_Controller {
 
 			case "Connected":
 				Log.d(this.TAG, "Event Connected");
-				this.e.emit("Connected");
+				this._emitter.emit("Connected");
 				this.isConnected = true;
 				break;
 
 			case "Started":
 				Log.d(this.TAG, "Event Started");
-				this.WebRTMPWorker.postMessage({
+				postMessage({
 					cmd: "loglevels",
 					loglevels: this.loglevels
 				});
@@ -158,7 +158,7 @@ class WebRTMP_Controller {
 
 			default:
 				Log.i(this.TAG, data[0], data.slice(1));
-				this.e.emit(data[0], data.slice(1));
+				this._emitter.emit(data[0], data.slice(1));
 				break;
 		}
 	}

@@ -1578,7 +1578,8 @@ class WebRTMP_Controller {
 		"MSEController": logger.INFO,
 		"WebRTMP": logger.WARN,
 		"WebRTMP_Controller": logger.WARN,
-		"WebRTMP Worker": logger.WARN
+		"WebRTMP Worker": logger.WARN,
+		"AMF": logger.WARN
 	}
 
 	WebRTMPWorker = new Worker(new URL(/* worker import */ __webpack_require__.p + __webpack_require__.u(306), __webpack_require__.b), {
@@ -1588,13 +1589,13 @@ class WebRTMP_Controller {
 	});
 
 	constructor() {
-		this.e = new event_emitter();
-
-		this.WebRTMPWorker.addEventListener("message", (e)=>{
-			this.WorkerListener(e);
-		})
-
 		logger.loglevels = this.loglevels;
+
+		this._emitter = new event_emitter();
+
+		this.WebRTMPWorker.addEventListener("message", (evt)=>{
+			this.WorkerListener(evt);
+		});
 	}
 
 	/**
@@ -1647,22 +1648,22 @@ class WebRTMP_Controller {
 	 * @param listener
 	 */
 	addEventListener(type, listener){
-		this.e.addEventListener(type, listener);
+		this._emitter.addEventListener(type, listener);
 	}
 
 
 
 	/**
 	 * Verarbeitet MQTT Events
-	 * @param e Event
+	 * @param evt Event
 	 */
-	WorkerListener(e){
+	WorkerListener(evt){
 		// Message.data wieder zum Event machen
-		const data = e.data;
+		const data = evt.data;
 
 		switch(data[0]){
 			case "ConnectionLost":
-				this.e.emit("ConnectionLost");
+				this._emitter.emit("ConnectionLost");
 				logger.d(this.TAG, "Event ConnectionLost");
 
 				this.isConnected = false;
@@ -1672,7 +1673,7 @@ class WebRTMP_Controller {
 
 					window.setTimeout(()=>{
 						logger.w(this.TAG, "timed Reconnect");
-						this.open();
+						this.open(this.host, this.port);
 					}, 1000)
 				}
 
@@ -1680,13 +1681,13 @@ class WebRTMP_Controller {
 
 			case "Connected":
 				logger.d(this.TAG, "Event Connected");
-				this.e.emit("Connected");
+				this._emitter.emit("Connected");
 				this.isConnected = true;
 				break;
 
 			case "Started":
 				logger.d(this.TAG, "Event Started");
-				this.WebRTMPWorker.postMessage({
+				postMessage({
 					cmd: "loglevels",
 					loglevels: this.loglevels
 				});
@@ -1694,7 +1695,7 @@ class WebRTMP_Controller {
 
 			default:
 				logger.i(this.TAG, data[0], data.slice(1));
-				this.e.emit(data[0], data.slice(1));
+				this._emitter.emit(data[0], data.slice(1));
 				break;
 		}
 	}
@@ -1750,8 +1751,6 @@ class WebRTMP{
 		this.wss.addEventListener("UserControlMessage", (data)=>{
 			logger.d(this.TAG,"UserControlMessage", data);
 		});
-
-		this.wss.addEventListener("Started", ()=>{});
 
 		this.wss.addEventListener("ConnectionLost", ()=>{});
 
@@ -1907,37 +1906,6 @@ class WebRTMP{
 				window.setTimeout(this._checkAndApplyUnbufferedSeekpoint.bind(this), 50);
 			}
 		}
-	}
-
-
-	_fillStatisticsInfo(statInfo) {
-		statInfo.playerType = this._type;
-
-		if (!(this._mediaElement instanceof HTMLVideoElement)) {
-			return statInfo;
-		}
-
-		let hasQualityInfo = true;
-		let decoded = 0;
-		let dropped = 0;
-
-		if (this._mediaElement.getVideoPlaybackQuality) {
-			let quality = this._mediaElement.getVideoPlaybackQuality();
-			decoded = quality.totalVideoFrames;
-			dropped = quality.droppedVideoFrames;
-		} else if (this._mediaElement.webkitDecodedFrameCount != undefined) {
-			decoded = this._mediaElement.webkitDecodedFrameCount;
-			dropped = this._mediaElement.webkitDroppedFrameCount;
-		} else {
-			hasQualityInfo = false;
-		}
-
-		if (hasQualityInfo) {
-			statInfo.decodedFrames = decoded;
-			statInfo.droppedFrames = dropped;
-		}
-
-		return statInfo;
 	}
 
 	_onmseBufferFull() {
@@ -2118,7 +2086,6 @@ class WebRTMP{
 
 	}
 }
-logger.LEVEL = logger.DEBUG;
 
 /* harmony default export */ const webrtmp = (WebRTMP);
 

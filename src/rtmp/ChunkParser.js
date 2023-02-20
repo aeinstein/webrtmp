@@ -58,8 +58,7 @@ class ChunkParser {
         do {
             Log.d(this.TAG, "buffer length: " + this.buffer.length);
 
-            //if(this.buffer.length < 100)
-                Log.d(this.TAG, this.buffer);
+            if(this.buffer.length < 100) Log.d(this.TAG, this.buffer);
 
             /**
              *

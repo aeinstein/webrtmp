@@ -33,7 +33,7 @@ class WebRTMP_Controller {
 		"RTMPMessageHandler": Log.WARN,
 		"RTMPMediaMessageHandler": Log.ERROR,
 		"ChunkParser": Log.WARN,
-		"RTMPHandshake": Log.WARN,
+		"RTMPHandshake": Log.ERROR,
 		"Chunk": Log.OFF,
 		"MP4Remuxer": Log.ERROR,
 		"Transmuxer": Log.WARN,
@@ -149,8 +149,8 @@ class WebRTMP_Controller {
 				break;
 
 			case "Started":
-				Log.d(this.TAG, "Event Started");
-				postMessage({
+				console.log(this.TAG, "Event Started");
+				this.WebRTMPWorker.postMessage({
 					cmd: "loglevels",
 					loglevels: this.loglevels
 				});

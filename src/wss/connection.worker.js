@@ -97,6 +97,7 @@ self.addEventListener('message', function(e) {
 			break;
 
 		case "loglevels":
+			Log.d(TAG, "setting loglevels", data.loglevels);
 			Log.loglevels = data.loglevels;
             break;
 

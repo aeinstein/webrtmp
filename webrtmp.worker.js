@@ -1368,8 +1368,7 @@ class ChunkParser {
         do {
             logger.d(this.TAG, "buffer length: " + this.buffer.length);
 
-            //if(this.buffer.length < 100)
-                logger.d(this.TAG, this.buffer);
+            if(this.buffer.length < 100) logger.d(this.TAG, this.buffer);
 
             /**
              *
@@ -6346,6 +6345,7 @@ self.addEventListener('message', function(e) {
 			break;
 
 		case "loglevels":
+			logger.d(TAG, "setting loglevels", data.loglevels);
 			logger.loglevels = data.loglevels;
             break;
 

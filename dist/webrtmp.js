@@ -1594,6 +1594,7 @@ class WebRTMP_Controller {
 		this._emitter = new event_emitter();
 
 		this.WebRTMPWorker.addEventListener("message", (evt)=>{
+			console.log("message: ", evt);
 			this.WorkerListener(evt);
 		});
 	}
@@ -1686,8 +1687,8 @@ class WebRTMP_Controller {
 				break;
 
 			case "Started":
-				logger.d(this.TAG, "Event Started");
-				postMessage({
+				console.log(this.TAG, "Event Started");
+				this.WebRTMPWorker.postMessage({
 					cmd: "loglevels",
 					loglevels: this.loglevels
 				});

@@ -1,11 +1,10 @@
 WebRTMP
 ======
-An HTML5 Flash Video (RTMP) Player written in pure JavaScript without Flash. LONG LIVE RTMP !
+An HTML5 Flash Video (RTMP) Player written in pure JavaScript without Flash. LONG LIVE RTMP ;-)
 
-for those who really miss RTMP in Browser
+For those who really miss RTMP in Browser, cause HLS sucks.
 
-### heavily inspired bei bilibi`s
-[FlvPlayer](https://github.com/bilibili/flv.js)
+### heavily inspired bei bilibi`s [FlvPlayer](https://github.com/bilibili/flv.js)
 
 
 ## Introduction
@@ -18,11 +17,11 @@ stunnel is used for SSL/TLS
 
 
 ## Demo
-[https://bunkertv.de/webrtmp/index.html](https://bunkertv.de/webrtmp/index.html)
+[https://bunkertv.org/webrtmp/index.html](https://bunkertv.org/webrtmp/index.html)
 
 ## Features
 - RTMP container with H.264 + AAC / MP3 codec playback
-- RTMP over Websocket low latency live stream playback < 2sec.
+- RTMP over Websocket low latency live stream playback <= 2 sec.
 - Compatible with Chrome, FireFox, Safari 10, IE11 and Edge
 - Extremely low overhead, and hardware accelerated by your browser!
 
@@ -54,13 +53,12 @@ Launch WSS RTMP-Wrapper
 java -jar WebRTMP.jar
 ```
 
-## Tested
-nginx-rtmp
-Chrome
+## State
+proof-of-concept
+
+## TODO
+a lot of error and exception handling
 
 ## Design
-### ServerSide
-![arch](docs/webrtmp_diagram.png)
-
 #### ClientSide
 ![arch](docs/webrtmp_arch.png)

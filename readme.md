@@ -24,6 +24,7 @@ stunnel is used for SSL/TLS
 - RTMP over Websocket low latency live stream playback <= 2 sec.
 - Compatible with Chrome, FireFox, Safari 10, IE11 and Edge
 - Extremely low overhead, and hardware accelerated by your browser!
+- Use promises
 
 
 ## Getting Started

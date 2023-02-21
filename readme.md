@@ -30,7 +30,7 @@ stunnel is used for SSL/TLS
 ## Getting Started
 ClientSide:
 ```html
-<script src="webrtmp.min.js"></script>
+<script src="dist/webrtmp.js"></script>
 <video id="videoElement"></video>
 <script>
     const videoElement = document.getElementById('videoElement');

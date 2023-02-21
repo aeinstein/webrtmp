@@ -34,10 +34,15 @@ ClientSide:
 <video id="videoElement"></video>
 <script>
     const videoElement = document.getElementById('videoElement');
-    webrtmp.attachMediaElement(videoElement);
-    webrtmp.open("bunkertv.de", 9001)                   // Host, Port of WebRTMP Proxy
-    webrtmp.connect("bunkertv");                        // Application name     
-    webrtmp.play("fab5bc692e71e17fba34e92d47e64fd0");   // Stream name
+
+    webrtmp.open("bunkertv.org", 9001).then(()=>{                       // Host, Port of WebRTMP Proxy
+        webrtmp.connect("bunkertv").then(()=>{                          // Application name  
+            webrtmp.play("fab5bc692e71e17fba34e92d47e64fd0").then(()=>{ // Stream name
+                console.log("playing");
+            })
+        })
+    })
+
 </script>
 ```
 

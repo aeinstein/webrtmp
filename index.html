@@ -46,8 +46,8 @@
 
   function playVideo(){
     webrtmp.open(document.getElementById("host").value, document.getElementById("port").value).then(()=>{
-      webrtmp.connect("bunkertv").then(()=>{
-        webrtmp.play("fab5bc692e71e17fba34e92d47e64fd0").then(()=>{
+      webrtmp.connect(document.getElementById("appName").value).then(()=>{
+        webrtmp.play(document.getElementById("streamName").value).then(()=>{
           console.log("playing");
         }).catch((error)=>{
           console.error(error);

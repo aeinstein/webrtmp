@@ -106,7 +106,7 @@ class WebRTMP_Controller {
 
 
 	/**
-	 * Eventlistenre hinzufügenm
+	 * Eventlistener hinzufügenm
 	 * @param type
 	 * @param listener
 	 */
@@ -115,10 +115,10 @@ class WebRTMP_Controller {
 	}
 
 
-
 	/**
-	 * Verarbeitet MQTT Events
-	 * @param evt Event
+	 *
+	 * @param {MessageEvent} evt
+	 * @constructor
 	 */
 	WorkerListener(evt){
 		// Message.data wieder zum Event machen

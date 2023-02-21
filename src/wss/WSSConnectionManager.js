@@ -67,6 +67,9 @@ class WSSConnectionManager{
         return this.host;
     }
 
+    /**
+     * close Websocket
+     */
     close(){
         this.wss.close();
     }

@@ -27,6 +27,12 @@ import Browser from "./utils/browser";
 
 class WebRTMP{
 	TAG = 'WebRTMP';
+
+	/**
+	 *
+	 * @type {HTMLVideoElement}
+	 * @private
+	 */
 	_mediaElement = null;
 
 	constructor() {
@@ -52,7 +58,6 @@ class WebRTMP{
 
 		this.e = {
 			onvLoadedMetadata: this._onvLoadedMetadata.bind(this),
-			onvSeeking: this._onvSeeking.bind(this),
 			onvCanPlay: this._onvCanPlay.bind(this),
 			onvStalled: this._onvStalled.bind(this),
 			onvProgress: this._onvProgress.bind(this)
@@ -95,112 +100,7 @@ class WebRTMP{
 		this._checkAndResumeStuckPlayback();
 	}
 
-	_onvSeeking(){
-		let target = this._mediaElement.currentTime;
-		let buffered = this._mediaElement.buffered;
 
-		if (this._requestSetTime) {
-			this._requestSetTime = false;
-			return;
-		}
-
-		if (target < 1.0 && buffered.length > 0) {
-			// seek to video begin, set currentTime directly if beginPTS buffered
-			let videoBeginTime = buffered.start(0);
-			if ((videoBeginTime < 1.0 && target < videoBeginTime) || Browser.safari) {
-				this._requestSetTime = true;
-				// also workaround for Safari: Seek to 0 may cause video stuck, use 0.1 to avoid
-				this._mediaElement.currentTime = Browser.safari ? 0.1 : videoBeginTime;
-				return;
-			}
-		}
-
-		if (this._isTimepointBuffered(target)) {
-			if (this._alwaysSeekKeyframe) {
-				let idr = this._msectl.getNearestKeyframe(Math.floor(target * 1000));
-				if (idr != null) {
-					this._requestSetTime = true;
-					this._mediaElement.currentTime = idr.dts / 1000;
-				}
-			}
-			if (this._progressChecker != null) {
-				this._checkProgressAndResume();
-			}
-			return;
-		}
-
-		this._seekpointRecord = {
-			seekPoint: target,
-			recordTime: this._now()
-		};
-		window.setTimeout(this._checkAndApplyUnbufferedSeekpoint.bind(this), 50);
-	}
-
-	_isTimepointBuffered(seconds) {
-		let buffered = this._mediaElement.buffered;
-
-		for (let i = 0; i < buffered.length; i++) {
-			let from = buffered.start(i);
-			let to = buffered.end(i);
-			if (seconds >= from && seconds < to) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	_checkProgressAndResume() {
-		let currentTime = this._mediaElement.currentTime;
-		let buffered = this._mediaElement.buffered;
-
-		let needResume = false;
-
-		for (let i = 0; i < buffered.length; i++) {
-			let from = buffered.start(i);
-			let to = buffered.end(i);
-			if (currentTime >= from && currentTime < to) {
-				if (currentTime >= to - this._config.lazyLoadRecoverDuration) {
-					needResume = true;
-				}
-				break;
-			}
-		}
-
-		if (needResume) {
-			window.clearInterval(this._progressChecker);
-			this._progressChecker = null;
-			if (needResume) {
-				Log.v(this.TAG, 'Continue loading from paused position');
-				//this._transmuxer.resume();
-			}
-		}
-	}
-
-	_checkAndApplyUnbufferedSeekpoint() {
-		if (this._seekpointRecord) {
-			if (this._seekpointRecord.recordTime <= this._now() - 100) {
-				let target = this._mediaElement.currentTime;
-				this._seekpointRecord = null;
-				if (!this._isTimepointBuffered(target)) {
-					if (this._progressChecker != null) {
-						window.clearTimeout(this._progressChecker);
-						this._progressChecker = null;
-					}
-					// .currentTime is consists with .buffered timestamp
-					// Chrome/Edge use DTS, while FireFox/Safari use PTS
-					this._msectl.seek(target);
-					this._transmuxer.seek(Math.floor(target * 1000));
-					// set currentTime if accurateSeek, or wait for recommend_seekpoint callback
-					if (this._config.accurateSeek) {
-						this._requestSetTime = true;
-						this._mediaElement.currentTime = target;
-					}
-				}
-			} else {
-				window.setTimeout(this._checkAndApplyUnbufferedSeekpoint.bind(this), 50);
-			}
-		}
-	}
 
 	_onmseBufferFull() {
 		Log.w(this.TAG, 'MSE SourceBuffer is full, suspend transmuxing task');
@@ -231,7 +131,7 @@ class WebRTMP{
 
 		if (currentRangeEnd >= currentTime + this._config.lazyLoadMaxDuration && this._progressChecker == null) {
 			Log.v(this.TAG, 'Maximum buffering duration exceeded, suspend transmuxing task');
-			this._suspendTransmuxer();
+			//this._suspendTransmuxer();
 		}
 	}
 
@@ -241,15 +141,11 @@ class WebRTMP{
 			window.clearInterval(this._progressChecker);
 			this._progressChecker = null;
 		}
-		if (this._transmuxer) {
-			this.unload();
-		}
+
 		if (this._mediaElement) {
 			this.detachMediaElement();
 		}
 		this.e = null;
-		this._mediaDataSource = null;
-
 		this._emitter.removeAllListeners();
 		this._emitter = null;
 	}
@@ -258,15 +154,13 @@ class WebRTMP{
 		this.wss.disconnect();
 	}
 
+	/**
+	 * send play command
+	 * @param {String} streamName
+	 * @returns {Promise<unknown>}
+	 */
 	play(streamName){
 		return new Promise((resolve, reject)=>{
-			/*
-			this.wss.addEventListener("RTMPHandshakeDone", (success)=>{
-				Log.d(this.TAG,"RTMPHandshakeDone");
-				if(success) resolve();
-				else reject();
-			});*/
-
 			this.wss.play(streamName);
 			this._mediaElement.play();
 			resolve();
@@ -366,18 +260,6 @@ class WebRTMP{
 		});
 
 		this._msectl.attachMediaElement(mediaElement);
-
-		if (this._pendingSeekTime != null) {
-			try {
-				mediaElement.currentTime = this._pendingSeekTime;
-				this._pendingSeekTime = null;
-			} catch (e) {
-				// IE11 may throw InvalidStateError if readyState === 0
-				// We can defer set currentTime operation after loadedmetadata
-			}
-		}
-
-
 	}
 }
 

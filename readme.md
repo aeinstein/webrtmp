@@ -1,6 +1,6 @@
 WebRTMP
 ======
-An HTML5 Flash Video (RTMP) Player written in pure JavaScript without Flash. LONG LIVE RTMP ;-)
+A HTML5 Flash Video (RTMP) Player written in pure JavaScript without Flash. LONG LIVE RTMP ;-)
 
 For those who really miss RTMP in Browser, cause HLS sucks.
 
@@ -13,7 +13,7 @@ This project consists of 2 parts.
 - WebRTMP Client library 
 
 stunnel is used for SSL/TLS 
-(why stunnel ?, I never ever have any problems, since 2005 and millions of connections per day)
+(why stunnel ? I never ever have any problems, since 2005 and millions of connections per day)
 
 
 ## Demo
@@ -23,7 +23,7 @@ stunnel is used for SSL/TLS
 - RTMP container with H.264 + AAC / MP3 codec playback
 - RTMP over Websocket low latency live stream playback <= 2 sec.
 - Compatible with Chrome, FireFox, Safari 10, IE11 and Edge
-- Extremely low overhead, and hardware accelerated by your browser!
+- Extremely low overhead and hardware accelerated by your browser!
 - Use promises
 
 
@@ -37,9 +37,9 @@ ClientSide:
     
     webrtmp.attachMediaElement(videoElement);
     
-    webrtmp.open("bunkertv.org", 9001).then(()=>{                       // Host, Port of WebRTMP Proxy
-        webrtmp.connect("bunkertv").then(()=>{                          // Application name  
-            webrtmp.play("fab5bc692e71e17fba34e92d47e64fd0").then(()=>{ // Stream name
+    webrtmp.open(document.location.host, 9001).then(()=>{ // Host, Port of WebRTMP Proxy
+        webrtmp.connect("demo").then(()=>{                // Application name  
+            webrtmp.play("your streanname").then(()=>{    // Stream name
                 console.log("playing");
             })
         })

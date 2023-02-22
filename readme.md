@@ -9,11 +9,8 @@ For those who really miss RTMP in Browser, cause HLS sucks.
 
 ## Introduction
 This project consists of 2 parts. 
-- A Simple Websocket <=> TCP Wrapper, which is running on the RTMP Server
+- Websockify for wrapping WSS to TCP
 - WebRTMP Client library 
-
-stunnel is used for SSL/TLS 
-(why stunnel ? I never ever have any problems, since 2005 and millions of connections per day)
 
 
 ## Demo
@@ -24,7 +21,7 @@ stunnel is used for SSL/TLS
 - RTMP over Websocket low latency live stream playback <= 2 sec.
 - Compatible with Chrome, FireFox, Safari 10, IE11 and Edge
 - Extremely low overhead and hardware accelerated by your browser!
-- Use promises
+- Use of promises
 
 
 ## Getting Started
@@ -48,12 +45,17 @@ ClientSide:
 </script>
 ```
 
+Prerequisites:
+```bash
+apt install websockify
+```
+
 ServerSide:
 
 Launch WSS RTMP-Wrapper
-
+(Don't forget to get certificates)
 ```bash
-java -jar WebRTMP.jar
+websockify -D --cert /home/bunkertv/certs/fullchain.pem --key /home/bunkertv/certs/privkey.pem --ssl-only 9001 127.0.0.1:1935
 ```
 
 ## State

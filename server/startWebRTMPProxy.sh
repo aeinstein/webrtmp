@@ -19,8 +19,5 @@
 #
 #
 
-# Uncomment for Log Output
-# DEBUG="-Dlog4j.configurationFile=WebRTMP.properties"
-
-java -server $DEBUG -jar WebRTMP.jar
+websockify -D --cert /home/bunkertv/certs/fullchain.pem --key /home/bunkertv/certs/privkey.pem --ssl-only 9001 127.0.0.1:1935
 

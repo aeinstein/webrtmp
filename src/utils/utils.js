@@ -101,16 +101,10 @@ export function _byteArrayToString(ba){
 }
 
 export const defaultConfig = {
-    enableWorker: false,
     enableStashBuffer: true,
     stashInitialSize: undefined,
 
     isLive: true,
-
-    lazyLoad: true,
-    lazyLoadMaxDuration: 3 * 60,
-    lazyLoadRecoverDuration: 30,
-    deferLoadAfterSourceOpen: true,
 
     autoCleanupSourceBuffer: true,
     autoCleanupMaxBackwardDuration: 3 * 60,
@@ -120,17 +114,7 @@ export const defaultConfig = {
 
     fixAudioTimestampGap: true,
 
-    accurateSeek: false,
-    seekType: 'range',  // [range, param, custom]
-    seekParamStart: 'bstart',
-    seekParamEnd: 'bend',
-    rangeLoadZeroStart: false,
-    customSeekHandler: undefined,
-    reuseRedirectedURL: false,
-    // referrerPolicy: leave as unspecified
-
-    headers: undefined,
-    customLoader: undefined
+    headers: undefined
 };
 
 

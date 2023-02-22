@@ -88,6 +88,7 @@ class WebRTMP{
 	}
 
 	_onvCanPlay(e) {
+		this._mediaElement.play();
 		this._receivedCanPlay = true;
 		this._mediaElement.removeEventListener('canplay', this.e.onvCanPlay);
 	}
@@ -100,48 +101,11 @@ class WebRTMP{
 		this._checkAndResumeStuckPlayback();
 	}
 
-
-
 	_onmseBufferFull() {
-		Log.w(this.TAG, 'MSE SourceBuffer is full, suspend transmuxing task');
-		if (this._progressChecker == null) {
-			//this._suspendTransmuxer();
-		}
+		Log.w(this.TAG, 'MSE SourceBuffer is full');
 	}
-
-	_onmseUpdateEnd() {
-		if (!this._config.lazyLoad || this._config.isLive) {
-			return;
-		}
-
-		let buffered = this._mediaElement.buffered;
-		let currentTime = this._mediaElement.currentTime;
-		let currentRangeStart = 0;
-		let currentRangeEnd = 0;
-
-		for (let i = 0; i < buffered.length; i++) {
-			let start = buffered.start(i);
-			let end = buffered.end(i);
-			if (start <= currentTime && currentTime < end) {
-				currentRangeStart = start;
-				currentRangeEnd = end;
-				break;
-			}
-		}
-
-		if (currentRangeEnd >= currentTime + this._config.lazyLoadMaxDuration && this._progressChecker == null) {
-			Log.v(this.TAG, 'Maximum buffering duration exceeded, suspend transmuxing task');
-			//this._suspendTransmuxer();
-		}
-	}
-
 
 	destroy() {
-		if (this._progressChecker != null) {
-			window.clearInterval(this._progressChecker);
-			this._progressChecker = null;
-		}
-
 		if (this._mediaElement) {
 			this.detachMediaElement();
 		}
@@ -228,6 +192,10 @@ class WebRTMP{
 		}
 	}
 
+	/**
+	 *
+	 * @param {HTMLVideoElement} mediaElement
+	 */
 	attachMediaElement(mediaElement) {
 		this._mediaElement = mediaElement;
 		mediaElement.addEventListener('loadedmetadata', this.e.onvLoadedMetadata);
@@ -238,7 +206,7 @@ class WebRTMP{
 
 		this._msectl = new MSEController(defaultConfig);
 
-		this._msectl.on(MSEEvents.UPDATE_END, this._onmseUpdateEnd.bind(this));
+		//this._msectl.on(MSEEvents.UPDATE_END, this._onmseUpdateEnd.bind(this));
 		this._msectl.on(MSEEvents.BUFFER_FULL, this._onmseBufferFull.bind(this));
 
 		this._msectl.on(MSEEvents.ERROR, (info) => {

@@ -30,10 +30,10 @@ class Log {
     static LEVEL = Log.INFO;
 
     /**
-     * Array with [ClassName, Loglevel]
-     * @type {[]}
+     * Object with [ClassName, Loglevel]
+     * @type {}
      */
-    static loglevels = [];
+    static loglevels = {};
 
     /**
      *

@@ -48,7 +48,7 @@ class WebRTMP_Controller {
 	WebRTMPWorker = new Worker(new URL('connection.worker.js', import.meta.url), {
 		name: "webrtmp.worker",
 		type: "module"
-		/* webpackEntryOptions: { filename: "[name].js" } */
+		/* webpackEntryOptions: { filename: "dist/[name].js" } */
 	});
 
 	constructor() {

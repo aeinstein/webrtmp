@@ -101,22 +101,22 @@ class RTMPMessageHandler {
             break;
 
         case 8:         // Audio Message
-            Log.d(this.TAG, "AUDIOFRAME: ", msg.getPayload());
+            Log.d(this.TAG, "AUDIOFRAME: ", msg);
             this.media_handler.handleMediaMessage(msg);
             break;
 
         case 9:         // Video Message
-            Log.d(this.TAG, "VIDEOFRAME: ", msg.getPayload());
+            Log.d(this.TAG, "VIDEOFRAME: ", msg);
             this.media_handler.handleMediaMessage(msg);
             break;
 
         case 18:        // Data Message AMF0
-            Log.d(this.TAG, "DATAFRAME: ", msg.getPayload());
+            Log.d(this.TAG, "DATAFRAME: ", msg);
             this.media_handler.handleMediaMessage(msg);
             break;
 
         case 19:        // Shared Object Message AMF0
-            //new SharedObjectMessage(msg.getPayload());
+            Log.d(this.TAG, "SharedObjectMessage", msg);
             break;
 
         case 20:        // Command Message AMF0
@@ -129,10 +129,10 @@ class RTMPMessageHandler {
             case "_result":
                 switch(this.trackedCommand){
                 case "connect":
-                    if(cmd[3].code == "NetConnection.Connect.Success") {
-                        Log.d(this.TAG,"got _result: " + cmd[3].code);
+                    Log.d(this.TAG,"got _result: " + cmd[3].code);
+                    if(cmd[3].code === "NetConnection.Connect.Success") {
                         postMessage([cmd[3].code]);
-                        this.createStream();
+                        this.createStream(null);
                     }
                     break;
 
@@ -144,6 +144,13 @@ class RTMPMessageHandler {
                     break;
 
                 case "play":
+                    break;
+
+                case "pause":
+                    break;
+
+                default:
+                    Log.w("tracked command:" + this.trackedCommand);
                     break;
                 }
 
@@ -180,29 +187,13 @@ class RTMPMessageHandler {
     /**
      *
      * @param {Object} connectionParams
-     * @param {callback} callback
      */
-    connect(connectionParams, callback){
-        this.callback = callback;
+    connect(connectionParams){
         const command = new AMF0Object([
             "connect", 1, connectionParams
         ]);
 
-        //const message_stream_id = this._getNextMessageStreamID();
-
-        let msg = new RTMPMessage(command.getBytes());
-        msg.setMessageType(0x14);		// AMF0 Command
-        msg.setMessageStreamID(0);
-
-        const chunk = new Chunk(msg);
-        chunk.setChunkStreamID(this._getNextChunkStreamID());
-
-        let buf = chunk.getBytes();
-
-        this.netconnections[0] = new NetConnection(0, this);
-
-        this.trackedCommand = "connect";
-        this.socket.send(buf);
+        this._sendCommand(3, command);
     }
 
     /**
@@ -210,24 +201,11 @@ class RTMPMessageHandler {
      * @param {Object} options
      */
     createStream(options){
-        this.trackedCommand = "createStream";
-
         const command = new AMF0Object([
             "createStream", 1, options
         ]);
 
-        let msg = new RTMPMessage(command.getBytes());
-        msg.setMessageType(0x14);		// AMF0 Command
-        msg.setMessageStreamID(0);
-
-        const chunk = new Chunk(msg);
-        chunk.setChunkStreamID(3);
-
-        let buf = chunk.getBytes();
-
-        this.netconnections[0] = new NetConnection(0, this);
-
-        this.socket.send(buf);
+        this._sendCommand(3, command);
     }
 
     /**
@@ -235,24 +213,11 @@ class RTMPMessageHandler {
      * @param {String} streamName
      */
     play(streamName){
-        this.trackedCommand = "play";
-
         const command = new AMF0Object([
             "play", 1, null, streamName
         ]);
 
-        let msg = new RTMPMessage(command.getBytes());
-        msg.setMessageType(0x14);		// AMF0 Command
-        msg.setMessageStreamID(0);
-
-        const chunk = new Chunk(msg);
-        chunk.setChunkStreamID(3);
-
-        let buf = chunk.getBytes();
-
-        this.netconnections[0] = new NetConnection(0, this);
-
-        this.socket.send(buf);
+        this._sendCommand(3, command);
     }
 
     /**
@@ -260,60 +225,46 @@ class RTMPMessageHandler {
      * @param {boolean} enable
      */
     pause(enable){
-        this.trackedCommand = "pause";
-
         const command = new AMF0Object([
             "pause", 0, null, enable,0
         ]);
 
-        let msg = new RTMPMessage(command.getBytes());
-        msg.setMessageType(0x14);		// AMF0 Command
-        msg.setMessageStreamID(0);
-
-        const chunk = new Chunk(msg);
-        chunk.setChunkStreamID(3);
-
-        let buf = chunk.getBytes();
-
-        this.netconnections[0] = new NetConnection(0, this);
-
-        this.socket.send(buf);
+        this._sendCommand(3, command);
     }
 
     receiveVideo(enable){
-        this.trackedCommand = "receiveVideo";
-
         const command = new AMF0Object([
             "receiveVideo", 0, null, enable
         ]);
 
-        let msg = new RTMPMessage(command.getBytes());
-        msg.setMessageType(0x14);		// AMF0 Command
-        msg.setMessageStreamID(0);
-
-        const chunk = new Chunk(msg);
-        chunk.setChunkStreamID(3);
-
-        let buf = chunk.getBytes();
-
-        this.netconnections[0] = new NetConnection(0, this);
-
-        this.socket.send(buf);
+        this._sendCommand(3, command);
     }
 
     receiveAudio(enable){
-        this.trackedCommand = "receiveAudio";
-
         const command = new AMF0Object([
             "receiveAudio", 0, null, enable
         ]);
 
+        this._sendCommand(3, command);
+    }
+
+    /**
+     *
+     * @param {Number} csid
+     * @param {AMF0Object} command
+     * @private
+     */
+    _sendCommand(csid, command){
+        Log.d(this.TAG, "sendCommand:", command);
+
+        this.trackedCommand = command.getCommand();
+
         let msg = new RTMPMessage(command.getBytes());
         msg.setMessageType(0x14);		// AMF0 Command
         msg.setMessageStreamID(0);
 
         const chunk = new Chunk(msg);
-        chunk.setChunkStreamID(3);
+        chunk.setChunkStreamID(csid);
 
         let buf = chunk.getBytes();
 

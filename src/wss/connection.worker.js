@@ -78,10 +78,7 @@ self.addEventListener('message', function(e) {
 			break;
 
 		case "connect":             // RTMP Connect Application
-			message_handler.connect(makeDefaultConnectionParams(data.appName), ()=>{
-				Log.v(TAG, "connected");
-				postMessage(["RTMPConnected"]);
-			});
+			message_handler.connect(makeDefaultConnectionParams(data.appName));
 			break;
 
 		case "play":

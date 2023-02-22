@@ -31,8 +31,6 @@ class NetConnection{
     BandWidth;
     socket;
 
-    netstreams = [];
-
     /**
      *
      * @param {Number} message_stream_id
@@ -88,10 +86,6 @@ class NetConnection{
         default:
             break;
         }
-    }
-
-    createStream(){
-
     }
 }
 

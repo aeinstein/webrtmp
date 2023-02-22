@@ -100,6 +100,10 @@ class WebRTMP_Controller {
 		this.WebRTMPWorker.postMessage({cmd: "play", streamName: streamName});
 	}
 
+	stop(){
+		this.WebRTMPWorker.postMessage({cmd: "stop"});
+	}
+
     pause(enable){
         this.WebRTMPWorker.postMessage({cmd: "pause", enable: enable});
     }

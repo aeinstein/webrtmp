@@ -131,6 +131,11 @@ class WebRTMP{
 		});
 	}
 
+	stop(){
+		this.wss.stop()
+		this._mediaElement.pause();
+	}
+
 	/**
 	 *
 	 * @param {String|null} host
@@ -161,14 +166,13 @@ class WebRTMP{
 	 */
 	connect(appName){
 		return new Promise((resolve, reject)=>{
-			this.wss.addEventListener("RTMPStreamCreated", ()=>{
-				Log.d(this.TAG,"RTMPStreamCreated");
+			this.wss.addEventListener("RTMPStreamCreated", (cmd, stream_id)=>{
+				Log.d(this.TAG,"RTMPStreamCreated: " + stream_id);
 				resolve();
 			});
 
 			this.wss.connect(appName);
 		})
-
 	}
 
 	pause(enable){

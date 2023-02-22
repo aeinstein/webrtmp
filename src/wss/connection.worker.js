@@ -85,6 +85,10 @@ self.addEventListener('message', function(e) {
 			message_handler.play(data.streamName);
 			break;
 
+		case "stop":
+			message_handler.stop();
+			break;
+
         case "pause":
 			message_handler.pause(data.enable);
             break;

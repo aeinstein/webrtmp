@@ -34,6 +34,7 @@ class RTMPMessageHandler {
     chunk_stream_id = 2;
     trackedCommand = "";
     socket;
+    current_stream_id;
 
     /**
      *
@@ -126,6 +127,10 @@ class RTMPMessageHandler {
             Log.d(this.TAG, "AMF0", cmd);
 
             switch(cmd[0]) {
+            case "_error":
+                Log.e(this.TAG, cmd);
+                break;
+
             case "_result":
                 switch(this.trackedCommand){
                 case "connect":
@@ -139,7 +144,8 @@ class RTMPMessageHandler {
                 case "createStream":
                     Log.d(this.TAG,"got _result: " + cmd[3]);
                     if(cmd[3]) {
-                        postMessage(["RTMPStreamCreated"]);
+                        this.current_stream_id = cmd[4];
+                        postMessage(["RTMPStreamCreated", cmd[3], cmd[4]]);
                     }
                     break;
 
@@ -208,6 +214,14 @@ class RTMPMessageHandler {
         this._sendCommand(3, command);
     }
 
+    deleteStream(stream_id){
+        const command = new AMF0Object([
+            "deleteStream", 1, null, stream_id
+        ]);
+
+        this._sendCommand(3, command);
+    }
+
     /**
      *
      * @param {String} streamName
@@ -218,6 +232,10 @@ class RTMPMessageHandler {
         ]);
 
         this._sendCommand(3, command);
+    }
+
+    stop(){
+        this.deleteStream(this.current_stream_id);
     }
 
     /**

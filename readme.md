@@ -45,13 +45,13 @@ ClientSide:
 </script>
 ```
 
+
+
+ServerSide:
 Prerequisites:
 ```bash
 apt install websockify
 ```
-
-ServerSide:
-
 Launch WSS RTMP-Wrapper
 (Don't forget to get certificates)
 ```bash
@@ -65,5 +65,8 @@ proof-of-concept
 a lot of error and exception handling
 
 ## Design
+#### serverSide
+![arch](docs/webrtmp_diagram.png)
+
 #### ClientSide
 ![arch](docs/webrtmp_arch.png)

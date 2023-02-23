@@ -78,22 +78,42 @@ self.addEventListener('message', function(e) {
 			break;
 
 		case "connect":             // RTMP Connect Application
+            if(!message_handler) {
+                Log.e(this.TAG, "RTMP not connected");
+                break;
+            }
 			message_handler.connect(makeDefaultConnectionParams(data.appName));
 			break;
 
 		case "play":
+            if(!message_handler) {
+                Log.e(this.TAG, "RTMP not connected");
+                break;
+            }
 			message_handler.play(data.streamName);
 			break;
 
 		case "stop":
+            if(!message_handler) {
+                Log.e(this.TAG, "RTMP not connected");
+                break;
+            }
 			message_handler.stop();
 			break;
 
         case "pause":
+            if(!message_handler) {
+                Log.e(this.TAG, "RTMP not connected");
+                break;
+            }
 			message_handler.pause(data.enable);
             break;
 
         case "disconnect":
+            if(!message_handler) {
+                Log.e(this.TAG, "RTMP not connected");
+                break;
+            }
 			wss_manager.close();
 			break;
 

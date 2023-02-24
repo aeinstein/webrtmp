@@ -118,6 +118,10 @@ class WebRTMP_Controller {
 		this._emitter.addEventListener(type, listener);
 	}
 
+	removeEventListener(type, listener){
+		this._emitter.removeListener(type, listener);
+	}
+
 
 	/**
 	 *

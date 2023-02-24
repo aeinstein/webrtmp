@@ -1639,6 +1639,10 @@ class WebRTMP_Controller {
 		this._emitter.addEventListener(type, listener);
 	}
 
+	removeEventListener(type, listener){
+		this._emitter.removeListener(type, listener);
+	}
+
 
 	/**
 	 *
@@ -1819,8 +1823,7 @@ class WebRTMP{
 	play(streamName){
 		return new Promise((resolve, reject)=>{
 			this.wss.play(streamName);
-			this._mediaElement.play();
-			resolve();
+			this._mediaElement.play().then(resolve);
 		});
 	}
 
@@ -1876,7 +1879,6 @@ class WebRTMP{
 		if (this._mediaElement) {
 			this._msectl.detachMediaElement();
 			this._mediaElement.removeEventListener('loadedmetadata', this.e.onvLoadedMetadata);
-			this._mediaElement.removeEventListener('seeking', this.e.onvSeeking);
 			this._mediaElement.removeEventListener('canplay', this.e.onvCanPlay);
 			this._mediaElement.removeEventListener('stalled', this.e.onvStalled);
 			this._mediaElement.removeEventListener('progress', this.e.onvProgress);
@@ -1884,6 +1886,8 @@ class WebRTMP{
 		}
 
 		if (this._msectl) {
+			this.wss.removeEventListener(TransmuxingEvents.INIT_SEGMENT, this._appendInitSegment);
+			this.wss.removeEventListener(TransmuxingEvents.MEDIA_SEGMENT, this._appendMediaSegment);
 			this._msectl.destroy();
 			this._msectl = null;
 		}
@@ -1896,7 +1900,6 @@ class WebRTMP{
 	attachMediaElement(mediaElement) {
 		this._mediaElement = mediaElement;
 		mediaElement.addEventListener('loadedmetadata', this.e.onvLoadedMetadata);
-		mediaElement.addEventListener('seeking', this.e.onvSeeking);
 		mediaElement.addEventListener('canplay', this.e.onvCanPlay);
 		mediaElement.addEventListener('stalled', this.e.onvStalled);
 		mediaElement.addEventListener('progress', this.e.onvProgress);
@@ -1914,17 +1917,20 @@ class WebRTMP{
 			);
 		});
 
-		this.wss.addEventListener(TransmuxingEvents.INIT_SEGMENT, (data)=>{
-			logger.i(this.TAG, TransmuxingEvents.INIT_SEGMENT, data[0], data[1]);
-			this._msectl.appendInitSegment(data[1]);
-		});
-
-		this.wss.addEventListener(TransmuxingEvents.MEDIA_SEGMENT, (data)=>{
-			logger.i(this.TAG, TransmuxingEvents.MEDIA_SEGMENT, data[0], data[1]);
-			this._msectl.appendMediaSegment(data[1]);
-		});
+		this.wss.addEventListener(TransmuxingEvents.INIT_SEGMENT, this._appendInitSegment.bind(this));
+		this.wss.addEventListener(TransmuxingEvents.MEDIA_SEGMENT, this._appendMediaSegment.bind(this));
 
 		this._msectl.attachMediaElement(mediaElement);
+	}
+
+	_appendInitSegment(data){
+		logger.i(this.TAG, TransmuxingEvents.INIT_SEGMENT, data[0], data[1]);
+		this._msectl.appendInitSegment(data[1]);
+	}
+
+	_appendMediaSegment(data){
+		logger.i(this.TAG, TransmuxingEvents.MEDIA_SEGMENT, data[0], data[1]);
+		this._msectl.appendMediaSegment(data[1]);
 	}
 }
 

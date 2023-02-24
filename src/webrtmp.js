@@ -88,7 +88,10 @@ class WebRTMP{
 	}
 
 	_onvCanPlay(e) {
-		this._mediaElement.play();
+		Log.d(this.TAG, "onvCanPlay");
+		this._mediaElement.play().then(()=>{
+			Log.d(this.TAG, "promise play");
+		});
 		this._receivedCanPlay = true;
 		this._mediaElement.removeEventListener('canplay', this.e.onvCanPlay);
 	}
@@ -176,6 +179,18 @@ class WebRTMP{
 
 	pause(enable){
 		this.wss.pause(enable);
+
+
+		if(enable) {
+			this._mediaElement.pause();
+
+
+		} else {
+			this.kerkDown = 10;
+			this._mediaElement.play().then(()=>{
+
+			});
+		}
 	}
 
 	detachMediaElement() {
@@ -227,13 +242,18 @@ class WebRTMP{
 	}
 
 	_appendInitSegment(data){
-		Log.i(this.TAG, TransmuxingEvents.INIT_SEGMENT, data[0], data[1]);
+		Log.t(this.TAG, TransmuxingEvents.INIT_SEGMENT, data[0], data[1]);
 		this._msectl.appendInitSegment(data[1]);
 	}
 
 	_appendMediaSegment(data){
-		Log.i(this.TAG, TransmuxingEvents.MEDIA_SEGMENT, data[0], data[1]);
+		Log.t(this.TAG, TransmuxingEvents.MEDIA_SEGMENT, data[0], data[1]);
 		this._msectl.appendMediaSegment(data[1]);
+		if(this.kerkDown) {
+			this.kerkDown--;
+			console.log("settime");
+			this._mediaElement.currentTime = 2000000000;
+		}
 	}
 }
 

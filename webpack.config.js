@@ -20,9 +20,10 @@ let config = {
 
 
 module.exports = (env, argv) => {
+    /*
     if (argv.mode === 'production') {
         config.output.filename = 'dist/webrtmp.min.js';
-    }
+    }*/
 
     return config;
 };

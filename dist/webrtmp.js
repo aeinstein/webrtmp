@@ -1010,7 +1010,7 @@ class MSEController {
 		this._config = config;
 		this._emitter = new event_emitter();
 
-		if (this._config.isLive && this._config.autoCleanupSourceBuffer == undefined) {
+		if (this._config.isLive && this._config.autoCleanupSourceBuffer === undefined) {
 			// For live stream, do auto cleanup by default
 			this._config.autoCleanupSourceBuffer = true;
 		}
@@ -1145,6 +1145,7 @@ class MSEController {
 
 	appendInitSegment(initSegment, deferred) {
 		logger.i(this.TAG, "appendInitSegment", initSegment);
+		/*
 		if (!this._mediaSource || this._mediaSource.readyState !== 'open') {
 			// sourcebuffer creation requires mediaSource.readyState === 'open'
 			// so we defer the sourcebuffer creation, until sourceopen event triggered
@@ -1153,7 +1154,7 @@ class MSEController {
 			this._pendingSegments[initSegment.type].push(initSegment);
 			return;
 		}
-
+*/
 		let is = initSegment;
 		let mimeType = `${is.container}`;
 		if (is.codec && is.codec.length > 0) {
@@ -1216,64 +1217,6 @@ class MSEController {
 		}
 	}
 
-	seek(seconds) {
-		// remove all appended buffers
-		for (let type in this._sourceBuffers) {
-			if (!this._sourceBuffers[type]) {
-				continue;
-			}
-
-			// abort current buffer append algorithm
-			let sb = this._sourceBuffers[type];
-			if (this._mediaSource.readyState === 'open') {
-				try {
-					// If range removal algorithm is running, InvalidStateError will be throwed
-					// Ignore it.
-					sb.abort();
-				} catch (error) {
-					logger.e(this.TAG, error.message);
-				}
-			}
-
-			// IDRList should be clear
-			this._idrList.clear();
-
-			// pending segments should be discard
-			let ps = this._pendingSegments[type];
-			ps.splice(0, ps.length);
-
-			if (this._mediaSource.readyState === 'closed') {
-				// Parent MediaSource object has been detached from HTMLMediaElement
-				continue;
-			}
-
-			// record ranges to be remove from SourceBuffer
-			for (let i = 0; i < sb.buffered.length; i++) {
-				let start = sb.buffered.start(i);
-				let end = sb.buffered.end(i);
-				this._pendingRemoveRanges[type].push({start, end});
-			}
-
-			// if sb is not updating, let's remove ranges now!
-			if (!sb.updating) {
-				this._doRemoveRanges();
-			}
-
-			// Safari 10 may get InvalidStateError in the later appendBuffer() after SourceBuffer.remove() call
-			// Internal parser's state may be invalid at this time. Re-append last InitSegment to workaround.
-			// Related issue: https://bugs.webkit.org/show_bug.cgi?id=159230
-			if (browser.safari) {
-				let lastInitSegment = this._lastInitSegments[type];
-				if (lastInitSegment) {
-					this._pendingSegments[type].push(lastInitSegment);
-					if (!sb.updating) {
-						this._doAppendSegments();
-					}
-				}
-			}
-		}
-	}
-
 	endOfStream() {
 		let ms = this._mediaSource;
 		let sb = this._sourceBuffers;
@@ -1296,10 +1239,6 @@ class MSEController {
 			// Otherwise MediaElement's ended event may not be triggered
 			ms.endOfStream();
 		}
-	}
-
-	getNearestKeyframe(dts) {
-		return this._idrList.getLastSyncPointBeforeDts(dts);
 	}
 
 	_needCleanupSourceBuffer() {
@@ -1560,7 +1499,7 @@ class WebRTMP_Controller {
 		"Transmuxer": logger.WARN,
 		"EventEmitter": logger.DEBUG,
 		"MSEController": logger.INFO,
-		"WebRTMP": logger.WARN,
+		"WebRTMP": logger.DEBUG,
 		"WebRTMP_Controller": logger.WARN,
 		"WebRTMP Worker": logger.WARN,
 		"AMF": logger.WARN
@@ -1785,7 +1724,10 @@ class WebRTMP{
 	}
 
 	_onvCanPlay(e) {
-		this._mediaElement.play();
+		logger.d(this.TAG, "onvCanPlay");
+		this._mediaElement.play().then(()=>{
+			logger.d(this.TAG, "promise play");
+		});
 		this._receivedCanPlay = true;
 		this._mediaElement.removeEventListener('canplay', this.e.onvCanPlay);
 	}
@@ -1873,6 +1815,18 @@ class WebRTMP{
 
 	pause(enable){
 		this.wss.pause(enable);
+
+
+		if(enable) {
+			this._mediaElement.pause();
+
+
+		} else {
+			this.isPaused = 10;
+			this._mediaElement.play().then(()=>{
+
+			});
+		}
 	}
 
 	detachMediaElement() {
@@ -1924,13 +1878,18 @@ class WebRTMP{
 	}
 
 	_appendInitSegment(data){
-		logger.i(this.TAG, TransmuxingEvents.INIT_SEGMENT, data[0], data[1]);
+		logger.t(this.TAG, TransmuxingEvents.INIT_SEGMENT, data[0], data[1]);
 		this._msectl.appendInitSegment(data[1]);
 	}
 
 	_appendMediaSegment(data){
-		logger.i(this.TAG, TransmuxingEvents.MEDIA_SEGMENT, data[0], data[1]);
+		logger.t(this.TAG, TransmuxingEvents.MEDIA_SEGMENT, data[0], data[1]);
 		this._msectl.appendMediaSegment(data[1]);
+		if(this.isPaused) {
+			this.isPaused--;
+			console.log("settime");
+			this._mediaElement.currentTime = 2000000000;
+		}
 	}
 }
 

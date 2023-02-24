@@ -1,13 +1,15 @@
-const path = require('path');
+const pkg = require('./package.json');
 
 let config = {
     entry: "./src/webrtmp.js",
     output: {
         path: __dirname, //path.join(__dirname, "../"),
-        filename: "dist/webrtmp.js",
+        filename: pkg.main,
         chunkFilename: "[name].js",
-        publicPath: "/webrtmp/"
+        library: 'webrtmp',
+        libraryTarget: 'umd'
     },
+
     mode: "development",
     devtool: 'source-map',
     optimization: {
@@ -18,10 +20,9 @@ let config = {
     }
 };
 
-
 module.exports = (env, argv) => {
     if (argv.mode === 'production') {
-        config.output.filename = 'dist/webrtmp.min.js';
+        config.output.filename = './dist/webrtmp.min.js';
     }
 
     return config;

@@ -23,7 +23,6 @@ import MSEController from "./utils/mse-controller";
 import {defaultConfig, ErrorDetails, ErrorTypes, MSEEvents, PlayerEvents, TransmuxingEvents} from "./utils/utils";
 import EventEmitter from "./utils/event_emitter";
 import WebRTMP_Controller from "./wss/webrtmp.controller";
-import Browser from "./utils/browser";
 
 class WebRTMP{
 	TAG = 'WebRTMP';
@@ -124,10 +123,8 @@ class WebRTMP{
 	 * @returns {Promise<unknown>}
 	 */
 	play(streamName){
-		return new Promise((resolve, reject)=>{
-			this.wss.play(streamName);
-			this._mediaElement.play().then(resolve);
-		});
+		this.wss.play(streamName);
+		return this._mediaElement.play();
 	}
 
 	stop(){
@@ -238,7 +235,3 @@ class WebRTMP{
 }
 
 export default WebRTMP;
-
-window["Log"] = Log;
-window["webrtmp"] = new WebRTMP();
-

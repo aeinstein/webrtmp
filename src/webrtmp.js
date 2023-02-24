@@ -126,8 +126,7 @@ class WebRTMP{
 	play(streamName){
 		return new Promise((resolve, reject)=>{
 			this.wss.play(streamName);
-			this._mediaElement.play();
-			resolve();
+			this._mediaElement.play().then(resolve);
 		});
 	}
 

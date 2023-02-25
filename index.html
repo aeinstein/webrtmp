@@ -40,10 +40,7 @@
   </tr>
 </table>
 Video is send by:
-<div style="width: 640px; height: 200px; background-color: white">ffmpeg -stream_loop -1 -re -i input.mp4 -vf drawtext="fontfile=monofonto.ttf: fontsize=96: box=1: boxcolor=black@0.75: boxborderw=5: fontcolor=white: x=(w-text_w)/2: y=((h-text_h)/2)+((h-text_h)/4): text='%{gmtime\:%M\\\\\:%S}'" -vcodec libx264 -b:v 3M -s 1280x720 -x264-params keyint=120:min-keyint=30:scenecut=0 -preset medium -profile:v main -movflags +faststart -acodec copy -f flv rtmp://127.0.0.1/demo/livetest</div>
-
-<br>
-
+<div style="width: 640px; height: 110px; background-color: white">ffmpeg -stream_loop -1 -re -i input.mp4 -vf drawtext="fontfile=monofonto.ttf: fontsize=96: box=1: boxcolor=black@0.75: boxborderw=5: fontcolor=white: x=(w-text_w)/2: y=((h-text_h)/2)+((h-text_h)/4): text='%{gmtime\:%M\\\\\:%S}'" -vcodec libx264 -b:v 3M -s 1280x720 -x264-params keyint=120:min-keyint=30:scenecut=0 -preset medium -profile:v main -movflags +faststart -acodec copy -f flv rtmp://127.0.0.1/demo/livetest</div>
 
 <script>
   Log.LEVEL = Log.INFO;

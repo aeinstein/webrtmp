@@ -25,7 +25,7 @@ This project consists of 2 parts.
 
 
 ## Getting Started
-ClientSide:
+### ClientSide:
 ```html
 <script src="dist/webrtmp.js"></script>
 <video id="videoElement"></video>
@@ -47,7 +47,7 @@ ClientSide:
 
 
 
-ServerSide:
+### ServerSide:
 Prerequisites:
 ```bash
 apt install websockify

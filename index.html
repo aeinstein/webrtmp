@@ -19,10 +19,15 @@
 <h1>WebRTMP-Demo</h1><br>
 <table>
   <tr>
-    <td colspan="2">
+    <td>
       <label for="host">Server:</label> <input type="text" id="host" value="bunkertv.org"> <label for="port">Port:</label> <input id="port" type="text" value="9001"><br>
-      <label for="appName">Application:</label> <input type="text" id="appName" value="bunkertv"> <label for="streamName">Streamname:</label> <input type="text" id="streamName" value="fab5bc692e71e17fba34e92d47e64fd0"><br>
+      <label for="appName">Application:</label> <input type="text" id="appName" value="demo"> <label for="streamName">Streamname:</label> <input type="text" id="streamName" value="livetest"><br>
+
+    </td>
+    <td>
       <input style="float:right;" id="StartButton" type="button" value="Play Video" onclick="playVideo()"><br>
+      <input type="button" value="pause" onclick="webrtmp.pause(true)"><br>
+      <input type="button" value="unpause" onclick="webrtmp.pause(false)"><br>
     </td>
   </tr>
   <tr>
@@ -34,8 +39,11 @@
     </td>
   </tr>
 </table>
+Video is send by:
+<div style="width: 640px; height: 200px; background-color: white">ffmpeg -stream_loop -1 -re -i input.mp4 -vf drawtext="fontfile=monofonto.ttf: fontsize=96: box=1: boxcolor=black@0.75: boxborderw=5: fontcolor=white: x=(w-text_w)/2: y=((h-text_h)/2)+((h-text_h)/4): text='%{gmtime\:%M\\\\\:%S}'" -vcodec libx264 -b:v 3M -s 1280x720 -x264-params keyint=120:min-keyint=30:scenecut=0 -preset medium -profile:v main -movflags +faststart -acodec copy -f flv rtmp://127.0.0.1/demo/livetest</div>
+
 <br>
-<input type="button" value="pause" onclick="webrtmp.pause(true)"><br>
+
 
 <script>
   Log.LEVEL = Log.INFO;

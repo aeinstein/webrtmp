@@ -24,7 +24,7 @@ import {defaultConfig, ErrorDetails, ErrorTypes, MSEEvents, PlayerEvents, Transm
 import EventEmitter from "./utils/event_emitter";
 import WebRTMP_Controller from "./wss/webrtmp.controller";
 
-class WebRTMP{
+export class WebRTMP{
 	TAG = 'WebRTMP';
 
 	/**
@@ -87,7 +87,10 @@ class WebRTMP{
 	}
 
 	_onvCanPlay(e) {
-		this._mediaElement.play();
+		Log.d(this.TAG, "onvCanPlay");
+		this._mediaElement.play().then(()=>{
+			Log.d(this.TAG, "promise play");
+		});
 		this._receivedCanPlay = true;
 		this._mediaElement.removeEventListener('canplay', this.e.onvCanPlay);
 	}
@@ -130,6 +133,7 @@ class WebRTMP{
 	stop(){
 		this.wss.stop()
 		this._mediaElement.pause();
+		this.detachMediaElement();
 	}
 
 	/**
@@ -173,6 +177,16 @@ class WebRTMP{
 
 	pause(enable){
 		this.wss.pause(enable);
+
+		if(enable) {
+			this._mediaElement.pause();
+
+		} else {
+			this.kerkDown = 10;
+			this._mediaElement.play().then(()=>{
+
+			});
+		}
 	}
 
 	detachMediaElement() {
@@ -204,6 +218,31 @@ class WebRTMP{
 		mediaElement.addEventListener('stalled', this.e.onvStalled);
 		mediaElement.addEventListener('progress', this.e.onvProgress);
 
+
+
+		mediaElement.addEventListener('pause', (e)=>{
+			Log.d(this.TAG, "pause", e);
+			this.pause(true);
+		});
+
+		mediaElement.addEventListener('playing', (e)=>{
+			Log.d(this.TAG, "playing:", e);
+
+		});
+
+		mediaElement.addEventListener('play', (e)=>{
+			Log.d(this.TAG, "play:", e);
+			this.pause(false);
+		});
+
+		mediaElement.addEventListener("loadstart", (e)=>{
+			Log.d(this.TAG, "loadstart:", e);
+		})
+
+		mediaElement.addEventListener("waiting", (e)=>{
+			Log.d(this.TAG, "waiting:", e);
+		})
+
 		this._msectl = new MSEController(defaultConfig);
 
 		//this._msectl.on(MSEEvents.UPDATE_END, this._onmseUpdateEnd.bind(this));
@@ -229,9 +268,18 @@ class WebRTMP{
 	}
 
 	_appendMediaSegment(data){
-		Log.i(this.TAG, TransmuxingEvents.MEDIA_SEGMENT, data[0], data[1]);
+		Log.t(this.TAG, TransmuxingEvents.MEDIA_SEGMENT, data[0], data[1]);
 		this._msectl.appendMediaSegment(data[1]);
+		if(this.kerkDown) {
+			this.kerkDown--;
+			this._mediaElement.currentTime = 2000000000;
+
+			if(!this.kerkDown) Log.d(this.TAG, "kerkdown reached");
+		}
 	}
 }
 
-export default WebRTMP;
+//export default WebRTMP;
+
+//window["webrtmp"] = new WebRTMP();
+window["Log"] = Log;

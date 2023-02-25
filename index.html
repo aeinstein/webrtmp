@@ -25,9 +25,10 @@
 
     </td>
     <td>
-      <input style="float:right;" id="StartButton" type="button" value="Play Video" onclick="playVideo()"><br>
-      <input type="button" value="pause" onclick="webrtmp.pause(true)"><br>
-      <input type="button" value="unpause" onclick="webrtmp.pause(false)"><br>
+      <input id="StartButton" type="button" value="Play Video" onclick="playVideo()"><br>
+      <input type="button" value="pause" onclick="rtmp_player.pause(true)"><br>
+      <input type="button" value="unpause" onclick="rtmp_player.pause(false)"><br>
+      <input type="button" value="Destroy" onclick="rtmp_player.stop()"><br>
     </td>
   </tr>
   <tr>
@@ -47,12 +48,15 @@ Video is send by:
 
   const output = document.getElementById("output");
 
-  webrtmp.attachMediaElement(output);
+
+  const rtmp_player = webrtmpjs.createWebRTMP();
+
+  rtmp_player.attachMediaElement(output);
 
   function playVideo(){
-    webrtmp.open(document.getElementById("host").value, document.getElementById("port").value).then(()=>{
-      webrtmp.connect(document.getElementById("appName").value).then(()=>{
-        webrtmp.play(document.getElementById("streamName").value).then(()=>{
+    rtmp_player.open(document.getElementById("host").value, document.getElementById("port").value).then(()=>{
+      rtmp_player.connect(document.getElementById("appName").value).then(()=>{
+        rtmp_player.play(document.getElementById("streamName").value).then(()=>{
           console.log("playing");
         }).catch((error)=>{
           console.error(error);

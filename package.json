@@ -5,7 +5,8 @@
   "private": true,
   "author": "Michael Balen",
   "license": "Apache-2.0",
-  "main": "./dist/webrtmp.js",
+  "main": "dist/webrtmp.js",
+  "module": "dist/index.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/aeinstein/webrtmp"

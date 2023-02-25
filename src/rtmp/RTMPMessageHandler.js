@@ -30,6 +30,7 @@ import Log from "../utils/logger";
 class RTMPMessageHandler {
     TAG = "RTMPMessageHandler";
 
+    paused = false;
     netconnections = {};
     chunk_stream_id = 2;
     trackedCommand = "";
@@ -243,11 +244,15 @@ class RTMPMessageHandler {
      * @param {boolean} enable
      */
     pause(enable){
-        const command = new AMF0Object([
-            "pause", 0, null, enable,0
-        ]);
+        if(this.paused !== enable) {
+            this.paused = enable;
 
-        this._sendCommand(3, command);
+            const command = new AMF0Object([
+                "pause", 0, null, enable,0
+            ]);
+
+            this._sendCommand(3, command);
+        }
     }
 
     receiveVideo(enable){

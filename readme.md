@@ -32,16 +32,17 @@ This project consists of 2 parts.
 <script>
     const videoElement = document.getElementById('videoElement');
     
-    webrtmp.attachMediaElement(videoElement);
+    const rtmp_player = webrtmpjs.createWebRTMP();
     
-    webrtmp.open(document.location.host, 9001).then(()=>{ // Host, Port of WebRTMP Proxy
-        webrtmp.connect("demo").then(()=>{                // Application name  
-            webrtmp.play("your streanname").then(()=>{    // Stream name
+    rtmp_player.attachMediaElement(videoElement);
+
+    rtmp_player.open(document.location.host, 9001).then(()=>{   // Host, Port of WebRTMP Proxy
+        rtmp_player.connect("demo").then(()=>{                  // Application name  
+            rtmp_player.play("your streanname").then(()=>{      // Stream name
                 console.log("playing");
             })
         })
     })
-
 </script>
 ```
 

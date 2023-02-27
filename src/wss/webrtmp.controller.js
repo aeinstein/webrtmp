@@ -65,22 +65,25 @@ class WebRTMP_Controller {
 	 *
 	 * @param {String|null} host
 	 * @param {Number|null} port
-	 * @returns {boolean}
 	 */
 	open(host, port){
-		if(this.isConnected) return false;
+		return new Promise((resolve, reject)=>{
+			if(this.isConnected) return reject("Already Connected. Please disconnect first");
+			this._emitter.waitForEvent("RTMPHandshakeDone", resolve);
+			this._emitter.waitForEvent("WSSConnectFailed", reject);
 
-		if(host) this.host = host;
-		if(port) this.port = port;
+			if(host) this.host = host;
+			if(port) this.port = port;
 
-		this.WebRTMPWorker.postMessage({cmd: "open", host: this.host, port: this.port});
+			this.WebRTMPWorker.postMessage({cmd: "open", host: this.host, port: this.port});
+		})
 	}
 
 	/**
 	 * Websocket disconnect
 	 */
 	disconnect() {
-		this.WSSReconnect = true;
+		this.WSSReconnect = false;
 		this.WebRTMPWorker.postMessage({cmd: "disconnect"});
 	}
 
@@ -89,7 +92,11 @@ class WebRTMP_Controller {
 	 * @param {String} appName
 	 */
 	connect(appName){
-		this.WebRTMPWorker.postMessage({cmd: "connect", appName: appName});
+		return new Promise((resolve, reject)=>{
+			this._emitter.waitForEvent("RTMPStreamCreated", resolve);
+			this.WebRTMPWorker.postMessage({cmd: "connect", appName: appName});
+		})
+
 	}
 
 	/**
@@ -113,13 +120,18 @@ class WebRTMP_Controller {
 	 * Eventlistener hinzufügenm
 	 * @param type
 	 * @param listener
+	 * @param {boolean} modal
 	 */
-	addEventListener(type, listener){
-		this._emitter.addEventListener(type, listener);
+	addEventListener(type, listener, modal){
+		this._emitter.addEventListener(type, listener, modal);
 	}
 
 	removeEventListener(type, listener){
-		this._emitter.removeListener(type, listener);
+		this._emitter.removeEventListener(type, listener);
+	}
+
+	removeAllEventListener(type){
+		this._emitter.removeAllEventListener(type);
 	}
 
 

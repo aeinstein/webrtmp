@@ -19,7 +19,7 @@
  */
 
 
-import {WebRTMP} from "./webrtmp";
+import { WebRTMP } from "./webrtmp";
 
 export { WebRTMP } from "./webrtmp";
 

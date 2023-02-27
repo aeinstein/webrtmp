@@ -82,7 +82,7 @@ class MSEController {
 			this.detachMediaElement();
 		}
 		this.e = null;
-		this._emitter.removeAllListeners();
+		this._emitter.removeAllListener();
 		this._emitter = null;
 	}
 
@@ -95,6 +95,7 @@ class MSEController {
 	}
 
 	attachMediaElement(mediaElement) {
+		Log.i(this.TAG, "attach");
 		if (this._mediaSource) {
 			throw new IllegalStateException('MediaSource has been attached to an HTMLMediaElement!');
 		}
@@ -109,8 +110,20 @@ class MSEController {
 	}
 
 	detachMediaElement() {
+		Log.i(this.TAG, "detach");
+
 		if (this._mediaSource) {
 			let ms = this._mediaSource;
+
+			if (ms.readyState === 'open') {
+				try {
+					ms.endOfStream();
+				} catch (error) {
+					Log.e(this.TAG, error.message);
+				}
+			}
+
+
 			for (let type in this._sourceBuffers) {
 				// pending segments should be discard
 				let ps = this._pendingSegments[type];
@@ -122,9 +135,11 @@ class MSEController {
 				// remove all sourcebuffers
 				let sb = this._sourceBuffers[type];
 				if (sb) {
+					Log.i(this.TAG, "try to remove sourcebuffer: " + type);
 					if (ms.readyState !== 'closed') {
 						// ms edge can throw an error: Unexpected call to method or property access
 						try {
+							Log.i(this.TAG, "removing sourcebuffer: " + type);
 							ms.removeSourceBuffer(sb);
 						} catch (error) {
 							Log.e(this.TAG, error.message);
@@ -136,13 +151,15 @@ class MSEController {
 					this._sourceBuffers[type] = null;
 				}
 			}
-			if (ms.readyState === 'open') {
-				try {
-					ms.endOfStream();
-				} catch (error) {
-					Log.e(this.TAG, error.message);
-				}
-			}
+
+
+
+			// proprerly remove sourcebuffers
+			/*
+			for(let mimeType in this._sourceBuffers) {
+				this._mediaSource.removeSourceBuffer(this._sourceBuffers[mimeType]);
+			}*/
+
 			ms.removeEventListener('sourceopen', this.e.onSourceOpen);
 			ms.removeEventListener('sourceended', this.e.onSourceEnded);
 			ms.removeEventListener('sourceclose', this.e.onSourceClose);
@@ -150,6 +167,9 @@ class MSEController {
 			this._isBufferFull = false;
 			this._idrList.clear();
 			this._mediaSource = null;
+
+		} else {
+			Log.w(this.TAG, "no mediasource attached");
 		}
 
 		if (this._mediaElement) {
@@ -157,6 +177,7 @@ class MSEController {
 			this._mediaElement.removeAttribute('src');
 			this._mediaElement = null;
 		}
+
 		if (this._mediaSourceObjectURL) {
 			window.URL.revokeObjectURL(this._mediaSourceObjectURL);
 			this._mediaSourceObjectURL = null;

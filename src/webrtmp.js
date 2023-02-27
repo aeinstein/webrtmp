@@ -59,7 +59,11 @@ export class WebRTMP{
 			onvLoadedMetadata: this._onvLoadedMetadata.bind(this),
 			onvCanPlay: this._onvCanPlay.bind(this),
 			onvStalled: this._onvStalled.bind(this),
-			onvProgress: this._onvProgress.bind(this)
+			onvProgress: this._onvProgress.bind(this),
+			onvPlay: this._onvPlay.bind(this),
+			onvPause: this._onvPause.bind(this),
+			onAppendInitSegment: this._appendMediaSegment.bind(this),
+			onAppendMediaSegment: this._appendMediaSegment.bind(this)
 		};
 	}
 
@@ -69,7 +73,7 @@ export class WebRTMP{
 			let buffered = media.buffered;
 			if (buffered.length > 0 && media.currentTime < buffered.start(0)) {
 				Log.w(this.TAG, `Playback seems stuck at ${media.currentTime}, seek to ${buffered.start(0)}`);
-				this._requestSetTime = true;
+				//this._requestSetTime = true;
 				this._mediaElement.currentTime = buffered.start(0);
 				this._mediaElement.removeEventListener('progress', this.e.onvProgress);
 			}
@@ -79,7 +83,7 @@ export class WebRTMP{
 		}
 	}
 
-	_onvLoadedMetadata(e) {
+	_onvLoadedMetadata() {
 		if (this._pendingSeekTime != null) {
 			this._mediaElement.currentTime = this._pendingSeekTime;
 			this._pendingSeekTime = null;
@@ -87,7 +91,7 @@ export class WebRTMP{
 	}
 
 	_onvCanPlay(e) {
-		Log.d(this.TAG, "onvCanPlay");
+		Log.d(this.TAG, "onvCanPlay", e);
 		this._mediaElement.play().then(()=>{
 			Log.d(this.TAG, "promise play");
 		});
@@ -95,11 +99,11 @@ export class WebRTMP{
 		this._mediaElement.removeEventListener('canplay', this.e.onvCanPlay);
 	}
 
-	_onvStalled(e) {
+	_onvStalled() {
 		this._checkAndResumeStuckPlayback(true);
 	}
 
-	_onvProgress(e) {
+	_onvProgress() {
 		this._checkAndResumeStuckPlayback();
 	}
 
@@ -107,17 +111,30 @@ export class WebRTMP{
 		Log.w(this.TAG, 'MSE SourceBuffer is full');
 	}
 
+	_onvPlay(e){
+		Log.d(this.TAG, "play:", e);
+		this.pause(false);
+	}
+
+	_onvPause(e) {
+		Log.d(this.TAG, "pause", e);
+		this.pause(true);
+	}
+
 	destroy() {
+		Log.w(this.TAG, "destroy webrtmp");
 		if (this._mediaElement) {
 			this.detachMediaElement();
 		}
 		this.e = null;
-		this._emitter.removeAllListeners();
+		this._emitter.removeAllListener();
 		this._emitter = null;
 	}
 
 	disconnect(){
 		this.wss.disconnect();
+		this.wss.removeAllEventListener("RTMPHandshakeDone");
+		this.wss.removeAllEventListener("WSSConnectFailed");
 	}
 
 	/**
@@ -130,10 +147,9 @@ export class WebRTMP{
 		return this._mediaElement.play();
 	}
 
-	stop(){
-		this.wss.stop()
+	stopLoad(){
+		//this.wss.stop()
 		this._mediaElement.pause();
-		this.detachMediaElement();
 	}
 
 	/**
@@ -143,20 +159,7 @@ export class WebRTMP{
 	 * @returns {Promise<unknown>}
 	 */
 	open(host, port){
-		return new Promise((resolve, reject)=>{
-			this.wss.addEventListener("RTMPHandshakeDone", (success)=>{
-				Log.d(this.TAG,"RTMPHandshakeDone");
-				if(success) resolve();
-				else reject();
-			});
-
-			this.wss.addEventListener("WSSConnectFailed", ()=>{
-				Log.d(this.TAG,"WSSConnectFailed");
-				reject();
-			});
-
-			this.wss.open(host, port);
-		})
+		return this.wss.open(host, port);
 	}
 
 	/**
@@ -165,14 +168,7 @@ export class WebRTMP{
 	 * @returns {Promise<unknown>}
 	 */
 	connect(appName){
-		return new Promise((resolve, reject)=>{
-			this.wss.addEventListener("RTMPStreamCreated", (cmd, stream_id)=>{
-				Log.d(this.TAG,"RTMPStreamCreated: " + stream_id);
-				resolve();
-			});
-
-			this.wss.connect(appName);
-		})
+		return this.wss.connect(appName);
 	}
 
 	pause(enable){
@@ -190,21 +186,26 @@ export class WebRTMP{
 	}
 
 	detachMediaElement() {
+		this.wss.removeAllEventListener(TransmuxingEvents.INIT_SEGMENT);
+		this.wss.removeAllEventListener(TransmuxingEvents.MEDIA_SEGMENT);
+
 		if (this._mediaElement) {
 			this._msectl.detachMediaElement();
 			this._mediaElement.removeEventListener('loadedmetadata', this.e.onvLoadedMetadata);
 			this._mediaElement.removeEventListener('canplay', this.e.onvCanPlay);
 			this._mediaElement.removeEventListener('stalled', this.e.onvStalled);
 			this._mediaElement.removeEventListener('progress', this.e.onvProgress);
+			this._mediaElement.removeEventListener('play', this.e.onvPlay);
+			this._mediaElement.removeEventListener('pause', this.e.onvPause);
 			this._mediaElement = null;
 		}
 
 		if (this._msectl) {
-			this.wss.removeEventListener(TransmuxingEvents.INIT_SEGMENT, this._appendInitSegment);
-			this.wss.removeEventListener(TransmuxingEvents.MEDIA_SEGMENT, this._appendMediaSegment);
 			this._msectl.destroy();
 			this._msectl = null;
 		}
+
+		this.disconnect();
 	}
 
 	/**
@@ -217,31 +218,8 @@ export class WebRTMP{
 		mediaElement.addEventListener('canplay', this.e.onvCanPlay);
 		mediaElement.addEventListener('stalled', this.e.onvStalled);
 		mediaElement.addEventListener('progress', this.e.onvProgress);
-
-
-
-		mediaElement.addEventListener('pause', (e)=>{
-			Log.d(this.TAG, "pause", e);
-			this.pause(true);
-		});
-
-		mediaElement.addEventListener('playing', (e)=>{
-			Log.d(this.TAG, "playing:", e);
-
-		});
-
-		mediaElement.addEventListener('play', (e)=>{
-			Log.d(this.TAG, "play:", e);
-			this.pause(false);
-		});
-
-		mediaElement.addEventListener("loadstart", (e)=>{
-			Log.d(this.TAG, "loadstart:", e);
-		})
-
-		mediaElement.addEventListener("waiting", (e)=>{
-			Log.d(this.TAG, "waiting:", e);
-		})
+		mediaElement.addEventListener('play', this.e.onvPlay);
+		mediaElement.addEventListener('pause', this.e.onvPause);
 
 		this._msectl = new MSEController(defaultConfig);
 
@@ -256,8 +234,8 @@ export class WebRTMP{
 			);
 		});
 
-		this.wss.addEventListener(TransmuxingEvents.INIT_SEGMENT, this._appendInitSegment.bind(this));
-		this.wss.addEventListener(TransmuxingEvents.MEDIA_SEGMENT, this._appendMediaSegment.bind(this));
+		this.wss.addEventListener(TransmuxingEvents.INIT_SEGMENT, this._appendInitSegment.bind(this), true);
+		this.wss.addEventListener(TransmuxingEvents.MEDIA_SEGMENT, this._appendMediaSegment.bind(this), true);
 
 		this._msectl.attachMediaElement(mediaElement);
 	}
@@ -279,7 +257,4 @@ export class WebRTMP{
 	}
 }
 
-//export default WebRTMP;
-
-//window["webrtmp"] = new WebRTMP();
 window["Log"] = Log;

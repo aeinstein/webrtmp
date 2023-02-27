@@ -110,9 +110,8 @@ self.addEventListener('message', function(e) {
             break;
 
         case "disconnect":
-            if(!message_handler) {
-                Log.e(this.TAG, "RTMP not connected");
-                break;
+            if(message_handler) {
+				message_handler.destroy();
             }
 			wss_manager.close();
 			break;

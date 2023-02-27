@@ -73,6 +73,12 @@ class RTMPMessageHandler {
         }
     }
 
+    destroy(){
+        this.media_handler.destroy();
+        this.media_handler = null;
+        this.chunk_parser = null
+    }
+
     /**
      *
      * @param {Uint8Array} data

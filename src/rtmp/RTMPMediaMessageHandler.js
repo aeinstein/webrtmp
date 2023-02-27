@@ -133,6 +133,7 @@ class RTMPMediaMessageHandler{
     }
 
     destroy() {
+        this._transmuxer.destroy();
         this._mediaInfo = null;
         this._metadata = null;
         this._audioMetadata = null;

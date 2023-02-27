@@ -20,7 +20,6 @@
 import {TransmuxingEvents} from "../utils/utils";
 import EventEmitter from "../utils/event_emitter";
 import MP4Remuxer from "../formats/mp4-remuxer";
-import MediaInfo from "../formats/media-info";
 import Browser from "../utils/browser";
 import Log from "../utils/logger";
 
@@ -32,15 +31,8 @@ class Transmuxer {
 
         this._config = config;
 
-        this._currentSegmentIndex = 0;
-
-        this._mediaInfo = null;
-        this._ioctl = null;
-
         this._pendingSeekTime = null;
         this._pendingResolveSeekPoint = null;
-
-        this._statisticsReporter = null;
 
         this._remuxer = new MP4Remuxer(this._config);
         this._remuxer.onInitSegment = this._onRemuxerInitSegmentArrival.bind(this);
@@ -48,23 +40,12 @@ class Transmuxer {
     }
 
     destroy() {
-        this._mediaInfo = null;
-        this._mediaDataSource = null;
-
-        if (this._statisticsReporter) {
-            this._disableStatisticsReporter();
-        }
-        if (this._ioctl) {
-            this._ioctl.destroy();
-            this._ioctl = null;
-        }
-
         if (this._remuxer) {
             this._remuxer.destroy();
             this._remuxer = null;
         }
 
-        this._emitter.removeAllListeners();
+        this._emitter.removeAllListener();
         this._emitter = null;
     }
 
@@ -85,62 +66,7 @@ class Transmuxer {
     }
 
     stop() {
-        this._internalAbort();
-    }
-
-    _internalAbort() {
-        if (this._ioctl) {
-            this._ioctl.destroy();
-            this._ioctl = null;
-        }
-    }
-
-    _searchSegmentIndexContains(milliseconds) {
-        let segments = this._mediaDataSource.segments;
-        let idx = segments.length - 1;
-
-        for (let i = 0; i < segments.length; i++) {
-            if (milliseconds < segments[i].timestampBase) {
-                idx = i - 1;
-                break;
-            }
-        }
-        return idx;
-    }
-
-    _onMediaInfo(mediaInfo) {
-        if (this._mediaInfo == null) {
-            // Store first segment's mediainfo as global mediaInfo
-            this._mediaInfo = Object.assign({}, mediaInfo);
-            this._mediaInfo.keyframesIndex = null;
-            this._mediaInfo.segments = [];
-            //this._mediaInfo.segmentCount = this._mediaDataSource.segments.length;
-            Object.setPrototypeOf(this._mediaInfo, MediaInfo.prototype);
-        }
-
-        let segmentInfo = Object.assign({}, mediaInfo);
-        Object.setPrototypeOf(segmentInfo, MediaInfo.prototype);
-        this._mediaInfo.segments[this._currentSegmentIndex] = segmentInfo;
-
-        // notify mediaInfo update
-        this._reportSegmentMediaInfo(this._currentSegmentIndex);
-
-        /*
-        if (this._pendingSeekTime != null) {
-            Promise.resolve().then(() => {
-                let target = this._pendingSeekTime;
-                this._pendingSeekTime = null;
-                this.seek(target);
-            });
-        }*/
-    }
-
-    _onMetaDataArrived(metadata) {
-        this._emitter.emit(TransmuxingEvents.METADATA_ARRIVED, metadata);
-    }
-
-    _onScriptDataArrived(data) {
-        this._emitter.emit(TransmuxingEvents.SCRIPTDATA_ARRIVED, data);
+       // this._internalAbort();
     }
 
     _onRemuxerInitSegmentArrival(type, initSegment) {

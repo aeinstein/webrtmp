@@ -9,7 +9,7 @@ For those who really miss RTMP in Browser, cause HLS sucks.
 
 ## Introduction
 This project consists of 2 parts. 
-- Websockify for wrapping WSS to TCP
+- Websockify for wrapping TCP in WSS
 - WebRTMP Client library 
 
 
@@ -18,7 +18,7 @@ This project consists of 2 parts.
 
 ## Features
 - RTMP container with H.264 + AAC / MP3 codec playback
-- RTMP over Websocket low latency live stream playback <= 2 sec.
+- RTMP over Websocket low latency live stream playback <= 3 sec.
 - Compatible with Chrome, FireFox, Safari 10, IE11 and Edge
 - Extremely low overhead and hardware accelerated by your browser!
 - Use of promises
@@ -55,7 +55,7 @@ apt install websockify
 Launch WSS RTMP-Wrapper
 (Don't forget to get certificates)
 ```bash
-websockify -D --cert /home/bunkertv/certs/fullchain.pem --key /home/bunkertv/certs/privkey.pem --ssl-only 9001 127.0.0.1:1935
+websockify -D --cert fullchain.pem --key privkey.pem --ssl-only 9001 127.0.0.1:1935
 ```
 
 ## State

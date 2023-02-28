@@ -46,7 +46,7 @@ class Chunk{
     }
 
     /**
-     *
+     * get bytes of the current chunk
      * @returns {Uint8Array}
      */
     getBytes(){
@@ -67,7 +67,7 @@ class Chunk{
     }
 
     /**
-     *
+     * get bytes from chunk header
      * @param {Number} fmt
      * @returns {Uint8Array}
      * @private
@@ -157,7 +157,7 @@ class Chunk{
     }
 
     /**
-     *
+     * Sets the Chunk StreamID
      * @param {Number} chunk_stream_id
      */
     setChunkStreamID(chunk_stream_id) {
@@ -166,7 +166,7 @@ class Chunk{
     }
 
     /**
-     *
+     * Sets the Message StreamID of the Chunk
      * @param {Number} message_stream_id
      */
     setMessageStreamID(message_stream_id) {
@@ -174,7 +174,7 @@ class Chunk{
     }
 
     /**
-     *
+     * Sets the Timestamp of the chunk
      * @param {Number} timestamp
      */
     setTimestamp(timestamp){

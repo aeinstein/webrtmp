@@ -27,6 +27,9 @@ import RTMPMediaMessageHandler from "./RTMPMediaMessageHandler";
 import AMF0Object from "./AMF0Object";
 import Log from "../utils/logger";
 
+/**
+ * Class for handling rtmp messages
+ */
 class RTMPMessageHandler {
     TAG = "RTMPMessageHandler";
 

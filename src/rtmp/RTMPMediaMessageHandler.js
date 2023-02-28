@@ -27,6 +27,9 @@ import {defaultConfig, DemuxErrors, TransmuxingEvents} from "../utils/utils";
 import SPSParser from "../flv/sps-parser";
 import Transmuxer from "../flv/transmuxer";
 
+/**
+ * class for handling media type messages
+ */
 class RTMPMediaMessageHandler{
     TAG = "RTMPMediaMessageHandler";
 

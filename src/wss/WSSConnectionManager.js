@@ -27,7 +27,7 @@ class WSSConnectionManager{
     wss;
 
     /**
-     *
+     * Open WSS connection
      * @param {String} host
      * @param {Number} port
      * @param callback
@@ -55,10 +55,18 @@ class WSSConnectionManager{
         }
     }
 
+    /**
+     * register a callback for messages
+     * @param cb
+     */
     registerMessageHandler(cb){
         this.wss.onmessage = cb;
     }
 
+    /**
+     * returns the WebSocket
+     * @returns {WebSocket}
+     */
     getSocket(){
         return this.wss;
     }

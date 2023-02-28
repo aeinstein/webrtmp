@@ -20,7 +20,7 @@
  */
 
 /**
- *
+ * concat two Uint8Array
  * @param {Uint8Array} bufs
  * @returns {Uint8Array}
  */
@@ -56,7 +56,7 @@ export function _stringToByteArray(str) {
 }
 
 /**
- *
+ * convert Float64 to 8 byteArray
  * @param {Number} num
  * @returns {*[]}
  * @private
@@ -68,7 +68,7 @@ export function _numberToByteArray(num) {
 }
 
 /**
- *
+ * convert 8 byte byteArray to Float64
  * @param {byte[]} ba
  * @returns {number}
  * @private
@@ -85,7 +85,7 @@ export function _byteArrayToNumber(ba){
 }
 
 /**
- *
+ * convert byteArray to string
  * @param {byte[]} ba
  * @returns {string}
  * @private

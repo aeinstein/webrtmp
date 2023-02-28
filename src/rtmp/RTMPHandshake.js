@@ -20,6 +20,9 @@
 
 import Log from "../utils/logger";
 
+/**
+ * Class for handle the rtmp handshake
+ */
 class RTMPHandshake{
     TAG = "RTMPHandshake";
     state = 0;
@@ -152,6 +155,13 @@ class RTMPHandshake{
         this.onHandshakeDone(true);
     }
 
+    /**
+     * compare to arrays
+     * @param ar1
+     * @param ar2
+     * @returns {boolean}
+     * @private
+     */
     _compare(ar1, ar2){
         for(let i = 0; i < ar1.length; i++){
             if(ar1[i] !== ar2[i]) return false;

@@ -20,6 +20,9 @@
 
 import Log from "../utils/logger";
 
+/**
+ * A small class for Handling events
+ */
 class EventEmitter{
 	ListenerList = [];
 	TAG = "EventEmitter";
@@ -29,10 +32,10 @@ class EventEmitter{
 	}
 
 	/**
-	 *
-	 * @param {String} event
-	 * @param {Function} listener
-	 * @param {boolean} modal
+	 * Add an event listener
+	 * @param {String} event - The Name of the event
+	 * @param {Function} listener - the callback when occurs
+	 * @param {boolean} modal - Overwrite existing listener for this event
 	 */
 	addEventListener(event, listener, modal = false){
 		Log.d(this.TAG, "addEventListener: " + event);
@@ -54,7 +57,7 @@ class EventEmitter{
 	}
 
 	/**
-	 *
+	 * A synonym for addEventListener
 	 * @param {String} event
 	 * @param {Function} listener
 	 * @param {boolean} modal
@@ -65,7 +68,7 @@ class EventEmitter{
 
 
 	/**
-	 *
+	 * Remove an event listener
 	 * @param {String} event
 	 * @param {Function} listener
 	 */
@@ -81,12 +84,18 @@ class EventEmitter{
 		}
 	}
 
+    /**
+     * A synonym for removeEventListener
+     * @param {String} event
+     * @param {Function} listener
+     */
 	removeListener(event, listener){
 		this.removeEventListener(event, listener);
 	}
 
 	/**
 	 * Remove all listener
+     * @param {String|undefined} event - If provided, remove all listener for this event
 	 */
 	removeAllEventListener(event){
 		Log.d(this.TAG, "removeAllEventListener: ", event);
@@ -102,6 +111,10 @@ class EventEmitter{
 			this.ListenerList = [];
 	}
 
+    /**
+     * A synonym for removeAllEventListener
+     * @param event
+     */
 	removeAllListener(event){
 		this.removeAllEventListener(event);
 	}

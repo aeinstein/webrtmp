@@ -22,6 +22,10 @@ import EventEmitter from "../utils/event_emitter";
 import Log from "../utils/logger";
 import Worker from "./connection.worker.js";
 
+
+/**
+ * Class which handles the Websocket
+ */
 class WebRTMP_Controller {
 	TAG = "WebRTMP_Controller";
 	host = document.location.host;
@@ -58,7 +62,7 @@ class WebRTMP_Controller {
 	}
 
 	/**
-	 *
+	 * Opens a WSS Connection
 	 * @param {String|null} host
 	 * @param {Number|null} port
 	 */
@@ -103,29 +107,45 @@ class WebRTMP_Controller {
 		this.WebRTMPWorker.postMessage({cmd: "play", streamName: streamName});
 	}
 
+    /**
+     * RTMP stop
+     */
 	stop(){
 		this.WebRTMPWorker.postMessage({cmd: "stop"});
 	}
 
+    /**
+     * Pause a video, RTMP Connection will also paused
+     * @param {boolean} enable - Enable or disable pause mode
+     */
     pause(enable){
         this.WebRTMPWorker.postMessage({cmd: "pause", enable: enable});
     }
 
 
 	/**
-	 * Eventlistener hinzufügenm
+	 * add Eventlistener
 	 * @param type
 	 * @param listener
-	 * @param {boolean} modal
+	 * @param {boolean} modal - Register only one Event, if exists overwrite
 	 */
 	addEventListener(type, listener, modal){
 		this._emitter.addEventListener(type, listener, modal);
 	}
 
+    /**
+     * Remove Eventlistner
+     * @param {String} type - Event name
+     * @param {Function} listener - callback when event occurs
+     */
 	removeEventListener(type, listener){
 		this._emitter.removeEventListener(type, listener);
 	}
 
+    /**
+     * Remove All registered Listener
+     * @param type
+     */
 	removeAllEventListener(type){
 		this._emitter.removeAllEventListener(type);
 	}

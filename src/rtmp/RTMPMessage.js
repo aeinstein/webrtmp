@@ -21,6 +21,9 @@
 import {_concatArrayBuffers} from "../utils/utils";
 import Log from "../utils/logger";
 
+/**
+ * Class which represent a RTMP Message
+ */
 class RTMPMessage{
 	TAG = "RTMPMessage";
 

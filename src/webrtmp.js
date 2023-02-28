@@ -24,6 +24,9 @@ import {defaultConfig, ErrorDetails, ErrorTypes, MSEEvents, PlayerEvents, Transm
 import EventEmitter from "./utils/event_emitter";
 import WebRTMP_Controller from "./wss/webrtmp.controller";
 
+/**
+ * the main class for webrtmp. Handles the remuxer result
+ */
 export class WebRTMP{
 	TAG = 'WebRTMP';
 
@@ -147,6 +150,9 @@ export class WebRTMP{
 		return this._mediaElement.play();
 	}
 
+    /**
+     * Stops loading, same as pause(true)
+     */
 	stopLoad(){
 		//this.wss.stop()
 		this._mediaElement.pause();
@@ -171,6 +177,10 @@ export class WebRTMP{
 		return this.wss.connect(appName);
 	}
 
+    /**
+     * Pause a rtmp stream
+     * @param {boolean} enable
+     */
 	pause(enable){
 		this.wss.pause(enable);
 
@@ -185,6 +195,9 @@ export class WebRTMP{
 		}
 	}
 
+    /**
+     * Detach Mediaelement
+     */
 	detachMediaElement() {
 		this.wss.removeAllEventListener(TransmuxingEvents.INIT_SEGMENT);
 		this.wss.removeAllEventListener(TransmuxingEvents.MEDIA_SEGMENT);
@@ -209,7 +222,7 @@ export class WebRTMP{
 	}
 
 	/**
-	 *
+	 * Attach MediaElement
 	 * @param {HTMLVideoElement} mediaElement
 	 */
 	attachMediaElement(mediaElement) {
@@ -240,11 +253,21 @@ export class WebRTMP{
 		this._msectl.attachMediaElement(mediaElement);
 	}
 
+    /**
+     * Append Init Segment to MSE
+     * @param data
+     * @private
+     */
 	_appendInitSegment(data){
 		Log.i(this.TAG, TransmuxingEvents.INIT_SEGMENT, data[0], data[1]);
 		this._msectl.appendInitSegment(data[1]);
 	}
 
+    /**
+     * Append Media Segment to MSE
+     * @param data
+     * @private
+     */
 	_appendMediaSegment(data){
 		Log.t(this.TAG, TransmuxingEvents.MEDIA_SEGMENT, data[0], data[1]);
 		this._msectl.appendMediaSegment(data[1]);

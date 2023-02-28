@@ -256,5 +256,3 @@ export class WebRTMP{
 		}
 	}
 }
-
-window["Log"] = Log;

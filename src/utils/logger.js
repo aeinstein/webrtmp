@@ -31,7 +31,7 @@ class Log {
 
     /**
      * Object with [ClassName, Loglevel]
-     * @type {}
+     * @type {Object}
      */
     static loglevels = {};
 
@@ -45,7 +45,13 @@ class Log {
     static _output = function output(level, tag, ...txt){
         let tmpLevel = Log.LEVEL;
 
-        if(Log.loglevels[tag]) tmpLevel = Log.loglevels[tag];
+        // Dirty fix because inline worker cant access static properties
+        try{
+            if(Log.loglevels[tag]) tmpLevel = Log.loglevels[tag];
+        }catch (e) {
+            return;
+        }
+
 
         if(tmpLevel === Log.OFF) return;
         if(tmpLevel > level) return;

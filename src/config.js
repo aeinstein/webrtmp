@@ -18,13 +18,21 @@
  *
  */
 
-
-import { WebRTMP } from "./webrtmp";
 import Log from "./utils/logger";
-export { WebRTMP } from "./webrtmp";
 
-export function createWebRTMP(){
-    return new WebRTMP();
+export const loglevels = {
+    "RTMPMessage": Log.ERROR,
+    "RTMPMessageHandler": Log.WARN,
+    "RTMPMediaMessageHandler": Log.ERROR,
+    "ChunkParser": Log.WARN,
+    "RTMPHandshake": Log.ERROR,
+    "Chunk": Log.OFF,
+    "MP4Remuxer": Log.ERROR,
+    "Transmuxer": Log.WARN,
+    "EventEmitter": Log.DEBUG,
+    "MSEController": Log.INFO,
+    "WebRTMP": Log.DEBUG,
+    "WebRTMP_Controller": Log.WARN,
+    "WebRTMP Worker": Log.WARN,
+    "AMF": Log.WARN
 }
-
-window["Log"] = Log;

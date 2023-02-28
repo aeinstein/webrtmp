@@ -10,10 +10,22 @@ module.exports = {
         library: "webrtmpjs",
         libraryTarget: "umd",
         globalObject: "this",
-        chunkFilename: "[name].js",
+        //chunkFilename: "[name].js"
     },
 
     devtool: 'source-map',
+
+    module: {
+        rules: [
+            {
+                test: /\.worker\.js$/i,
+                loader: "worker-loader",
+                options: {
+                    inline: "no-fallback",
+                },
+            },
+        ],
+    },
 
 
     optimization: {

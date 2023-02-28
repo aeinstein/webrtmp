@@ -20,6 +20,7 @@
 
 import EventEmitter from "../utils/event_emitter";
 import Log from "../utils/logger";
+import Worker from "./connection.worker.js";
 
 class WebRTMP_Controller {
 	TAG = "WebRTMP_Controller";
@@ -28,31 +29,26 @@ class WebRTMP_Controller {
 	WSSReconnect = false;
 	isConnected = false;
 
-	loglevels = {
-		"RTMPMessage": Log.ERROR,
-		"RTMPMessageHandler": Log.WARN,
-		"RTMPMediaMessageHandler": Log.ERROR,
-		"ChunkParser": Log.WARN,
-		"RTMPHandshake": Log.ERROR,
-		"Chunk": Log.OFF,
-		"MP4Remuxer": Log.ERROR,
-		"Transmuxer": Log.WARN,
-		"EventEmitter": Log.DEBUG,
-		"MSEController": Log.INFO,
-		"WebRTMP": Log.DEBUG,
-		"WebRTMP_Controller": Log.WARN,
-		"WebRTMP Worker": Log.WARN,
-		"AMF": Log.WARN
-	}
-
-	WebRTMPWorker = new Worker(new URL('connection.worker.js', import.meta.url), {
-		name: "webrtmp.worker",
-		type: "module"
-		/* webpackEntryOptions: { filename: "[name].js" } */
-	});
+	WebRTMPWorker = new Worker();
 
 	constructor() {
-		Log.loglevels = this.loglevels;
+		Log.loglevels = {
+            "RTMPMessage": Log.ERROR,
+            "RTMPMessageHandler": Log.WARN,
+            "RTMPMediaMessageHandler": Log.ERROR,
+            "ChunkParser": Log.WARN,
+            "RTMPHandshake": Log.ERROR,
+            "Chunk": Log.OFF,
+            "MP4Remuxer": Log.ERROR,
+            "Transmuxer": Log.WARN,
+            "EventEmitter": Log.DEBUG,
+            "MSEController": Log.INFO,
+            "WebRTMP": Log.DEBUG,
+            "WebRTMP_Controller": Log.WARN,
+            "WebRTMP Worker": Log.WARN,
+            "AMF": Log.WARN,
+            "WSSConnectionManager": Log.DEBUG
+        };
 
 		this._emitter = new EventEmitter();
 

@@ -25,7 +25,8 @@ import AMF from "../flv/amf-parser";
 import Log from "../utils/logger";
 import {defaultConfig, DemuxErrors, TransmuxingEvents} from "../utils/utils";
 import SPSParser from "../flv/sps-parser";
-import Transmuxer from "../flv/transmuxer";
+import MP4Remuxer from "../formats/mp4-remuxer";
+import EventEmitter from "../utils/event_emitter";
 
 /**
  * class for handling media type messages
@@ -101,42 +102,32 @@ class RTMPMediaMessageHandler{
         this.bytePos = 0;
 
         this._config = defaultConfig;
-        this._transmuxer = new Transmuxer(this._config);
 
-        this._transmuxer.on(TransmuxingEvents.INIT_SEGMENT, (type, is) => {
-            postMessage([TransmuxingEvents.INIT_SEGMENT, type, is]);
-        });
+        this._remuxer = new MP4Remuxer(this._config);
+        
+        this._remuxer.onInitSegment = (type, initSegment) =>{
+            postMessage([TransmuxingEvents.INIT_SEGMENT, type, initSegment]);
+        }
 
-        this._transmuxer.on(TransmuxingEvents.MEDIA_SEGMENT, (type, ms) => {
-            postMessage([TransmuxingEvents.MEDIA_SEGMENT, type, ms]);
-        });
-
-        this._transmuxer.on(TransmuxingEvents.MEDIA_INFO, (mediaInfo) => {
-            this._mediaInfo = mediaInfo;
-            postMessage([TransmuxingEvents.MEDIA_INFO, mediaInfo]);
-        });
-
-        this._transmuxer.on(TransmuxingEvents.METADATA_ARRIVED, (metadata) => {
-            postMessage([TransmuxingEvents.METADATA_ARRIVED, metadata]);
-        });
-
-        this._transmuxer.on(TransmuxingEvents.SCRIPTDATA_ARRIVED, (data) => {
-            postMessage([TransmuxingEvents.SCRIPTDATA_ARRIVED, data]);
-        });
+        this._remuxer.onMediaSegment = (type, mediaSegment) => {
+            postMessage([TransmuxingEvents.MEDIA_SEGMENT, type, mediaSegment]);
+        }
 
         this._onDataAvailable = (audioTrack, videoTrack) =>{
-            Log.d(this.TAG, "_onDataAvailable");
-            this._transmuxer.remux(audioTrack, videoTrack);
+            this._remuxer.remux(audioTrack, videoTrack);
         }
 
         this._onTrackMetadata = (type, metadata)=>{
-            Log.d(this.TAG, "_onTrackMetadata");
-            this._transmuxer._onTrackMetadataReceived(type, metadata);
+            this._remuxer._onTrackMetadataReceived(type, metadata);
         }
     }
 
     destroy() {
-        this._transmuxer.destroy();
+        if (this._remuxer) {
+            this._remuxer.destroy();
+            this._remuxer = null;
+        }
+
         this._mediaInfo = null;
         this._metadata = null;
         this._audioMetadata = null;
@@ -152,16 +143,6 @@ class RTMPMediaMessageHandler{
         this._onDataAvailable = null;
     }
 
-    // prototype: function(type: string, metadata: any): void
-    get onTrackMetadata() {
-        return this._onTrackMetadata;
-    }
-
-    set onTrackMetadata(callback) {
-        this._onTrackMetadata = callback;
-    }
-
-    // prototype: function(mediaInfo: MediaInfo): void
     get onMediaInfo() {
         return this._onMediaInfo;
     }
@@ -193,53 +174,6 @@ class RTMPMediaMessageHandler{
 
     set onError(callback) {
         this._onError = callback;
-    }
-
-    // prototype: function(videoTrack: any, audioTrack: any): void
-    get onDataAvailable() {
-        return this._onDataAvailable;
-    }
-
-    set onDataAvailable(callback) {
-        this._onDataAvailable = callback;
-    }
-
-    // timestamp base for output samples, must be in milliseconds
-    get timestampBase() {
-        return this._timestampBase;
-    }
-
-    set timestampBase(base) {
-        this._timestampBase = base;
-    }
-
-    get overridedDuration() {
-        return this._duration;
-    }
-
-    // Force-override media duration. Must be in milliseconds, int32
-    set overridedDuration(duration) {
-        this._durationOverrided = true;
-        this._duration = duration;
-        this._mediaInfo.duration = duration;
-    }
-
-    // Force-override audio track present flag, boolean
-    set overridedHasAudio(hasAudio) {
-        this._hasAudioFlagOverrided = true;
-        this._hasAudio = hasAudio;
-        this._mediaInfo.hasAudio = hasAudio;
-    }
-
-    // Force-override video track present flag, boolean
-    set overridedHasVideo(hasVideo) {
-        this._hasVideoFlagOverrided = true;
-        this._hasVideo = hasVideo;
-        this._mediaInfo.hasVideo = hasVideo;
-    }
-
-    resetMediaInfo() {
-        this._mediaInfo = new MediaInfo();
     }
 
     _isInitialMetadataDispatched() {

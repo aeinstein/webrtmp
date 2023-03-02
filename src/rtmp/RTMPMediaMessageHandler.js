@@ -104,7 +104,7 @@ class RTMPMediaMessageHandler{
         this._config = defaultConfig;
 
         this._remuxer = new MP4Remuxer(this._config);
-        
+
         this._remuxer.onInitSegment = (type, initSegment) =>{
             postMessage([TransmuxingEvents.INIT_SEGMENT, type, initSegment]);
         }

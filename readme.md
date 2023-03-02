@@ -2,16 +2,14 @@ WebRTMP
 ======
 A HTML5 Flash Video (RTMP) Player written in pure JavaScript without Flash. LONG LIVE RTMP ;-)
 
-For those who really miss RTMP in Browser, cause HLS sucks.
-
+For those who really miss RTMP in Browser, cause HLS sucks. This will be a part of [avideo](https://github.com/aeinstein/avideo).
+ 
 ### heavily inspired bei bilibi`s [FlvPlayer](https://github.com/bilibili/flv.js)
-
 
 ## Introduction
 This project consists of 2 parts. 
 - Websockify for wrapping TCP in WSS
-- WebRTMP Client library 
-
+- WebRTMP Client library
 
 ## Demo
 [https://bunkertv.org/webrtmp/index.html](https://bunkertv.org/webrtmp/index.html)
@@ -59,9 +57,6 @@ Launch WSS RTMP-Wrapper
 websockify -D --cert fullchain.pem --key privkey.pem --ssl-only 9001 127.0.0.1:1935
 ```
 
-## State
-proof-of-concept
-
 ## TODO
 a lot of error and exception handling
 
@@ -69,5 +64,3 @@ a lot of error and exception handling
 #### serverSide
 ![arch](docs/webrtmp_diagram.png)
 
-#### ClientSide
-![arch](docs/webrtmp_arch.png)
